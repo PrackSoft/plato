@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con corrección: resetear término al cambiar filtro principal)
+// js/app.js - Plato App (con corrección: filtro por término en Trashcan)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -346,13 +346,17 @@ if (filterWatchingBtn) filterWatchingBtn.addEventListener('click', toggleWatchin
 if (filterFavoriteBtn) filterFavoriteBtn.addEventListener('click', toggleFavoriteFilter);
 if (filterTrashBtn) filterTrashBtn.addEventListener('click', toggleTrashFilter);
 
-// ---------------------- Load and display ----------------------
+// ---------------------- Load and display (CORREGIDO) ----------------------
 async function loadAndDisplayAll() {
     await dbReady;
     let allMovies;
 
     if (activeTrashFilter) {
         allMovies = await getTrashMovies();
+        // Aplicar filtro por término también en la papelera
+        if (activeTermFilter) {
+            allMovies = allMovies.filter(movie => (movie.searchTerms || []).includes(activeTermFilter));
+        }
     } else {
         allMovies = await getAllMovies();
         if (activeTermFilter) {
