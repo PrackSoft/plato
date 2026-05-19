@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con filtros de orden, duración y eliminación de términos por contexto)
+// js/app.js - Plato App (con corrección: resetear término al cambiar filtro principal)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -208,9 +208,7 @@ async function editTermGlobally(oldTerm, newTerm) {
     await loadAndDisplayAll();
 }
 
-// Nueva función: eliminar películas con un término según la vista actual
 async function deleteMoviesWithTermFromCurrentView(term) {
-    // Obtener las películas según los filtros actuales (igual que en loadAndDisplayAll)
     let moviesToProcess;
     if (activeTrashFilter) {
         moviesToProcess = await getTrashMovies();
@@ -222,7 +220,6 @@ async function deleteMoviesWithTermFromCurrentView(term) {
         if (activeWatchingFilter) moviesToProcess = moviesToProcess.filter(movie => movie.watching === true);
         if (activeFavoriteFilter) moviesToProcess = moviesToProcess.filter(movie => movie.favorite === true);
     }
-    // Filtrar solo las que contienen el término
     const moviesWithTerm = moviesToProcess.filter(movie => (movie.searchTerms || []).includes(term));
     if (moviesWithTerm.length === 0) return;
 
@@ -238,7 +235,6 @@ async function deleteMoviesWithTermFromCurrentView(term) {
             await moveMovieToTrash(movie.youtubeId);
         }
     }
-    // Si el filtro activo era este término, desactivarlo
     if (activeTermFilter === term) activeTermFilter = null;
     await refreshAvailableTerms();
     await loadAndDisplayAll();
@@ -280,7 +276,6 @@ function renderTermsBar(termsArray = null) {
         });
     });
 
-    // Nuevo handler para eliminar término según vista actual
     document.querySelectorAll('.term-delete').forEach(deleteSpan => {
         deleteSpan.addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -302,7 +297,7 @@ if (toggleTermsBtn && termsBar) {
     });
 }
 
-// ---------------------- Filter buttons ----------------------
+// ---------------------- Filter buttons (con reset de término activo) ----------------------
 function updateFilterButtonsUI() {
     if (activeWatchingFilter) filterWatchingBtn.classList.add('active');
     else filterWatchingBtn.classList.remove('active');
@@ -313,6 +308,7 @@ function updateFilterButtonsUI() {
 }
 
 function toggleWatchingFilter() {
+    activeTermFilter = null;  // Resetear término al cambiar filtro
     if (activeTrashFilter) {
         activeTrashFilter = false;
         updateFilterButtonsUI();
@@ -324,6 +320,7 @@ function toggleWatchingFilter() {
 }
 
 function toggleFavoriteFilter() {
+    activeTermFilter = null;  // Resetear término al cambiar filtro
     if (activeTrashFilter) {
         activeTrashFilter = false;
         updateFilterButtonsUI();
@@ -335,11 +332,11 @@ function toggleFavoriteFilter() {
 }
 
 function toggleTrashFilter() {
+    activeTermFilter = null;  // Resetear término al cambiar filtro
     activeTrashFilter = !activeTrashFilter;
     if (activeTrashFilter) {
         activeWatchingFilter = false;
         activeFavoriteFilter = false;
-        activeTermFilter = null;
     }
     updateFilterButtonsUI();
     loadAndDisplayAll();
