@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con filtros de orden y duración en sidebar)
+// js/app.js - Plato App (con filtros de orden, duración y eliminación de términos por contexto)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -94,7 +94,6 @@ function buildSearchInPanel() {
 function openSettingsSidebar() {
     settingsSidebar.classList.remove('hidden');
     sidebarOverlay.classList.remove('hidden');
-    // Sincronizar radios con valores actuales
     const orderRadios = document.querySelectorAll('input[name="searchOrder"]');
     orderRadios.forEach(radio => {
         if (radio.value === searchOrder) radio.checked = true;
@@ -132,7 +131,6 @@ function loadSearchPreferences() {
 }
 
 function buildSettingsSidebarContent() {
-    // Asegurar que exista un contenedor para el contenido del sidebar
     let sidebarContent = document.querySelector('.sidebar-content');
     if (!sidebarContent) {
         sidebarContent = document.createElement('div');
@@ -160,7 +158,6 @@ function buildSettingsSidebarContent() {
         </div>
     `;
 
-    // Event listeners para los radios
     const orderRadios = document.querySelectorAll('input[name="searchOrder"]');
     orderRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
@@ -211,6 +208,42 @@ async function editTermGlobally(oldTerm, newTerm) {
     await loadAndDisplayAll();
 }
 
+// Nueva función: eliminar películas con un término según la vista actual
+async function deleteMoviesWithTermFromCurrentView(term) {
+    // Obtener las películas según los filtros actuales (igual que en loadAndDisplayAll)
+    let moviesToProcess;
+    if (activeTrashFilter) {
+        moviesToProcess = await getTrashMovies();
+    } else {
+        moviesToProcess = await getAllMovies();
+        if (activeTermFilter) {
+            moviesToProcess = moviesToProcess.filter(movie => (movie.searchTerms || []).includes(activeTermFilter));
+        }
+        if (activeWatchingFilter) moviesToProcess = moviesToProcess.filter(movie => movie.watching === true);
+        if (activeFavoriteFilter) moviesToProcess = moviesToProcess.filter(movie => movie.favorite === true);
+    }
+    // Filtrar solo las que contienen el término
+    const moviesWithTerm = moviesToProcess.filter(movie => (movie.searchTerms || []).includes(term));
+    if (moviesWithTerm.length === 0) return;
+
+    const confirmMsg = activeTrashFilter
+        ? `Permanently delete ${moviesWithTerm.length} movie(s) with term "${term}" from trash?`
+        : `Move ${moviesWithTerm.length} movie(s) with term "${term}" to trash?`;
+    if (!confirm(confirmMsg)) return;
+
+    for (const movie of moviesWithTerm) {
+        if (activeTrashFilter) {
+            await permanentlyDeleteMovie(movie.youtubeId);
+        } else {
+            await moveMovieToTrash(movie.youtubeId);
+        }
+    }
+    // Si el filtro activo era este término, desactivarlo
+    if (activeTermFilter === term) activeTermFilter = null;
+    await refreshAvailableTerms();
+    await loadAndDisplayAll();
+}
+
 function renderTermsBar(termsArray = null) {
     const terms = termsArray !== null ? termsArray : availableTerms;
     if (terms.length === 0) {
@@ -247,16 +280,12 @@ function renderTermsBar(termsArray = null) {
         });
     });
 
+    // Nuevo handler para eliminar término según vista actual
     document.querySelectorAll('.term-delete').forEach(deleteSpan => {
         deleteSpan.addEventListener('click', async (e) => {
             e.stopPropagation();
             const term = deleteSpan.dataset.term;
-            if (confirm(`Delete term "${term}" from all movies? This cannot be undone.`)) {
-                await removeTermFromAllMovies(term);
-                if (activeTermFilter === term) activeTermFilter = null;
-                await refreshAvailableTerms();
-                await loadAndDisplayAll();
-            }
+            await deleteMoviesWithTermFromCurrentView(term);
         });
     });
 }
@@ -356,13 +385,10 @@ async function loadAndDisplayAll() {
 
     renderMovies(resultsGrid, allMovies, title, activeTrashFilter ? 'trash' : 'main', currentSort, onSortChange);
 
-    // Calcular términos a mostrar en la barra
     let termsToShow;
     if (activeTermFilter) {
-        // Si hay un filtro por término activo, mostrar solo ese término
         termsToShow = [activeTermFilter];
     } else {
-        // Si no, mostrar todos los términos presentes en las películas actuales
         termsToShow = Array.from(new Set(allMovies.flatMap(m => m.searchTerms || []))).sort();
     }
     renderTermsBar(termsToShow);
@@ -438,7 +464,6 @@ searchBtn.onclick = async () => {
     let effectiveQuery = query;
     let customTermName = null;
     
-    // Manejo de búsqueda vacía según orden
     if (!query) {
         if (searchOrder === 'viewCount') {
             effectiveQuery = 'movie';
@@ -446,7 +471,7 @@ searchBtn.onclick = async () => {
         } else if (searchOrder === 'rating') {
             effectiveQuery = 'movie';
             customTermName = 'Most Rated';
-        } else { // relevance
+        } else {
             resultsGrid.innerHTML = '<div class="stats">Enter a search term</div>';
             return;
         }
@@ -489,7 +514,6 @@ searchBtn.onclick = async () => {
             resultsGrid.innerHTML = `<div class="stats">Error: ${err.message}</div>`;
         }
     } else {
-        // Búsqueda local en Plato DB
         resultsGrid.innerHTML = '<div class="stats">Searching in Plato DB...</div>';
         const allMovies = await getAllMovies();
         const lowerQuery = effectiveQuery.toLowerCase();
@@ -519,7 +543,6 @@ async function init() {
     buildSearchInPanel();
     buildSettingsSidebarContent();
     
-    // Eventos del dropdown de búsqueda
     searchInBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         searchInPanel.classList.toggle('hidden');
