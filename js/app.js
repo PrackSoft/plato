@@ -36,7 +36,7 @@ let currentSort = 'date';
 let searchOrder = 'relevance';   // 'relevance', 'viewCount', 'rating'
 let searchDuration = 'any';      // 'any', 'long'
 // NUEVO: filtro de categoría
-let searchCategoryFilter = 'all'; // 'all' o 'movies'
+let searchCategoryFilter = 'movies'; // 'all' o 'movies'
 
 // ---------------------- Helper: close panels ----------------------
 function closeAllPanels() {
