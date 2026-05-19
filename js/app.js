@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con corrección: filtro por término en Trashcan)
+// js/app.js - Plato App (corrección: eliminar término activo si ya no hay películas en papelera)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -346,16 +346,21 @@ if (filterWatchingBtn) filterWatchingBtn.addEventListener('click', toggleWatchin
 if (filterFavoriteBtn) filterFavoriteBtn.addEventListener('click', toggleFavoriteFilter);
 if (filterTrashBtn) filterTrashBtn.addEventListener('click', toggleTrashFilter);
 
-// ---------------------- Load and display (CORREGIDO) ----------------------
+// ---------------------- Load and display (CORREGIDO: auto-deseleccionar término si ya no existe en papelera) ----------------------
 async function loadAndDisplayAll() {
     await dbReady;
     let allMovies;
 
     if (activeTrashFilter) {
         allMovies = await getTrashMovies();
-        // Aplicar filtro por término también en la papelera
         if (activeTermFilter) {
-            allMovies = allMovies.filter(movie => (movie.searchTerms || []).includes(activeTermFilter));
+            const filtered = allMovies.filter(movie => (movie.searchTerms || []).includes(activeTermFilter));
+            if (filtered.length === 0) {
+                // El término ya no existe en la papelera, desactivar filtro
+                activeTermFilter = null;
+            } else {
+                allMovies = filtered;
+            }
         }
     } else {
         allMovies = await getAllMovies();
