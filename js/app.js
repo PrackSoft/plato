@@ -162,7 +162,7 @@ function buildSettingsSidebarContent() {
                 <label class="settings-label">Content type:</label>
                 <div class="radio-group">
                     <label><input type="radio" name="searchCategory" value="movies"> Include only movies</label>
-                    <label><input type="radio" name="searchCategory" value="all"> All results</label>
+                    <label><input type="radio" name="searchCategory" value="all"> Include related videos (non‑movies)</label>
                 </div>
             </div>
             <div class="settings-group">
