@@ -35,6 +35,8 @@ let currentSort = 'date';
 // Filtros de búsqueda (settings)
 let searchOrder = 'relevance';   // 'relevance', 'viewCount', 'rating'
 let searchDuration = 'any';      // 'any', 'long'
+// NUEVO: filtro de categoría
+let searchCategoryFilter = 'all'; // 'all' o 'movies'
 
 // ---------------------- Helper: close panels ----------------------
 function closeAllPanels() {
@@ -102,6 +104,11 @@ function openSettingsSidebar() {
     durationRadios.forEach(radio => {
         if (radio.value === searchDuration) radio.checked = true;
     });
+    // NUEVO: actualizar estado del filtro de categoría
+    const categoryRadios = document.querySelectorAll('input[name="searchCategory"]');
+    categoryRadios.forEach(radio => {
+        if (radio.value === searchCategoryFilter) radio.checked = true;
+    });
 }
 function closeSettingsSidebar() {
     settingsSidebar.classList.add('hidden');
@@ -119,6 +126,11 @@ function saveSearchDuration(value) {
     searchDuration = value;
     localStorage.setItem('plato_searchDuration', value);
 }
+// NUEVO: guardar filtro de categoría
+function saveSearchCategory(value) {
+    searchCategoryFilter = value;
+    localStorage.setItem('plato_searchCategory', value);
+}
 function loadSearchPreferences() {
     const savedOrder = localStorage.getItem('plato_searchOrder');
     if (savedOrder && (savedOrder === 'relevance' || savedOrder === 'viewCount' || savedOrder === 'rating')) {
@@ -127,6 +139,11 @@ function loadSearchPreferences() {
     const savedDuration = localStorage.getItem('plato_searchDuration');
     if (savedDuration && (savedDuration === 'any' || savedDuration === 'long')) {
         searchDuration = savedDuration;
+    }
+    // NUEVO: cargar filtro de categoría
+    const savedCategory = localStorage.getItem('plato_searchCategory');
+    if (savedCategory && (savedCategory === 'all' || savedCategory === 'movies')) {
+        searchCategoryFilter = savedCategory;
     }
 }
 
@@ -155,6 +172,14 @@ function buildSettingsSidebarContent() {
                     <label><input type="radio" name="searchDuration" value="long"> Only long videos (>20 min)</label>
                 </div>
             </div>
+            <!-- NUEVO: filtro de categoría -->
+            <div class="settings-group">
+                <label class="settings-label">Content type:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="searchCategory" value="all"> All results</label>
+                    <label><input type="radio" name="searchCategory" value="movies"> Include only movies (categoryId 30)</label>
+                </div>
+            </div>
         </div>
     `;
 
@@ -168,6 +193,13 @@ function buildSettingsSidebarContent() {
     durationRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
             if (e.target.checked) saveSearchDuration(e.target.value);
+        });
+    });
+    // NUEVO: evento para filtro de categoría
+    const categoryRadios = document.querySelectorAll('input[name="searchCategory"]');
+    categoryRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.checked) saveSearchCategory(e.target.value);
         });
     });
 }
@@ -490,7 +522,8 @@ searchBtn.onclick = async () => {
         resultsGrid.innerHTML = '<div class="stats">Searching YouTube...</div>';
         try {
             const channelId = selectedOption.id === 'plato_db' ? null : selectedOption.id;
-            const moviesFromAPI = await searchYouTube(effectiveQuery, channelId, searchOrder, searchDuration);
+            // NUEVO: pasar el filtro de categoría a searchYouTube
+            const moviesFromAPI = await searchYouTube(effectiveQuery, channelId, searchOrder, searchDuration, searchCategoryFilter);
             if (moviesFromAPI.length === 0) {
                 resultsGrid.innerHTML = '<div class="stats">No movies found on YouTube</div>';
                 return;
