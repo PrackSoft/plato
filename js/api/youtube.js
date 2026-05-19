@@ -3,14 +3,24 @@ import { API_KEY } from '../config.js';
 
 const MAX_RESULTS_PER_PAGE = 50;
 
-export async function searchYouTube(query, channelId = null) {
+export async function searchYouTube(query, channelId = null, order = 'relevance', duration = 'any') {
     if (!query || query.trim() === "") {
         throw new Error("Search query cannot be empty");
     }
     let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=${MAX_RESULTS_PER_PAGE}&q=${encodeURIComponent(query)}&key=${API_KEY}`;
+    
     if (channelId) {
         url += `&channelId=${channelId}`;
     }
+    
+    if (order && order !== 'relevance') {
+        url += `&order=${order}`;
+    }
+    
+    if (duration === 'long') {
+        url += `&videoDuration=long`;
+    }
+    
     const searchResponse = await fetch(url);
     const searchData = await searchResponse.json();
     if (!searchData.items || searchData.items.length === 0) return [];
@@ -35,7 +45,6 @@ export async function searchYouTube(query, channelId = null) {
                 title: video.snippet.title,
                 publishedAt: video.snippet.publishedAt,
                 thumbnails: video.snippet.thumbnails,
-                // Extra fields
                 categoryId: video.snippet.categoryId || 'N/A',
                 defaultLanguage: video.snippet.defaultLanguage || 'N/A',
                 defaultAudioLanguage: video.snippet.defaultAudioLanguage || 'N/A',
@@ -68,7 +77,6 @@ export async function searchYouTube(query, channelId = null) {
             likeCount: extra.likeCount,
             commentCount: extra.commentCount,
             tags: extra.tags,
-            // Extra fields
             categoryId: extra.categoryId,
             defaultLanguage: extra.defaultLanguage,
             defaultAudioLanguage: extra.defaultAudioLanguage,

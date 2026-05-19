@@ -1,4 +1,4 @@
-// js/app.js - Plato App (unified term management)
+// js/app.js - Plato App (con filtros de orden y duración en sidebar)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -31,6 +31,10 @@ let activeTrashFilter = false;
 let activeTermFilter = null;
 let availableTerms = [];
 let currentSort = 'date';
+
+// Filtros de búsqueda (settings)
+let searchOrder = 'relevance';   // 'relevance', 'viewCount', 'rating'
+let searchDuration = 'any';      // 'any', 'long'
 
 // ---------------------- Helper: close panels ----------------------
 function closeAllPanels() {
@@ -86,10 +90,19 @@ function buildSearchInPanel() {
     updateSearchInButtonText();
 }
 
-// ---------------------- Sidebar functions ----------------------
+// ---------------------- Sidebar functions (settings) ----------------------
 function openSettingsSidebar() {
     settingsSidebar.classList.remove('hidden');
     sidebarOverlay.classList.remove('hidden');
+    // Sincronizar radios con valores actuales
+    const orderRadios = document.querySelectorAll('input[name="searchOrder"]');
+    orderRadios.forEach(radio => {
+        if (radio.value === searchOrder) radio.checked = true;
+    });
+    const durationRadios = document.querySelectorAll('input[name="searchDuration"]');
+    durationRadios.forEach(radio => {
+        if (radio.value === searchDuration) radio.checked = true;
+    });
 }
 function closeSettingsSidebar() {
     settingsSidebar.classList.add('hidden');
@@ -98,6 +111,69 @@ function closeSettingsSidebar() {
 settingsBtn.addEventListener('click', openSettingsSidebar);
 closeSidebarBtn.addEventListener('click', closeSettingsSidebar);
 sidebarOverlay.addEventListener('click', closeSettingsSidebar);
+
+function saveSearchOrder(value) {
+    searchOrder = value;
+    localStorage.setItem('plato_searchOrder', value);
+}
+function saveSearchDuration(value) {
+    searchDuration = value;
+    localStorage.setItem('plato_searchDuration', value);
+}
+function loadSearchPreferences() {
+    const savedOrder = localStorage.getItem('plato_searchOrder');
+    if (savedOrder && (savedOrder === 'relevance' || savedOrder === 'viewCount' || savedOrder === 'rating')) {
+        searchOrder = savedOrder;
+    }
+    const savedDuration = localStorage.getItem('plato_searchDuration');
+    if (savedDuration && (savedDuration === 'any' || savedDuration === 'long')) {
+        searchDuration = savedDuration;
+    }
+}
+
+function buildSettingsSidebarContent() {
+    // Asegurar que exista un contenedor para el contenido del sidebar
+    let sidebarContent = document.querySelector('.sidebar-content');
+    if (!sidebarContent) {
+        sidebarContent = document.createElement('div');
+        sidebarContent.className = 'sidebar-content';
+        settingsSidebar.appendChild(sidebarContent);
+    }
+    sidebarContent.innerHTML = `
+        <div class="sidebar-section">
+            <h3>Search Filters</h3>
+            <div class="settings-group">
+                <label class="settings-label">Order by:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="searchOrder" value="relevance"> Relevance (default)</label>
+                    <label><input type="radio" name="searchOrder" value="viewCount"> Most Viewed</label>
+                    <label><input type="radio" name="searchOrder" value="rating"> Most Liked</label>
+                </div>
+            </div>
+            <div class="settings-group">
+                <label class="settings-label">Minimum duration:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="searchDuration" value="any"> Any duration</label>
+                    <label><input type="radio" name="searchDuration" value="long"> Only long videos (>20 min)</label>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Event listeners para los radios
+    const orderRadios = document.querySelectorAll('input[name="searchOrder"]');
+    orderRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.checked) saveSearchOrder(e.target.value);
+        });
+    });
+    const durationRadios = document.querySelectorAll('input[name="searchDuration"]');
+    durationRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.checked) saveSearchDuration(e.target.value);
+        });
+    });
+}
 
 // ---------------------- Terms Bar ----------------------
 async function refreshAvailableTerms() {
@@ -350,10 +426,22 @@ searchBtn.onclick = async () => {
     }
     activeTermFilter = null;
     
-    const query = searchInput.value.trim();
+    let query = searchInput.value.trim();
+    let effectiveQuery = query;
+    let customTermName = null;
+    
+    // Manejo de búsqueda vacía según orden
     if (!query) {
-        resultsGrid.innerHTML = '<div class="stats">Enter a search term</div>';
-        return;
+        if (searchOrder === 'viewCount') {
+            effectiveQuery = 'movie';
+            customTermName = 'Most Viewed';
+        } else if (searchOrder === 'rating') {
+            effectiveQuery = 'movie';
+            customTermName = 'Most Rated';
+        } else { // relevance
+            resultsGrid.innerHTML = '<div class="stats">Enter a search term</div>';
+            return;
+        }
     }
     
     const selectedOption = SEARCH_OPTIONS.find(opt => opt.id === currentSearchOptionId);
@@ -363,13 +451,14 @@ searchBtn.onclick = async () => {
         resultsGrid.innerHTML = '<div class="stats">Searching YouTube...</div>';
         try {
             const channelId = selectedOption.id === 'plato_db' ? null : selectedOption.id;
-            const moviesFromAPI = await searchYouTube(query, channelId);
+            const moviesFromAPI = await searchYouTube(effectiveQuery, channelId, searchOrder, searchDuration);
             if (moviesFromAPI.length === 0) {
                 resultsGrid.innerHTML = '<div class="stats">No movies found on YouTube</div>';
                 return;
             }
+            const termToSave = customTermName ? customTermName : (query || effectiveQuery);
             for (const movie of moviesFromAPI) {
-                await saveMovie(movie, query);
+                await saveMovie(movie, termToSave);
                 await saveExtraInfo(movie.youtubeId, {
                     categoryId: movie.categoryId,
                     defaultLanguage: movie.defaultLanguage,
@@ -392,9 +481,10 @@ searchBtn.onclick = async () => {
             resultsGrid.innerHTML = `<div class="stats">Error: ${err.message}</div>`;
         }
     } else {
+        // Búsqueda local en Plato DB
         resultsGrid.innerHTML = '<div class="stats">Searching in Plato DB...</div>';
         const allMovies = await getAllMovies();
-        const lowerQuery = query.toLowerCase();
+        const lowerQuery = effectiveQuery.toLowerCase();
         const filtered = allMovies.filter(movie => {
             const titleMatch = movie.title.toLowerCase().includes(lowerQuery);
             const descMatch = movie.description && movie.description.toLowerCase().includes(lowerQuery);
@@ -406,9 +496,9 @@ searchBtn.onclick = async () => {
         } else {
             const onSortChange = (newSort) => {
                 currentSort = newSort;
-                renderMovies(resultsGrid, filtered, `Search results for "${query}" (${filtered.length})`, 'main', currentSort, onSortChange);
+                renderMovies(resultsGrid, filtered, `Search results for "${effectiveQuery}" (${filtered.length})`, 'main', currentSort, onSortChange);
             };
-            renderMovies(resultsGrid, filtered, `Search results for "${query}" (${filtered.length})`, 'main', currentSort, onSortChange);
+            renderMovies(resultsGrid, filtered, `Search results for "${effectiveQuery}" (${filtered.length})`, 'main', currentSort, onSortChange);
         }
         searchInput.value = '';
     }
@@ -417,8 +507,11 @@ searchBtn.onclick = async () => {
 // ---------------------- Initialization ----------------------
 async function init() {
     await dbReady;
+    loadSearchPreferences();
     buildSearchInPanel();
-
+    buildSettingsSidebarContent();
+    
+    // Eventos del dropdown de búsqueda
     searchInBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         searchInPanel.classList.toggle('hidden');
@@ -428,7 +521,7 @@ async function init() {
             searchInPanel.classList.add('hidden');
         }
     });
-
+    
     initModal(async () => {
         await refreshAvailableTerms();
         await loadAndDisplayAll();
