@@ -356,8 +356,16 @@ async function loadAndDisplayAll() {
 
     renderMovies(resultsGrid, allMovies, title, activeTrashFilter ? 'trash' : 'main', currentSort, onSortChange);
 
-    const filteredTerms = Array.from(new Set(allMovies.flatMap(m => m.searchTerms || []))).sort();
-    renderTermsBar(filteredTerms);
+    // Calcular términos a mostrar en la barra
+    let termsToShow;
+    if (activeTermFilter) {
+        // Si hay un filtro por término activo, mostrar solo ese término
+        termsToShow = [activeTermFilter];
+    } else {
+        // Si no, mostrar todos los términos presentes en las películas actuales
+        termsToShow = Array.from(new Set(allMovies.flatMap(m => m.searchTerms || []))).sort();
+    }
+    renderTermsBar(termsToShow);
 }
 
 // ---------------------- Modal helpers ----------------------
