@@ -157,6 +157,14 @@ function buildSettingsSidebarContent() {
     sidebarContent.innerHTML = `
         <div class="sidebar-section">
             <h3>Search Filters</h3>
+            <!-- Content type (ahora primero) -->
+            <div class="settings-group">
+                <label class="settings-label">Content type:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="searchCategory" value="movies"> Include only movies</label>
+                    <label><input type="radio" name="searchCategory" value="all"> All results</label>
+                </div>
+            </div>
             <div class="settings-group">
                 <label class="settings-label">Order by:</label>
                 <div class="radio-group">
@@ -172,17 +180,10 @@ function buildSettingsSidebarContent() {
                     <label><input type="radio" name="searchDuration" value="long"> Only long videos (>20 min)</label>
                 </div>
             </div>
-            <!-- NUEVO: filtro de categoría -->
-            <div class="settings-group">
-                <label class="settings-label">Content type:</label>
-                <div class="radio-group">
-                    <label><input type="radio" name="searchCategory" value="all"> All results</label>
-                    <label><input type="radio" name="searchCategory" value="movies"> Include only movies (categoryId 30)</label>
-                </div>
-            </div>
         </div>
     `;
 
+    // Event listeners (sin cambios)
     const orderRadios = document.querySelectorAll('input[name="searchOrder"]');
     orderRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
@@ -195,7 +196,6 @@ function buildSettingsSidebarContent() {
             if (e.target.checked) saveSearchDuration(e.target.value);
         });
     });
-    // NUEVO: evento para filtro de categoría
     const categoryRadios = document.querySelectorAll('input[name="searchCategory"]');
     categoryRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
