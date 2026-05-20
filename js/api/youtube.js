@@ -2,7 +2,7 @@ import { API_KEY } from '../config.js';
 
 const MAX_RESULTS_PER_PAGE = 50;
 
-export async function searchYouTube(query, channelId = null, order = 'relevance', duration = 'any', categoryFilter = 'all') {
+export async function searchYouTube(query, channelId = null, order = 'relevance', duration = 'long', categoryFilter = 'movies') {
     if (!query || query.trim() === "") {
         throw new Error("Search query cannot be empty");
     }
@@ -16,9 +16,10 @@ export async function searchYouTube(query, channelId = null, order = 'relevance'
         url += `&order=${order}`;
     }
     
-    if (duration === 'long') {
-        url += `&videoDuration=long`;
+    if (duration === 'long') || duration === 'medium' || duration === 'short' {
+        url += `&videoDuration=${duration}`;
     }
+    // Si duration es 'any', no se añade parámetro
     
     // NUEVO: filtrar solo películas (categoryId 30) si está activado
     if (categoryFilter === 'movies') {

@@ -32,11 +32,11 @@ let activeTermFilter = null;
 let availableTerms = [];
 let currentSort = 'date';
 
-// Filtros de búsqueda (settings)
+// Search filters (settings)
 let searchOrder = 'relevance';   // 'relevance', 'viewCount', 'rating'
-let searchDuration = 'any';      // 'any', 'long'
-// NUEVO: filtro de categoría
-let searchCategoryFilter = 'movies'; // 'all' o 'movies'
+let searchDuration = 'long';      // 'long', 'medium', 'short', 'any'
+// Category filter (settings)
+let searchCategoryFilter = 'movies'; // 'movies' or 'all'
 
 // ---------------------- Helper: close panels ----------------------
 function closeAllPanels() {
@@ -137,12 +137,12 @@ function loadSearchPreferences() {
         searchOrder = savedOrder;
     }
     const savedDuration = localStorage.getItem('plato_searchDuration');
-    if (savedDuration && (savedDuration === 'any' || savedDuration === 'long')) {
+    if (savedDuration && (savedDuration === 'short' || savedDuration === 'medium' || savedDuration === 'long' || savedDuration === 'any')) {        
         searchDuration = savedDuration;
     }
     // NUEVO: cargar filtro de categoría
     const savedCategory = localStorage.getItem('plato_searchCategory');
-    if (savedCategory && (savedCategory === 'all' || savedCategory === 'movies')) {
+    if (savedCategory && (savedCategory === 'movies' || savedCategory === 'all')) {
         searchCategoryFilter = savedCategory;
     }
 }
@@ -168,16 +168,18 @@ function buildSettingsSidebarContent() {
             <div class="settings-group">
                 <label class="settings-label">Order by:</label>
                 <div class="radio-group">
-                    <label><input type="radio" name="searchOrder" value="relevance"> Relevance (default)</label>
+                    <label><input type="radio" name="searchOrder" value="relevance"> Best match</label>
                     <label><input type="radio" name="searchOrder" value="viewCount"> Most Viewed</label>
                     <label><input type="radio" name="searchOrder" value="rating"> Most Liked</label>
                 </div>
             </div>
             <div class="settings-group">
-                <label class="settings-label">Minimum duration:</label>
+                <label class="settings-label">Duration:</label>
                 <div class="radio-group">
+                    <label><input type="radio" name="searchDuration" value="long"> Long (&gt;20 min)</label>
+                    <label><input type="radio" name="searchDuration" value="medium"> Medium (4-20 min)</label>
+                    <label><input type="radio" name="searchDuration" value="short"> Short (&lt;4 min)</label>
                     <label><input type="radio" name="searchDuration" value="any"> Any duration</label>
-                    <label><input type="radio" name="searchDuration" value="long"> Only long videos (>20 min)</label>
                 </div>
             </div>
         </div>
