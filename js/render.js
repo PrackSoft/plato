@@ -17,8 +17,7 @@ function escapeHtml(str) {
 
 function getLocalDateKey(utcDateString) {
     const date = new Date(utcDateString);
-    const localDate = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
-    return `${localDate.getFullYear()}-${String(localDate.getMonth() + 1).padStart(2, '0')}-${String(localDate.getDate()).padStart(2, '0')}`;
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
 }
 
 export function renderMovies(container, movies, title, source = 'main', currentSort = 'date', onSortChange = null) {
@@ -34,9 +33,9 @@ export function renderMovies(container, movies, title, source = 'main', currentS
         { value: 'date', label: 'Date' },
         { value: 'title', label: 'Title' },
         { value: 'channel', label: 'Channel' },
-        { value: 'mostViewed', label: 'Most Viewed' },
-        { value: 'mostLiked', label: 'Most Liked' },
-        { value: 'mostCommented', label: 'Most Commented' },
+        { value: 'mostViewed', label: 'Most viewed' },
+        { value: 'mostLiked', label: 'Most liked' },
+        { value: 'mostCommented', label: 'Most commented' },
         { value: 'watching', label: 'Watching' },
         { value: 'favorite', label: 'Favorites' }
     ];
