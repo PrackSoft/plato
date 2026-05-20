@@ -157,7 +157,7 @@ function buildSettingsSidebarContent() {
     sidebarContent.innerHTML = `
         <div class="sidebar-section">
             <h3>Search Filters</h3>
-            <!-- Content type (ahora primero) -->
+            <!-- Content type -->
             <div class="settings-group">
                 <label class="settings-label">Content type:</label>
                 <div class="radio-group">
@@ -169,8 +169,8 @@ function buildSettingsSidebarContent() {
                 <label class="settings-label">Order by:</label>
                 <div class="radio-group">
                     <label><input type="radio" name="searchOrder" value="relevance"> Best match</label>
-                    <label><input type="radio" name="searchOrder" value="viewCount"> Most Viewed</label>
-                    <label><input type="radio" name="searchOrder" value="rating"> Most Liked</label>
+                    <label><input type="radio" name="searchOrder" value="viewCount"> Most viewed</label>
+                    <label><input type="radio" name="searchOrder" value="rating"> Most liked</label>
                 </div>
             </div>
             <div class="settings-group">
