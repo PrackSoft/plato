@@ -16,12 +16,13 @@ export async function searchYouTube(query, channelId = null, order = 'relevance'
         url += `&order=${order}`;
     }
     
-    if (duration === 'long') || duration === 'medium' || duration === 'short' {
+    // Corrección: paréntesis alrededor de toda la condición
+    if (duration === 'long' || duration === 'medium' || duration === 'short') {
         url += `&videoDuration=${duration}`;
     }
     // Si duration es 'any', no se añade parámetro
     
-    // NUEVO: filtrar solo películas (categoryId 30) si está activado
+    // Filtrar solo películas (categoryId 30) si está activado
     if (categoryFilter === 'movies') {
         url += `&videoCategoryId=30`;
     }
