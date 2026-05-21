@@ -494,8 +494,11 @@ window.openMovieModal = (movie, source = 'main') => {
 
 // ---------------------- Search ----------------------
 searchBtn.onclick = async () => {
-    if (activeTrashFilter) {
+    // Desactivar cualquier filtro activo (Watching, Favorites, Trash)
+    if (activeTrashFilter || activeWatchingFilter || activeFavoriteFilter) {
         activeTrashFilter = false;
+        activeWatchingFilter = false;
+        activeFavoriteFilter = false;
         updateFilterButtonsUI();
     }
     activeTermFilter = null;
@@ -507,10 +510,10 @@ searchBtn.onclick = async () => {
     if (!query) {
         if (searchOrder === 'viewCount') {
             effectiveQuery = 'movie';
-            customTermName = 'Most Viewed';
+            customTermName = 'Most viewed';
         } else if (searchOrder === 'rating') {
             effectiveQuery = 'movie';
-            customTermName = 'Most Rated';
+            customTermName = 'Most rated';
         } else {
             resultsGrid.innerHTML = '<div class="stats">Enter a search term</div>';
             return;
@@ -524,7 +527,6 @@ searchBtn.onclick = async () => {
         resultsGrid.innerHTML = '<div class="stats">Searching YouTube...</div>';
         try {
             const channelId = selectedOption.id === 'plato_db' ? null : selectedOption.id;
-            // NUEVO: pasar el filtro de categoría a searchYouTube
             const moviesFromAPI = await searchYouTube(effectiveQuery, channelId, searchOrder, searchDuration, searchCategoryFilter);
             if (moviesFromAPI.length === 0) {
                 resultsGrid.innerHTML = '<div class="stats">No movies found on YouTube</div>';
