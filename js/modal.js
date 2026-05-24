@@ -1,4 +1,4 @@
-// js/modal.js
+// js/modal.js (modificado solo para leer {term, exact})
 import { getExtraInfo } from './db.js';
 
 let currentMovie = null;
@@ -48,6 +48,7 @@ function renderModalContent(movie, source) {
     const isInTrash = (source === 'trash');
     const watchingIconName = movie.watching ? 'visibility' : 'visibility_off';
     const favoriteIconName = movie.favorite ? 'star_shine' : 'star';
+    const termList = (movie.searchTerms || []).map(t => t.term).join(', ');
 
     return `
         <div class="modal-header">
@@ -65,10 +66,10 @@ function renderModalContent(movie, source) {
         <div class="modal-section">
             <strong>Search Terms:</strong>
             <div id="termsList" class="terms-list">
-                ${(movie.searchTerms || []).map(term => `
+                ${(movie.searchTerms || []).map(t => `
                     <span class="term-chip">
-                        ${escapeHtml(term)}
-                        ${!isInTrash ? `<span class="remove-term" data-term="${escapeHtml(term)}">✖</span>` : ''}
+                        ${escapeHtml(t.term)} ${t.exact ? '(exact)' : '(related)'}
+                        ${!isInTrash ? `<span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>` : ''}
                     </span>
                 `).join('')}
             </div>
@@ -175,15 +176,12 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         };
     }
 
-    // Extra info button - ahora muestra todos los campos solicitados
     const toggleExtraInfoBtn = document.getElementById('toggleExtraInfoBtn');
     const extraInfoPanel = document.getElementById('extraInfoPanel');
     if (toggleExtraInfoBtn && extraInfoPanel) {
         toggleExtraInfoBtn.onclick = async () => {
             if (extraInfoPanel.classList.contains('hidden')) {
-                // Obtener datos extra de la DB
                 const extra = await getExtraInfo(movie.youtubeId);
-                // Construir lista de campos con valores desde movie y extra
                 const fields = [
                     { label: 'channelId', value: movie.channelId || 'N/A' },
                     { label: 'channelTitle', value: movie.channelTitle || 'N/A' },
@@ -217,23 +215,22 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         };
     }
 
-    // Term editing (unchanged)
     if (!isInTrash) {
         document.querySelectorAll('.remove-term').forEach(el => {
             el.onclick = async (e) => {
                 e.stopPropagation();
                 const term = el.dataset.term;
-                const newTerms = movie.searchTerms.filter(t => t !== term);
+                const newTerms = (movie.searchTerms || []).filter(t => t.term !== term).map(t => t.term);
                 await updateMovieTerms(movie.youtubeId, newTerms);
-                movie.searchTerms = newTerms;
+                movie.searchTerms = movie.searchTerms.filter(t => t.term !== term);
                 const termsContainer = document.getElementById('termsList');
                 if (termsContainer) {
-                    termsContainer.innerHTML = (newTerms.map(t => `
+                    termsContainer.innerHTML = (movie.searchTerms || []).map(t => `
                         <span class="term-chip">
-                            ${escapeHtml(t)}
-                            <span class="remove-term" data-term="${escapeHtml(t)}">✖</span>
+                            ${escapeHtml(t.term)} ${t.exact ? '(exact)' : '(related)'}
+                            <span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>
                         </span>
-                    `).join(''));
+                    `).join('');
                     attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
                 }
                 if (currentOnUpdate) await currentOnUpdate();
@@ -247,19 +244,19 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         if (addBtn && newTermInput) {
             addBtn.onclick = async () => {
                 const newTerm = newTermInput.value.trim();
-                if (newTerm && !movie.searchTerms.includes(newTerm)) {
-                    const newTerms = [...movie.searchTerms, newTerm];
+                if (newTerm && !(movie.searchTerms || []).some(t => t.term === newTerm)) {
+                    const newTerms = [...(movie.searchTerms || []).map(t => t.term), newTerm];
                     await updateMovieTerms(movie.youtubeId, newTerms);
-                    movie.searchTerms = newTerms;
+                    movie.searchTerms.push({ term: newTerm, exact: true });
                     newTermInput.value = '';
                     const termsContainer = document.getElementById('termsList');
                     if (termsContainer) {
-                        termsContainer.innerHTML = (newTerms.map(t => `
+                        termsContainer.innerHTML = (movie.searchTerms || []).map(t => `
                             <span class="term-chip">
-                                ${escapeHtml(t)}
-                                <span class="remove-term" data-term="${escapeHtml(t)}">✖</span>
+                                ${escapeHtml(t.term)} ${t.exact ? '(exact)' : '(related)'}
+                                <span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>
                             </span>
-                        `).join(''));
+                        `).join('');
                         attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
                     }
                     if (currentOnUpdate) await currentOnUpdate();

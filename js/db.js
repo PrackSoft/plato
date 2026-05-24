@@ -1,24 +1,10 @@
-// js/db.js
 const DB_NAME = 'PlatoDB';
-const DB_VERSION = 4; // Se incrementa la versión para migración
+const DB_VERSION = 4;
 const STORE_MOVIES = 'movies';
 const STORE_TRASH = 'trash';
 const STORE_EXTRA = 'movie_extra';
 
 let dbInstance = null;
-
-// Helper para migrar searchTerms de string[] a {term, exact}[]
-function migrateSearchTerms(movie) {
-    if (movie.searchTerms && movie.searchTerms.length > 0) {
-        // Si el primer elemento es string, convertir
-        if (typeof movie.searchTerms[0] === 'string') {
-            movie.searchTerms = movie.searchTerms.map(term => ({ term, exact: true }));
-        }
-    } else if (!movie.searchTerms) {
-        movie.searchTerms = [];
-    }
-    return movie;
-}
 
 export async function openDB() {
     if (dbInstance) return dbInstance;
@@ -31,24 +17,22 @@ export async function openDB() {
         };
         request.onupgradeneeded = (event) => {
             const db = event.target.result;
-            if (!db.objectStoreNames.contains(STORE_MOVIES)) {
-                const store = db.createObjectStore(STORE_MOVIES, { keyPath: 'youtubeId' });
-                store.createIndex('by_dateSaved', 'dateSaved', { unique: false });
-                store.createIndex('by_watching', 'watching', { unique: false });
-                store.createIndex('by_favorite', 'favorite', { unique: false });
-                store.createIndex('by_channelId', 'channelId', { unique: false });
-            } else if (event.oldVersion < 4) {
-                // Para actualizaciones desde versiones anteriores, no necesitamos cambiar el esquema,
-                // solo migraremos los datos al leer/escribir.
-            }
-            if (!db.objectStoreNames.contains(STORE_TRASH)) {
-                const trashStore = db.createObjectStore(STORE_TRASH, { keyPath: 'youtubeId' });
-                trashStore.createIndex('by_deletedAt', 'deletedAt', { unique: false });
-                trashStore.createIndex('by_channelId', 'channelId', { unique: false });
-            }
-            if (!db.objectStoreNames.contains(STORE_EXTRA)) {
-                db.createObjectStore(STORE_EXTRA, { keyPath: 'youtubeId' });
-            }
+            // Borrar stores antiguos si existen para empezar limpio
+            if (db.objectStoreNames.contains(STORE_MOVIES)) db.deleteObjectStore(STORE_MOVIES);
+            if (db.objectStoreNames.contains(STORE_TRASH)) db.deleteObjectStore(STORE_TRASH);
+            if (db.objectStoreNames.contains(STORE_EXTRA)) db.deleteObjectStore(STORE_EXTRA);
+            
+            const store = db.createObjectStore(STORE_MOVIES, { keyPath: 'youtubeId' });
+            store.createIndex('by_dateSaved', 'dateSaved', { unique: false });
+            store.createIndex('by_watching', 'watching', { unique: false });
+            store.createIndex('by_favorite', 'favorite', { unique: false });
+            store.createIndex('by_channelId', 'channelId', { unique: false });
+            
+            const trashStore = db.createObjectStore(STORE_TRASH, { keyPath: 'youtubeId' });
+            trashStore.createIndex('by_deletedAt', 'deletedAt', { unique: false });
+            trashStore.createIndex('by_channelId', 'channelId', { unique: false });
+            
+            db.createObjectStore(STORE_EXTRA, { keyPath: 'youtubeId' });
         };
     });
 }
@@ -64,9 +48,7 @@ export async function getAllMovies() {
         request.onsuccess = () => {
             const cursor = request.result;
             if (cursor) {
-                let movie = cursor.value;
-                movie = migrateSearchTerms(movie);
-                movies.push(movie);
+                movies.push(cursor.value);
                 cursor.continue();
             } else {
                 resolve(movies);
@@ -87,12 +69,7 @@ export async function getTrashMovies() {
         request.onsuccess = () => {
             const cursor = request.result;
             if (cursor) {
-                let movie = cursor.value;
-                // Migrar también en trash por si acaso
-                if (movie.searchTerms && typeof movie.searchTerms[0] === 'string') {
-                    movie.searchTerms = movie.searchTerms.map(term => ({ term, exact: true }));
-                }
-                movies.push(movie);
+                movies.push(cursor.value);
                 cursor.continue();
             } else {
                 resolve(movies);
@@ -102,7 +79,7 @@ export async function getTrashMovies() {
     });
 }
 
-export async function saveMovie(movieData, searchTerm) {
+export async function saveMovie(movieData, searchTerm, isExact = true) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
     const store = transaction.objectStore(STORE_MOVIES);
@@ -111,23 +88,17 @@ export async function saveMovie(movieData, searchTerm) {
         getRequest.onsuccess = () => {
             const existing = getRequest.result;
             if (existing) {
-                // Migrar existente si es necesario
-                let existingTerms = existing.searchTerms;
-                if (existingTerms && existingTerms.length > 0 && typeof existingTerms[0] === 'string') {
-                    existingTerms = existingTerms.map(term => ({ term, exact: true }));
-                } else if (!existingTerms) {
-                    existingTerms = [];
-                }
-                // Agregar el nuevo término si no existe ya (comparando por term)
-                if (searchTerm) {
-                    const found = existingTerms.some(t => t.term === searchTerm);
-                    if (!found) {
-                        existingTerms.push({ term: searchTerm, exact: true });
-                    }
+                let terms = existing.searchTerms || [];
+                const existingIndex = terms.findIndex(t => t.term === searchTerm);
+                if (existingIndex === -1) {
+                    terms.push({ term: searchTerm, exact: isExact });
+                } else {
+                    // Si ya existe, solo actualizamos el flag exact si el nuevo es más estricto
+                    if (isExact) terms[existingIndex].exact = true;
                 }
                 const updated = {
                     ...existing,
-                    searchTerms: existingTerms,
+                    searchTerms: terms,
                     viewCount: movieData.viewCount ?? existing.viewCount,
                     likeCount: movieData.likeCount ?? existing.likeCount,
                     commentCount: movieData.commentCount ?? existing.commentCount,
@@ -140,7 +111,7 @@ export async function saveMovie(movieData, searchTerm) {
             } else {
                 const newMovie = {
                     ...movieData,
-                    searchTerms: searchTerm ? [{ term: searchTerm, exact: true }] : [],
+                    searchTerms: searchTerm ? [{ term: searchTerm, exact: isExact }] : [],
                     watching: false,
                     favorite: false,
                     dateSaved: new Date().toISOString(),
@@ -164,12 +135,7 @@ export async function moveMovieToTrash(youtubeId) {
         req.onerror = () => reject(req.error);
     });
     if (!movie) throw new Error('Movie not found');
-    // Migrar antes de mover
-    let searchTerms = movie.searchTerms;
-    if (searchTerms && searchTerms.length > 0 && typeof searchTerms[0] === 'string') {
-        searchTerms = searchTerms.map(term => ({ term, exact: true }));
-    }
-    const trashMovie = { ...movie, searchTerms, deletedAt: new Date().toISOString() };
+    const trashMovie = { ...movie, deletedAt: new Date().toISOString() };
     const trashTransaction = db.transaction([STORE_TRASH], 'readwrite');
     const trashStore = trashTransaction.objectStore(STORE_TRASH);
     await new Promise((resolve, reject) => {
@@ -196,10 +162,6 @@ export async function restoreMovieFromTrash(youtubeId) {
     });
     if (!trashMovie) throw new Error('Movie not found in trash');
     const { deletedAt, ...restoredMovie } = trashMovie;
-    // Asegurar migración
-    if (restoredMovie.searchTerms && restoredMovie.searchTerms.length > 0 && typeof restoredMovie.searchTerms[0] === 'string') {
-        restoredMovie.searchTerms = restoredMovie.searchTerms.map(term => ({ term, exact: true }));
-    }
     const mainTransaction = db.transaction([STORE_MOVIES], 'readwrite');
     const mainStore = mainTransaction.objectStore(STORE_MOVIES);
     await new Promise((resolve, reject) => {
@@ -276,7 +238,6 @@ export async function renameTermInAllMovies(oldTerm, newTerm) {
     }
 }
 
-// ========== NUEVAS FUNCIONES PARA EXTRA INFO ==========
 export async function saveExtraInfo(youtubeId, extraData) {
     const db = await openDB();
     const transaction = db.transaction([STORE_EXTRA], 'readwrite');

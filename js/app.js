@@ -1,4 +1,4 @@
-// js/app.js - Plato App (corrección: eliminar término activo si ya no hay películas en papelera)
+// js/app.js - Plato App (con soporte exact/related)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -29,14 +29,13 @@ let activeWatchingFilter = false;
 let activeFavoriteFilter = false;
 let activeTrashFilter = false;
 let activeTermFilter = null;
+let activeRelatedFilter = false;  // Nuevo: si es true, muestra resultados relacionados (exact=false)
 let availableTerms = [];
 let currentSort = 'date';
 
-// Search filters (settings)
-let searchOrder = 'relevance';   // 'relevance', 'viewCount', 'rating'
-let searchDuration = 'long';      // 'long', 'medium', 'short', 'any'
-// Category filter (settings)
-let searchCategoryFilter = 'movies'; // 'movies' or 'all'
+let searchOrder = 'relevance';
+let searchDuration = 'long';
+let searchCategoryFilter = 'movies';
 
 // ---------------------- Helper: close panels ----------------------
 function closeAllPanels() {
@@ -104,7 +103,6 @@ function openSettingsSidebar() {
     durationRadios.forEach(radio => {
         if (radio.value === searchDuration) radio.checked = true;
     });
-    // NUEVO: actualizar estado del filtro de categoría
     const categoryRadios = document.querySelectorAll('input[name="searchCategory"]');
     categoryRadios.forEach(radio => {
         if (radio.value === searchCategoryFilter) radio.checked = true;
@@ -126,7 +124,6 @@ function saveSearchDuration(value) {
     searchDuration = value;
     localStorage.setItem('plato_searchDuration', value);
 }
-// NUEVO: guardar filtro de categoría
 function saveSearchCategory(value) {
     searchCategoryFilter = value;
     localStorage.setItem('plato_searchCategory', value);
@@ -140,7 +137,6 @@ function loadSearchPreferences() {
     if (savedDuration && (savedDuration === 'short' || savedDuration === 'medium' || savedDuration === 'long' || savedDuration === 'any')) {        
         searchDuration = savedDuration;
     }
-    // NUEVO: cargar filtro de categoría
     const savedCategory = localStorage.getItem('plato_searchCategory');
     if (savedCategory && (savedCategory === 'movies' || savedCategory === 'all')) {
         searchCategoryFilter = savedCategory;
@@ -157,7 +153,6 @@ function buildSettingsSidebarContent() {
     sidebarContent.innerHTML = `
         <div class="sidebar-section">
             <h3>Search Filters</h3>
-            <!-- Content type -->
             <div class="settings-group">
                 <label class="settings-label">Content type:</label>
                 <div class="radio-group">
@@ -185,7 +180,6 @@ function buildSettingsSidebarContent() {
         </div>
     `;
 
-    // Event listeners (sin cambios)
     const orderRadios = document.querySelectorAll('input[name="searchOrder"]');
     orderRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
@@ -211,7 +205,7 @@ async function refreshAvailableTerms() {
     const allMovies = await getAllMovies();
     const termsSet = new Set();
     for (const movie of allMovies) {
-        (movie.searchTerms || []).forEach(term => termsSet.add(term));
+        (movie.searchTerms || []).forEach(t => termsSet.add(t.term));
     }
     availableTerms = Array.from(termsSet).sort();
 }
@@ -222,14 +216,17 @@ async function removeTermFromAllMovies(term) {
     const transaction = db.transaction(['movies'], 'readwrite');
     const store = transaction.objectStore('movies');
     for (const movie of allMovies) {
-        if (movie.searchTerms && movie.searchTerms.includes(term)) {
-            movie.searchTerms = movie.searchTerms.filter(t => t !== term);
-            movie.lastUpdated = new Date().toISOString();
-            await new Promise((resolve, reject) => {
-                const req = store.put(movie);
-                req.onsuccess = () => resolve();
-                req.onerror = () => reject(req.error);
-            });
+        if (movie.searchTerms) {
+            const newTerms = movie.searchTerms.filter(t => t.term !== term);
+            if (newTerms.length !== movie.searchTerms.length) {
+                movie.searchTerms = newTerms;
+                movie.lastUpdated = new Date().toISOString();
+                await new Promise((resolve, reject) => {
+                    const req = store.put(movie);
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
+            }
         }
     }
 }
@@ -249,12 +246,12 @@ async function deleteMoviesWithTermFromCurrentView(term) {
     } else {
         moviesToProcess = await getAllMovies();
         if (activeTermFilter) {
-            moviesToProcess = moviesToProcess.filter(movie => (movie.searchTerms || []).includes(activeTermFilter));
+            moviesToProcess = moviesToProcess.filter(movie => (movie.searchTerms || []).some(t => t.term === activeTermFilter && t.exact === !activeRelatedFilter));
         }
         if (activeWatchingFilter) moviesToProcess = moviesToProcess.filter(movie => movie.watching === true);
         if (activeFavoriteFilter) moviesToProcess = moviesToProcess.filter(movie => movie.favorite === true);
     }
-    const moviesWithTerm = moviesToProcess.filter(movie => (movie.searchTerms || []).includes(term));
+    const moviesWithTerm = moviesToProcess.filter(movie => (movie.searchTerms || []).some(t => t.term === term));
     if (moviesWithTerm.length === 0) return;
 
     const confirmMsg = activeTrashFilter
@@ -281,20 +278,35 @@ function renderTermsBar(termsArray = null) {
         return;
     }
     const html = terms.map(term => `
-        <button class="btn btn-secondary btn-sm ${activeTermFilter === term ? 'active' : ''}" data-term="${escapeHtml(term)}">
-            ${escapeHtml(term)}
+        <div class="term-group" style="display: inline-flex; gap: 4px; margin-right: 8px;">
+            <button class="btn btn-secondary btn-sm ${activeTermFilter === term && !activeRelatedFilter ? 'active' : ''}" data-term="${escapeHtml(term)}" data-related="false">
+                ${escapeHtml(term)}
+            </button>
+            <button class="btn btn-secondary btn-sm ${activeTermFilter === term && activeRelatedFilter ? 'active' : ''}" data-term="${escapeHtml(term)}" data-related="true">
+                Related
+            </button>
             <span class="term-edit material-symbols-outlined" data-term="${escapeHtml(term)}" title="Edit term globally">edit</span>
             <span class="term-delete" data-term="${escapeHtml(term)}" title="Delete term from all movies">✖</span>
-        </button>
+        </div>
     `).join('');
     termsBar.innerHTML = html;
 
-    document.querySelectorAll('#termsBar .btn').forEach(btn => {
+    // Botones de término exacto y related
+    document.querySelectorAll('#termsBar .btn[data-related="false"]').forEach(btn => {
         const term = btn.dataset.term;
         btn.addEventListener('click', (e) => {
             if (e.target.classList.contains('term-edit') || e.target.classList.contains('term-delete')) return;
-            if (activeTermFilter === term) activeTermFilter = null;
-            else activeTermFilter = term;
+            activeTermFilter = term;
+            activeRelatedFilter = false;
+            loadAndDisplayAll();
+        });
+    });
+    document.querySelectorAll('#termsBar .btn[data-related="true"]').forEach(btn => {
+        const term = btn.dataset.term;
+        btn.addEventListener('click', (e) => {
+            if (e.target.classList.contains('term-edit') || e.target.classList.contains('term-delete')) return;
+            activeTermFilter = term;
+            activeRelatedFilter = true;
             loadAndDisplayAll();
         });
     });
@@ -331,7 +343,7 @@ if (toggleTermsBtn && termsBar) {
     });
 }
 
-// ---------------------- Filter buttons (con reset de término activo) ----------------------
+// ---------------------- Filter buttons ----------------------
 function updateFilterButtonsUI() {
     if (activeWatchingFilter) filterWatchingBtn.classList.add('active');
     else filterWatchingBtn.classList.remove('active');
@@ -342,7 +354,8 @@ function updateFilterButtonsUI() {
 }
 
 function toggleWatchingFilter() {
-    activeTermFilter = null;  // Resetear término al cambiar filtro
+    activeTermFilter = null;
+    activeRelatedFilter = false;
     if (activeTrashFilter) {
         activeTrashFilter = false;
         updateFilterButtonsUI();
@@ -354,7 +367,8 @@ function toggleWatchingFilter() {
 }
 
 function toggleFavoriteFilter() {
-    activeTermFilter = null;  // Resetear término al cambiar filtro
+    activeTermFilter = null;
+    activeRelatedFilter = false;
     if (activeTrashFilter) {
         activeTrashFilter = false;
         updateFilterButtonsUI();
@@ -366,7 +380,8 @@ function toggleFavoriteFilter() {
 }
 
 function toggleTrashFilter() {
-    activeTermFilter = null;  // Resetear término al cambiar filtro
+    activeTermFilter = null;
+    activeRelatedFilter = false;
     activeTrashFilter = !activeTrashFilter;
     if (activeTrashFilter) {
         activeWatchingFilter = false;
@@ -380,7 +395,7 @@ if (filterWatchingBtn) filterWatchingBtn.addEventListener('click', toggleWatchin
 if (filterFavoriteBtn) filterFavoriteBtn.addEventListener('click', toggleFavoriteFilter);
 if (filterTrashBtn) filterTrashBtn.addEventListener('click', toggleTrashFilter);
 
-// ---------------------- Load and display (CORREGIDO: auto-deseleccionar término si ya no existe en papelera) ----------------------
+// ---------------------- Load and display ----------------------
 async function loadAndDisplayAll() {
     await dbReady;
     let allMovies;
@@ -388,18 +403,12 @@ async function loadAndDisplayAll() {
     if (activeTrashFilter) {
         allMovies = await getTrashMovies();
         if (activeTermFilter) {
-            const filtered = allMovies.filter(movie => (movie.searchTerms || []).includes(activeTermFilter));
-            if (filtered.length === 0) {
-                // El término ya no existe en la papelera, desactivar filtro
-                activeTermFilter = null;
-            } else {
-                allMovies = filtered;
-            }
+            allMovies = allMovies.filter(movie => (movie.searchTerms || []).some(t => t.term === activeTermFilter && t.exact === !activeRelatedFilter));
         }
     } else {
         allMovies = await getAllMovies();
         if (activeTermFilter) {
-            allMovies = allMovies.filter(movie => (movie.searchTerms || []).includes(activeTermFilter));
+            allMovies = allMovies.filter(movie => (movie.searchTerms || []).some(t => t.term === activeTermFilter && t.exact === !activeRelatedFilter));
         }
         if (activeWatchingFilter) allMovies = allMovies.filter(movie => movie.watching === true);
         if (activeFavoriteFilter) allMovies = allMovies.filter(movie => movie.favorite === true);
@@ -413,7 +422,8 @@ async function loadAndDisplayAll() {
     } else if (activeFavoriteFilter) {
         title = `Favorites (${allMovies.length})`;
     } else if (activeTermFilter) {
-        title = `Movies: "${activeTermFilter}" (${allMovies.length})`;
+        const exactLabel = activeRelatedFilter ? 'related' : 'exact';
+        title = `Movies: "${activeTermFilter}" (${exactLabel}) (${allMovies.length})`;
     } else {
         title = `All Movies (${allMovies.length})`;
     }
@@ -429,7 +439,11 @@ async function loadAndDisplayAll() {
     if (activeTermFilter) {
         termsToShow = [activeTermFilter];
     } else {
-        termsToShow = Array.from(new Set(allMovies.flatMap(m => m.searchTerms || []))).sort();
+        const allTerms = new Set();
+        for (const movie of allMovies) {
+            (movie.searchTerms || []).forEach(t => allTerms.add(t.term));
+        }
+        termsToShow = Array.from(allTerms).sort();
     }
     renderTermsBar(termsToShow);
 }
@@ -445,7 +459,9 @@ async function updateMovieTerms(youtubeId, newTerms) {
         req.onerror = () => reject(req.error);
     });
     if (movie) {
-        movie.searchTerms = newTerms;
+        // newTerms es un array de strings (por compatibilidad con modal actual)
+        // Convertir a {term, exact: true} para mantener exactos por defecto
+        movie.searchTerms = newTerms.map(term => ({ term, exact: true }));
         movie.lastUpdated = new Date().toISOString();
         await new Promise((resolve, reject) => {
             const req = store.put(movie);
@@ -453,7 +469,7 @@ async function updateMovieTerms(youtubeId, newTerms) {
             req.onerror = () => reject(req.error);
         });
         await refreshAvailableTerms();
-        if (activeTermFilter && !movie.searchTerms.includes(activeTermFilter)) {
+        if (activeTermFilter && !movie.searchTerms.some(t => t.term === activeTermFilter)) {
             loadAndDisplayAll();
         }
     }
@@ -494,7 +510,6 @@ window.openMovieModal = (movie, source = 'main') => {
 
 // ---------------------- Search ----------------------
 searchBtn.onclick = async () => {
-    // Desactivar cualquier filtro activo (Watching, Favorites, Trash)
     if (activeTrashFilter || activeWatchingFilter || activeFavoriteFilter) {
         activeTrashFilter = false;
         activeWatchingFilter = false;
@@ -502,6 +517,7 @@ searchBtn.onclick = async () => {
         updateFilterButtonsUI();
     }
     activeTermFilter = null;
+    activeRelatedFilter = false;
     
     let query = searchInput.value.trim();
     let effectiveQuery = query;
@@ -534,7 +550,9 @@ searchBtn.onclick = async () => {
             }
             const termToSave = customTermName ? customTermName : (query || effectiveQuery);
             for (const movie of moviesFromAPI) {
-                await saveMovie(movie, termToSave);
+                // Determinar si es coincidencia exacta (case-insensitive)
+                const isExact = movie.title.toLowerCase() === termToSave.toLowerCase();
+                await saveMovie(movie, termToSave, isExact);
                 await saveExtraInfo(movie.youtubeId, {
                     categoryId: movie.categoryId,
                     defaultLanguage: movie.defaultLanguage,
@@ -563,7 +581,7 @@ searchBtn.onclick = async () => {
         const filtered = allMovies.filter(movie => {
             const titleMatch = movie.title.toLowerCase().includes(lowerQuery);
             const descMatch = movie.description && movie.description.toLowerCase().includes(lowerQuery);
-            const termsMatch = (movie.searchTerms || []).some(term => term.toLowerCase().includes(lowerQuery));
+            const termsMatch = (movie.searchTerms || []).some(t => t.term.toLowerCase().includes(lowerQuery));
             return titleMatch || descMatch || termsMatch;
         });
         if (filtered.length === 0) {
