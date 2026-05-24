@@ -48,6 +48,8 @@ function renderModalContent(movie, source) {
     const isInTrash = (source === 'trash');
     const watchingIconName = movie.watching ? 'visibility' : 'visibility_off';
     const favoriteIconName = movie.favorite ? 'star_shine' : 'star';
+    // Extraer los strings de los términos para mostrar
+    const termStrings = (movie.searchTerms || []).map(t => t.term);
 
     return `
         <div class="modal-header">
@@ -65,7 +67,7 @@ function renderModalContent(movie, source) {
         <div class="modal-section">
             <strong>Search Terms:</strong>
             <div id="termsList" class="terms-list">
-                ${(movie.searchTerms || []).map(term => `
+                ${termStrings.map(term => `
                     <span class="term-chip">
                         ${escapeHtml(term)}
                         ${!isInTrash ? `<span class="remove-term" data-term="${escapeHtml(term)}">✖</span>` : ''}
@@ -175,15 +177,12 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         };
     }
 
-    // Extra info button - ahora muestra todos los campos solicitados
     const toggleExtraInfoBtn = document.getElementById('toggleExtraInfoBtn');
     const extraInfoPanel = document.getElementById('extraInfoPanel');
     if (toggleExtraInfoBtn && extraInfoPanel) {
         toggleExtraInfoBtn.onclick = async () => {
             if (extraInfoPanel.classList.contains('hidden')) {
-                // Obtener datos extra de la DB
                 const extra = await getExtraInfo(movie.youtubeId);
-                // Construir lista de campos con valores desde movie y extra
                 const fields = [
                     { label: 'channelId', value: movie.channelId || 'N/A' },
                     { label: 'channelTitle', value: movie.channelTitle || 'N/A' },
@@ -217,18 +216,20 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         };
     }
 
-    // Term editing (unchanged)
+    // Term editing - adaptado a objetos
     if (!isInTrash) {
         document.querySelectorAll('.remove-term').forEach(el => {
             el.onclick = async (e) => {
                 e.stopPropagation();
                 const term = el.dataset.term;
-                const newTerms = movie.searchTerms.filter(t => t !== term);
-                await updateMovieTerms(movie.youtubeId, newTerms);
-                movie.searchTerms = newTerms;
+                // Filtrar el término del array de objetos
+                const newTermsObjs = movie.searchTerms.filter(t => t.term !== term);
+                const newTermsStrings = newTermsObjs.map(t => t.term);
+                await updateMovieTerms(movie.youtubeId, newTermsStrings);
+                movie.searchTerms = newTermsObjs;
                 const termsContainer = document.getElementById('termsList');
                 if (termsContainer) {
-                    termsContainer.innerHTML = (newTerms.map(t => `
+                    termsContainer.innerHTML = (newTermsStrings.map(t => `
                         <span class="term-chip">
                             ${escapeHtml(t)}
                             <span class="remove-term" data-term="${escapeHtml(t)}">✖</span>
@@ -247,14 +248,14 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         if (addBtn && newTermInput) {
             addBtn.onclick = async () => {
                 const newTerm = newTermInput.value.trim();
-                if (newTerm && !movie.searchTerms.includes(newTerm)) {
-                    const newTerms = [...movie.searchTerms, newTerm];
-                    await updateMovieTerms(movie.youtubeId, newTerms);
-                    movie.searchTerms = newTerms;
+                if (newTerm && !movie.searchTerms.some(t => t.term === newTerm)) {
+                    const newTermsStrings = [...movie.searchTerms.map(t => t.term), newTerm];
+                    await updateMovieTerms(movie.youtubeId, newTermsStrings);
+                    movie.searchTerms = [...movie.searchTerms, { term: newTerm, exact: true }];
                     newTermInput.value = '';
                     const termsContainer = document.getElementById('termsList');
                     if (termsContainer) {
-                        termsContainer.innerHTML = (newTerms.map(t => `
+                        termsContainer.innerHTML = (newTermsStrings.map(t => `
                             <span class="term-chip">
                                 ${escapeHtml(t)}
                                 <span class="remove-term" data-term="${escapeHtml(t)}">✖</span>
