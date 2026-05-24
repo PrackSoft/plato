@@ -206,7 +206,13 @@ async function refreshAvailableTerms() {
     const allMovies = await getAllMovies();
     const termsSet = new Set();
     for (const movie of allMovies) {
-        (movie.searchTerms || []).forEach(t => termsSet.add(t.term));
+        (movie.searchTerms || []).forEach(t => {
+            if (t && typeof t === 'object' && t.term) {
+                termsSet.add(t.term);
+            } else if (typeof t === 'string') {
+                termsSet.add(t);
+            }
+        });
     }
     availableTerms = Array.from(termsSet).sort();
 }
@@ -218,7 +224,10 @@ async function removeTermFromAllMovies(term) {
     const store = transaction.objectStore('movies');
     for (const movie of allMovies) {
         if (movie.searchTerms) {
-            const newTerms = movie.searchTerms.filter(t => t.term !== term);
+            const newTerms = movie.searchTerms.filter(t => {
+                const termValue = (t && typeof t === 'object') ? t.term : t;
+                return termValue !== term;
+            });
             if (newTerms.length !== movie.searchTerms.length) {
                 movie.searchTerms = newTerms;
                 movie.lastUpdated = new Date().toISOString();
@@ -247,13 +256,31 @@ async function deleteMoviesWithTermFromCurrentView(term) {
     } else {
         moviesToProcess = await getAllMovies();
         if (activeTermFilter) {
-            moviesToProcess = moviesToProcess.filter(movie => (movie.searchTerms || []).some(t => t.term === activeTermFilter));
+            moviesToProcess = moviesToProcess.filter(movie => {
+                const terms = movie.searchTerms || [];
+                return terms.some(t => {
+                    const termValue = (t && typeof t === 'object') ? t.term : t;
+                    return termValue === activeTermFilter;
+                });
+            });
         }
         if (activeWatchingFilter) moviesToProcess = moviesToProcess.filter(movie => movie.watching === true);
         if (activeFavoriteFilter) moviesToProcess = moviesToProcess.filter(movie => movie.favorite === true);
-        if (activeRelatedFilter) moviesToProcess = moviesToProcess.filter(movie => (movie.searchTerms || []).some(t => t.exact === false));
+        if (activeRelatedFilter) moviesToProcess = moviesToProcess.filter(movie => {
+            const terms = movie.searchTerms || [];
+            return terms.some(t => {
+                const exact = (t && typeof t === 'object') ? t.exact : true;
+                return exact === false;
+            });
+        });
     }
-    const moviesWithTerm = moviesToProcess.filter(movie => (movie.searchTerms || []).some(t => t.term === term));
+    const moviesWithTerm = moviesToProcess.filter(movie => {
+        const terms = movie.searchTerms || [];
+        return terms.some(t => {
+            const termValue = (t && typeof t === 'object') ? t.term : t;
+            return termValue === term;
+        });
+    });
     if (moviesWithTerm.length === 0) return;
 
     const confirmMsg = activeTrashFilter
@@ -275,17 +302,20 @@ async function deleteMoviesWithTermFromCurrentView(term) {
 
 function renderTermsBar(termsArray = null) {
     const terms = termsArray !== null ? termsArray : availableTerms;
-    if (terms.length === 0) {
+    if (!terms || terms.length === 0) {
         termsBar.innerHTML = '<div class="terms-placeholder">No search terms yet</div>';
         return;
     }
-    const html = terms.map(term => `
-        <button class="btn btn-secondary btn-sm ${activeTermFilter === term ? 'active' : ''}" data-term="${escapeHtml(term)}">
-            ${escapeHtml(term)}
-            <span class="term-edit material-symbols-outlined" data-term="${escapeHtml(term)}" title="Edit term globally">edit</span>
-            <span class="term-delete" data-term="${escapeHtml(term)}" title="Delete term from all movies">✖</span>
-        </button>
-    `).join('');
+    const html = terms.map(term => {
+        const termStr = String(term);
+        return `
+            <button class="btn btn-secondary btn-sm ${activeTermFilter === termStr ? 'active' : ''}" data-term="${escapeHtml(termStr)}">
+                ${escapeHtml(termStr)}
+                <span class="term-edit material-symbols-outlined" data-term="${escapeHtml(termStr)}" title="Edit term globally">edit</span>
+                <span class="term-delete" data-term="${escapeHtml(termStr)}" title="Delete term from all movies">✖</span>
+            </button>
+        `;
+    }).join('');
     termsBar.innerHTML = html;
 
     document.querySelectorAll('#termsBar .btn').forEach(btn => {
@@ -410,16 +440,36 @@ async function loadAndDisplayAll() {
     if (activeTrashFilter) {
         allMovies = await getTrashMovies();
         if (activeTermFilter) {
-            allMovies = allMovies.filter(movie => (movie.searchTerms || []).some(t => t.term === activeTermFilter));
+            allMovies = allMovies.filter(movie => {
+                const terms = movie.searchTerms || [];
+                return terms.some(t => {
+                    const termValue = (t && typeof t === 'object') ? t.term : t;
+                    return termValue === activeTermFilter;
+                });
+            });
         }
     } else {
         allMovies = await getAllMovies();
         if (activeTermFilter) {
-            allMovies = allMovies.filter(movie => (movie.searchTerms || []).some(t => t.term === activeTermFilter));
+            allMovies = allMovies.filter(movie => {
+                const terms = movie.searchTerms || [];
+                return terms.some(t => {
+                    const termValue = (t && typeof t === 'object') ? t.term : t;
+                    return termValue === activeTermFilter;
+                });
+            });
         }
         if (activeWatchingFilter) allMovies = allMovies.filter(movie => movie.watching === true);
         if (activeFavoriteFilter) allMovies = allMovies.filter(movie => movie.favorite === true);
-        if (activeRelatedFilter) allMovies = allMovies.filter(movie => (movie.searchTerms || []).some(t => t.exact === false));
+        if (activeRelatedFilter) {
+            allMovies = allMovies.filter(movie => {
+                const terms = movie.searchTerms || [];
+                return terms.some(t => {
+                    const exact = (t && typeof t === 'object') ? t.exact : true;
+                    return exact === false;
+                });
+            });
+        }
     }
 
     let title;
@@ -450,7 +500,11 @@ async function loadAndDisplayAll() {
     } else {
         const allTerms = new Set();
         for (const movie of allMovies) {
-            (movie.searchTerms || []).forEach(t => allTerms.add(t.term));
+            const terms = movie.searchTerms || [];
+            terms.forEach(t => {
+                const termValue = (t && typeof t === 'object') ? t.term : t;
+                if (termValue) allTerms.add(termValue);
+            });
         }
         termsToShow = Array.from(allTerms).sort();
     }
@@ -468,7 +522,7 @@ async function updateMovieTerms(youtubeId, newTerms) {
         req.onerror = () => reject(req.error);
     });
     if (movie) {
-        movie.searchTerms = newTerms.map(term => ({ term, exact: true }));
+        movie.searchTerms = newTerms.map(term => ({ term: String(term), exact: true }));
         movie.lastUpdated = new Date().toISOString();
         await new Promise((resolve, reject) => {
             const req = store.put(movie);
@@ -485,7 +539,7 @@ async function updateMovieTerms(youtubeId, newTerms) {
 async function toggleFavorite(youtubeId) {
     const db = await openDB();
     const transaction = db.transaction(['movies'], 'readwrite');
-    const store = transaction.objectStore(STORE_MOVIES);
+    const store = transaction.objectStore('movies');
     const movie = await new Promise((resolve, reject) => {
         const req = store.get(youtubeId);
         req.onsuccess = () => resolve(req.result);
@@ -587,7 +641,12 @@ searchBtn.onclick = async () => {
         const filtered = allMovies.filter(movie => {
             const titleMatch = movie.title.toLowerCase().includes(lowerQuery);
             const descMatch = movie.description && movie.description.toLowerCase().includes(lowerQuery);
-            const termsMatch = (movie.searchTerms || []).some(t => t.term.toLowerCase().includes(lowerQuery));
+            let termsMatch = false;
+            const terms = movie.searchTerms || [];
+            terms.forEach(t => {
+                const termValue = (t && typeof t === 'object') ? t.term : t;
+                if (termValue && termValue.toLowerCase().includes(lowerQuery)) termsMatch = true;
+            });
             return titleMatch || descMatch || termsMatch;
         });
         if (filtered.length === 0) {
@@ -631,5 +690,5 @@ init();
 
 function escapeHtml(str) {
     if (!str) return '';
-    return str.replace(/[&<>]/g, c => c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;');
+    return String(str).replace(/[&<>]/g, c => c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;');
 }
