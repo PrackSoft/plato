@@ -1,6 +1,6 @@
 // js/db.js
 const DB_NAME = 'PlatoDB';
-const DB_VERSION = 4; // Incrementado por cambio de estructura
+const DB_VERSION = 3; // ← incrementado para nuevo store
 const STORE_MOVIES = 'movies';
 const STORE_TRASH = 'trash';
 const STORE_EXTRA = 'movie_extra';
@@ -32,37 +32,6 @@ export async function openDB() {
             }
             if (!db.objectStoreNames.contains(STORE_EXTRA)) {
                 db.createObjectStore(STORE_EXTRA, { keyPath: 'youtubeId' });
-            }
-            // Migración de datos antiguos (v3 a v4)
-            if (event.oldVersion < 4) {
-                const movieStore = db.transaction.objectStore(STORE_MOVIES);
-                movieStore.openCursor().onsuccess = (e) => {
-                    const cursor = e.target.result;
-                    if (cursor) {
-                        const movie = cursor.value;
-                        if (movie.searchTerms && movie.searchTerms.length > 0 && typeof movie.searchTerms[0] === 'string') {
-                            // Convertir array de strings a array de objetos { term, exact: true }
-                            movie.searchTerms = movie.searchTerms.map(term => ({ term, exact: true }));
-                            cursor.update(movie);
-                        }
-                        cursor.continue();
-                    }
-                };
-                // También migrar trash si existe
-                const trashStore = db.transaction.objectStore(STORE_TRASH);
-                if (trashStore) {
-                    trashStore.openCursor().onsuccess = (e) => {
-                        const cursor = e.target.result;
-                        if (cursor) {
-                            const movie = cursor.value;
-                            if (movie.searchTerms && movie.searchTerms.length > 0 && typeof movie.searchTerms[0] === 'string') {
-                                movie.searchTerms = movie.searchTerms.map(term => ({ term, exact: true }));
-                                cursor.update(movie);
-                            }
-                            cursor.continue();
-                        }
-                    };
-                }
             }
         };
     });
@@ -110,7 +79,7 @@ export async function getTrashMovies() {
     });
 }
 
-export async function saveMovie(movieData, searchTerm, exact = true) {
+export async function saveMovie(movieData, searchTerm) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
     const store = transaction.objectStore(STORE_MOVIES);
@@ -119,20 +88,11 @@ export async function saveMovie(movieData, searchTerm, exact = true) {
         getRequest.onsuccess = () => {
             const existing = getRequest.result;
             if (existing) {
-                // Actualizar términos existentes
-                let terms = existing.searchTerms || [];
-                if (searchTerm) {
-                    const existingTermObj = terms.find(t => t.term === searchTerm);
-                    if (existingTermObj) {
-                        // Conservar el flag existente (no sobreescribir)
-                        // Si se quiere actualizar, se podría, pero por ahora no
-                    } else {
-                        terms.push({ term: searchTerm, exact });
-                    }
-                }
+                const termsSet = new Set(existing.searchTerms || []);
+                if (searchTerm) termsSet.add(searchTerm);
                 const updated = {
                     ...existing,
-                    searchTerms: terms,
+                    searchTerms: Array.from(termsSet),
                     viewCount: movieData.viewCount ?? existing.viewCount,
                     likeCount: movieData.likeCount ?? existing.likeCount,
                     commentCount: movieData.commentCount ?? existing.commentCount,
@@ -145,7 +105,7 @@ export async function saveMovie(movieData, searchTerm, exact = true) {
             } else {
                 const newMovie = {
                     ...movieData,
-                    searchTerms: searchTerm ? [{ term: searchTerm, exact }] : [],
+                    searchTerms: searchTerm ? [searchTerm] : [],
                     watching: false,
                     favorite: false,
                     dateSaved: new Date().toISOString(),
@@ -252,8 +212,9 @@ export async function renameTermInAllMovies(oldTerm, newTerm) {
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
     const store = transaction.objectStore(STORE_MOVIES);
     for (const movie of allMovies) {
-        if (movie.searchTerms && movie.searchTerms.some(t => t.term === oldTerm)) {
-            movie.searchTerms = movie.searchTerms.map(t => t.term === oldTerm ? { term: newTerm, exact: t.exact } : t);
+        if (movie.searchTerms && movie.searchTerms.includes(oldTerm)) {
+            const newTerms = movie.searchTerms.map(t => t === oldTerm ? newTerm : t);
+            movie.searchTerms = newTerms;
             movie.lastUpdated = new Date().toISOString();
             await new Promise((resolve, reject) => {
                 const req = store.put(movie);
@@ -264,6 +225,7 @@ export async function renameTermInAllMovies(oldTerm, newTerm) {
     }
 }
 
+// ========== NUEVAS FUNCIONES PARA EXTRA INFO ==========
 export async function saveExtraInfo(youtubeId, extraData) {
     const db = await openDB();
     const transaction = db.transaction([STORE_EXTRA], 'readwrite');

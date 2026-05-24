@@ -1,4 +1,4 @@
-// js/app.js - Plato App (soporte para términos exactos y relacionados, con filtro "Related items")
+// js/app.js - Plato App (corrección: eliminar término activo si ya no hay películas en papelera)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -14,7 +14,6 @@ const searchInPanel = document.getElementById('searchInPanel');
 const filterWatchingBtn = document.getElementById('filterWatchingBtn');
 const filterFavoriteBtn = document.getElementById('filterFavoriteBtn');
 const filterTrashBtn = document.getElementById('filterTrashBtn');
-const filterRelatedBtn = document.getElementById('filterRelatedBtn');
 const termsBar = document.getElementById('termsBar');
 const toggleTermsBtn = document.getElementById('toggleTermsBtn');
 const settingsBtn = document.getElementById('settingsBtn');
@@ -29,15 +28,14 @@ let currentSearchOptionId = "UCuVPpxrm2VAgpH3Ktln4HXg";
 let activeWatchingFilter = false;
 let activeFavoriteFilter = false;
 let activeTrashFilter = false;
-let activeRelatedFilter = false;
-let activeTermFilter = null;      // término activo en modo normal (exactos)
-let relatedTermFilter = null;     // término activo en modo relacionados (exact === false)
+let activeTermFilter = null;
 let availableTerms = [];
 let currentSort = 'date';
 
 // Search filters (settings)
 let searchOrder = 'relevance';   // 'relevance', 'viewCount', 'rating'
 let searchDuration = 'long';      // 'long', 'medium', 'short', 'any'
+// Category filter (settings)
 let searchCategoryFilter = 'movies'; // 'movies' or 'all'
 
 // ---------------------- Helper: close panels ----------------------
@@ -106,6 +104,7 @@ function openSettingsSidebar() {
     durationRadios.forEach(radio => {
         if (radio.value === searchDuration) radio.checked = true;
     });
+    // NUEVO: actualizar estado del filtro de categoría
     const categoryRadios = document.querySelectorAll('input[name="searchCategory"]');
     categoryRadios.forEach(radio => {
         if (radio.value === searchCategoryFilter) radio.checked = true;
@@ -127,6 +126,7 @@ function saveSearchDuration(value) {
     searchDuration = value;
     localStorage.setItem('plato_searchDuration', value);
 }
+// NUEVO: guardar filtro de categoría
 function saveSearchCategory(value) {
     searchCategoryFilter = value;
     localStorage.setItem('plato_searchCategory', value);
@@ -140,6 +140,7 @@ function loadSearchPreferences() {
     if (savedDuration && (savedDuration === 'short' || savedDuration === 'medium' || savedDuration === 'long' || savedDuration === 'any')) {        
         searchDuration = savedDuration;
     }
+    // NUEVO: cargar filtro de categoría
     const savedCategory = localStorage.getItem('plato_searchCategory');
     if (savedCategory && (savedCategory === 'movies' || savedCategory === 'all')) {
         searchCategoryFilter = savedCategory;
@@ -156,6 +157,7 @@ function buildSettingsSidebarContent() {
     sidebarContent.innerHTML = `
         <div class="sidebar-section">
             <h3>Search Filters</h3>
+            <!-- Content type -->
             <div class="settings-group">
                 <label class="settings-label">Content type:</label>
                 <div class="radio-group">
@@ -183,6 +185,7 @@ function buildSettingsSidebarContent() {
         </div>
     `;
 
+    // Event listeners (sin cambios)
     const orderRadios = document.querySelectorAll('input[name="searchOrder"]');
     orderRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
@@ -208,9 +211,7 @@ async function refreshAvailableTerms() {
     const allMovies = await getAllMovies();
     const termsSet = new Set();
     for (const movie of allMovies) {
-        (movie.searchTerms || []).forEach(termObj => {
-            if (termObj && termObj.term) termsSet.add(termObj.term);
-        });
+        (movie.searchTerms || []).forEach(term => termsSet.add(term));
     }
     availableTerms = Array.from(termsSet).sort();
 }
@@ -221,8 +222,8 @@ async function removeTermFromAllMovies(term) {
     const transaction = db.transaction(['movies'], 'readwrite');
     const store = transaction.objectStore('movies');
     for (const movie of allMovies) {
-        if (movie.searchTerms && movie.searchTerms.some(t => t.term === term)) {
-            movie.searchTerms = movie.searchTerms.filter(t => t.term !== term);
+        if (movie.searchTerms && movie.searchTerms.includes(term)) {
+            movie.searchTerms = movie.searchTerms.filter(t => t !== term);
             movie.lastUpdated = new Date().toISOString();
             await new Promise((resolve, reject) => {
                 const req = store.put(movie);
@@ -237,7 +238,6 @@ async function editTermGlobally(oldTerm, newTerm) {
     if (oldTerm === newTerm || !newTerm.trim()) return;
     await renameTermInAllMovies(oldTerm, newTerm.trim());
     if (activeTermFilter === oldTerm) activeTermFilter = newTerm.trim();
-    if (relatedTermFilter === oldTerm) relatedTermFilter = newTerm.trim();
     await refreshAvailableTerms();
     await loadAndDisplayAll();
 }
@@ -249,15 +249,12 @@ async function deleteMoviesWithTermFromCurrentView(term) {
     } else {
         moviesToProcess = await getAllMovies();
         if (activeTermFilter) {
-            moviesToProcess = moviesToProcess.filter(movie => (movie.searchTerms || []).some(t => t.term === activeTermFilter && t.exact === true));
-        } else if (activeRelatedFilter && relatedTermFilter) {
-            moviesToProcess = moviesToProcess.filter(movie => (movie.searchTerms || []).some(t => t.term === relatedTermFilter && t.exact === false));
-        } else {
-            if (activeWatchingFilter) moviesToProcess = moviesToProcess.filter(movie => movie.watching === true);
-            if (activeFavoriteFilter) moviesToProcess = moviesToProcess.filter(movie => movie.favorite === true);
+            moviesToProcess = moviesToProcess.filter(movie => (movie.searchTerms || []).includes(activeTermFilter));
         }
+        if (activeWatchingFilter) moviesToProcess = moviesToProcess.filter(movie => movie.watching === true);
+        if (activeFavoriteFilter) moviesToProcess = moviesToProcess.filter(movie => movie.favorite === true);
     }
-    const moviesWithTerm = moviesToProcess.filter(movie => (movie.searchTerms || []).some(t => t.term === term));
+    const moviesWithTerm = moviesToProcess.filter(movie => (movie.searchTerms || []).includes(term));
     if (moviesWithTerm.length === 0) return;
 
     const confirmMsg = activeTrashFilter
@@ -273,20 +270,18 @@ async function deleteMoviesWithTermFromCurrentView(term) {
         }
     }
     if (activeTermFilter === term) activeTermFilter = null;
-    if (relatedTermFilter === term) relatedTermFilter = null;
     await refreshAvailableTerms();
     await loadAndDisplayAll();
 }
 
-function renderTermsBar(termsArray = null, mode = 'normal') {
+function renderTermsBar(termsArray = null) {
     const terms = termsArray !== null ? termsArray : availableTerms;
     if (terms.length === 0) {
         termsBar.innerHTML = '<div class="terms-placeholder">No search terms yet</div>';
         return;
     }
-    const activeTerm = (mode === 'related') ? relatedTermFilter : activeTermFilter;
     const html = terms.map(term => `
-        <button class="btn btn-secondary btn-sm ${activeTerm === term ? 'active' : ''}" data-term="${escapeHtml(term)}">
+        <button class="btn btn-secondary btn-sm ${activeTermFilter === term ? 'active' : ''}" data-term="${escapeHtml(term)}">
             ${escapeHtml(term)}
             <span class="term-edit material-symbols-outlined" data-term="${escapeHtml(term)}" title="Edit term globally">edit</span>
             <span class="term-delete" data-term="${escapeHtml(term)}" title="Delete term from all movies">✖</span>
@@ -298,15 +293,9 @@ function renderTermsBar(termsArray = null, mode = 'normal') {
         const term = btn.dataset.term;
         btn.addEventListener('click', (e) => {
             if (e.target.classList.contains('term-edit') || e.target.classList.contains('term-delete')) return;
-            if (mode === 'related') {
-                if (relatedTermFilter === term) relatedTermFilter = null;
-                else relatedTermFilter = term;
-                loadAndDisplayAll();
-            } else {
-                if (activeTermFilter === term) activeTermFilter = null;
-                else activeTermFilter = term;
-                loadAndDisplayAll();
-            }
+            if (activeTermFilter === term) activeTermFilter = null;
+            else activeTermFilter = term;
+            loadAndDisplayAll();
         });
     });
 
@@ -325,8 +314,6 @@ function renderTermsBar(termsArray = null, mode = 'normal') {
         deleteSpan.addEventListener('click', async (e) => {
             e.stopPropagation();
             const term = deleteSpan.dataset.term;
-            if (mode === 'related' && relatedTermFilter === term) relatedTermFilter = null;
-            else if (activeTermFilter === term) activeTermFilter = null;
             await deleteMoviesWithTermFromCurrentView(term);
         });
     });
@@ -344,7 +331,7 @@ if (toggleTermsBtn && termsBar) {
     });
 }
 
-// ---------------------- Filter buttons ----------------------
+// ---------------------- Filter buttons (con reset de término activo) ----------------------
 function updateFilterButtonsUI() {
     if (activeWatchingFilter) filterWatchingBtn.classList.add('active');
     else filterWatchingBtn.classList.remove('active');
@@ -352,48 +339,34 @@ function updateFilterButtonsUI() {
     else filterFavoriteBtn.classList.remove('active');
     if (activeTrashFilter) filterTrashBtn.classList.add('active');
     else filterTrashBtn.classList.remove('active');
-    if (activeRelatedFilter) filterRelatedBtn.classList.add('active');
-    else filterRelatedBtn.classList.remove('active');
 }
 
 function toggleWatchingFilter() {
-    activeTermFilter = null;
-    relatedTermFilter = null;
-    activeRelatedFilter = false;
+    activeTermFilter = null;  // Resetear término al cambiar filtro
     if (activeTrashFilter) {
         activeTrashFilter = false;
         updateFilterButtonsUI();
     }
     activeWatchingFilter = !activeWatchingFilter;
-    if (activeWatchingFilter) {
-        activeFavoriteFilter = false;
-        activeRelatedFilter = false;
-    }
+    if (activeWatchingFilter) activeFavoriteFilter = false;
     updateFilterButtonsUI();
     loadAndDisplayAll();
 }
 
 function toggleFavoriteFilter() {
-    activeTermFilter = null;
-    relatedTermFilter = null;
-    activeRelatedFilter = false;
+    activeTermFilter = null;  // Resetear término al cambiar filtro
     if (activeTrashFilter) {
         activeTrashFilter = false;
         updateFilterButtonsUI();
     }
     activeFavoriteFilter = !activeFavoriteFilter;
-    if (activeFavoriteFilter) {
-        activeWatchingFilter = false;
-        activeRelatedFilter = false;
-    }
+    if (activeFavoriteFilter) activeWatchingFilter = false;
     updateFilterButtonsUI();
     loadAndDisplayAll();
 }
 
 function toggleTrashFilter() {
-    activeTermFilter = null;
-    relatedTermFilter = null;
-    activeRelatedFilter = false;
+    activeTermFilter = null;  // Resetear término al cambiar filtro
     activeTrashFilter = !activeTrashFilter;
     if (activeTrashFilter) {
         activeWatchingFilter = false;
@@ -403,31 +376,11 @@ function toggleTrashFilter() {
     loadAndDisplayAll();
 }
 
-function toggleRelatedFilter() {
-    activeTermFilter = null;
-    relatedTermFilter = null;
-    if (activeTrashFilter || activeWatchingFilter || activeFavoriteFilter) {
-        activeTrashFilter = false;
-        activeWatchingFilter = false;
-        activeFavoriteFilter = false;
-        updateFilterButtonsUI();
-    }
-    activeRelatedFilter = !activeRelatedFilter;
-    if (activeRelatedFilter) {
-        activeWatchingFilter = false;
-        activeFavoriteFilter = false;
-        activeTrashFilter = false;
-    }
-    updateFilterButtonsUI();
-    loadAndDisplayAll();
-}
-
 if (filterWatchingBtn) filterWatchingBtn.addEventListener('click', toggleWatchingFilter);
 if (filterFavoriteBtn) filterFavoriteBtn.addEventListener('click', toggleFavoriteFilter);
 if (filterTrashBtn) filterTrashBtn.addEventListener('click', toggleTrashFilter);
-if (filterRelatedBtn) filterRelatedBtn.addEventListener('click', toggleRelatedFilter);
 
-// ---------------------- Load and display ----------------------
+// ---------------------- Load and display (CORREGIDO: auto-deseleccionar término si ya no existe en papelera) ----------------------
 async function loadAndDisplayAll() {
     await dbReady;
     let allMovies;
@@ -435,20 +388,18 @@ async function loadAndDisplayAll() {
     if (activeTrashFilter) {
         allMovies = await getTrashMovies();
         if (activeTermFilter) {
-            allMovies = allMovies.filter(movie => (movie.searchTerms || []).some(t => t.term === activeTermFilter));
-        }
-    } else if (activeRelatedFilter) {
-        allMovies = await getAllMovies();
-        // Solo películas que tengan ALGÚN término con exact === false
-        allMovies = allMovies.filter(movie => (movie.searchTerms || []).some(t => t.exact === false));
-        if (relatedTermFilter) {
-            allMovies = allMovies.filter(movie => (movie.searchTerms || []).some(t => t.term === relatedTermFilter && t.exact === false));
+            const filtered = allMovies.filter(movie => (movie.searchTerms || []).includes(activeTermFilter));
+            if (filtered.length === 0) {
+                // El término ya no existe en la papelera, desactivar filtro
+                activeTermFilter = null;
+            } else {
+                allMovies = filtered;
+            }
         }
     } else {
         allMovies = await getAllMovies();
         if (activeTermFilter) {
-            // En modo normal (exactos), solo términos exactos
-            allMovies = allMovies.filter(movie => (movie.searchTerms || []).some(t => t.term === activeTermFilter && t.exact === true));
+            allMovies = allMovies.filter(movie => (movie.searchTerms || []).includes(activeTermFilter));
         }
         if (activeWatchingFilter) allMovies = allMovies.filter(movie => movie.watching === true);
         if (activeFavoriteFilter) allMovies = allMovies.filter(movie => movie.favorite === true);
@@ -461,8 +412,6 @@ async function loadAndDisplayAll() {
         title = `Watching (${allMovies.length})`;
     } else if (activeFavoriteFilter) {
         title = `Favorites (${allMovies.length})`;
-    } else if (activeRelatedFilter) {
-        title = relatedTermFilter ? `Related: "${relatedTermFilter}" (${allMovies.length})` : `Related items (${allMovies.length})`;
     } else if (activeTermFilter) {
         title = `Movies: "${activeTermFilter}" (${allMovies.length})`;
     } else {
@@ -476,29 +425,13 @@ async function loadAndDisplayAll() {
 
     renderMovies(resultsGrid, allMovies, title, activeTrashFilter ? 'trash' : 'main', currentSort, onSortChange);
 
-    // Renderizar la barra de términos según el modo
     let termsToShow;
     if (activeTermFilter) {
         termsToShow = [activeTermFilter];
-    } else if (activeRelatedFilter) {
-        const termsSet = new Set();
-        allMovies.forEach(movie => {
-            (movie.searchTerms || []).forEach(t => {
-                if (t.exact === false) termsSet.add(t.term);
-            });
-        });
-        termsToShow = Array.from(termsSet).sort();
-        renderTermsBar(termsToShow, 'related');
     } else {
-        const termsSet = new Set();
-        allMovies.forEach(movie => {
-            (movie.searchTerms || []).forEach(t => {
-                if (t.exact === true) termsSet.add(t.term);
-            });
-        });
-        termsToShow = Array.from(termsSet).sort();
-        renderTermsBar(termsToShow, 'normal');
+        termsToShow = Array.from(new Set(allMovies.flatMap(m => m.searchTerms || []))).sort();
     }
+    renderTermsBar(termsToShow);
 }
 
 // ---------------------- Modal helpers ----------------------
@@ -512,8 +445,7 @@ async function updateMovieTerms(youtubeId, newTerms) {
         req.onerror = () => reject(req.error);
     });
     if (movie) {
-        // Convertir array de strings a array de objetos { term, exact: true }
-        movie.searchTerms = newTerms.map(term => ({ term, exact: true }));
+        movie.searchTerms = newTerms;
         movie.lastUpdated = new Date().toISOString();
         await new Promise((resolve, reject) => {
             const req = store.put(movie);
@@ -521,7 +453,7 @@ async function updateMovieTerms(youtubeId, newTerms) {
             req.onerror = () => reject(req.error);
         });
         await refreshAvailableTerms();
-        if (activeTermFilter && !movie.searchTerms.some(t => t.term === activeTermFilter)) {
+        if (activeTermFilter && !movie.searchTerms.includes(activeTermFilter)) {
             loadAndDisplayAll();
         }
     }
@@ -562,15 +494,14 @@ window.openMovieModal = (movie, source = 'main') => {
 
 // ---------------------- Search ----------------------
 searchBtn.onclick = async () => {
-    if (activeTrashFilter || activeWatchingFilter || activeFavoriteFilter || activeRelatedFilter) {
+    // Desactivar cualquier filtro activo (Watching, Favorites, Trash)
+    if (activeTrashFilter || activeWatchingFilter || activeFavoriteFilter) {
         activeTrashFilter = false;
         activeWatchingFilter = false;
         activeFavoriteFilter = false;
-        activeRelatedFilter = false;
         updateFilterButtonsUI();
     }
     activeTermFilter = null;
-    relatedTermFilter = null;
     
     let query = searchInput.value.trim();
     let effectiveQuery = query;
@@ -603,8 +534,7 @@ searchBtn.onclick = async () => {
             }
             const termToSave = customTermName ? customTermName : (query || effectiveQuery);
             for (const movie of moviesFromAPI) {
-                // Guardar como exacto (true) para los resultados de búsqueda directa
-                await saveMovie(movie, termToSave, true);
+                await saveMovie(movie, termToSave);
                 await saveExtraInfo(movie.youtubeId, {
                     categoryId: movie.categoryId,
                     defaultLanguage: movie.defaultLanguage,
@@ -633,7 +563,7 @@ searchBtn.onclick = async () => {
         const filtered = allMovies.filter(movie => {
             const titleMatch = movie.title.toLowerCase().includes(lowerQuery);
             const descMatch = movie.description && movie.description.toLowerCase().includes(lowerQuery);
-            const termsMatch = (movie.searchTerms || []).some(t => t.term.toLowerCase().includes(lowerQuery));
+            const termsMatch = (movie.searchTerms || []).some(term => term.toLowerCase().includes(lowerQuery));
             return titleMatch || descMatch || termsMatch;
         });
         if (filtered.length === 0) {
