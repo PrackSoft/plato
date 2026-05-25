@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con filtro Related estático)
+// js/app.js - Plato App (con edición/eliminación de términos corregida)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -209,8 +209,6 @@ async function refreshAvailableTerms() {
         (movie.searchTerms || []).forEach(t => {
             if (t && typeof t === 'object' && t.term) {
                 termsSet.add(t.term);
-            } else if (typeof t === 'string') {
-                termsSet.add(t);
             }
         });
     }
@@ -224,10 +222,7 @@ async function removeTermFromAllMovies(term) {
     const store = transaction.objectStore('movies');
     for (const movie of allMovies) {
         if (movie.searchTerms) {
-            const newTerms = movie.searchTerms.filter(t => {
-                const termValue = (t && typeof t === 'object') ? t.term : t;
-                return termValue !== term;
-            });
+            const newTerms = movie.searchTerms.filter(t => t.term !== term);
             if (newTerms.length !== movie.searchTerms.length) {
                 movie.searchTerms = newTerms;
                 movie.lastUpdated = new Date().toISOString();
@@ -258,28 +253,21 @@ async function deleteMoviesWithTermFromCurrentView(term) {
         if (activeTermFilter) {
             moviesToProcess = moviesToProcess.filter(movie => {
                 const terms = movie.searchTerms || [];
-                return terms.some(t => {
-                    const termValue = (t && typeof t === 'object') ? t.term : t;
-                    return termValue === activeTermFilter;
-                });
+                return terms.some(t => t.term === activeTermFilter);
             });
         }
         if (activeWatchingFilter) moviesToProcess = moviesToProcess.filter(movie => movie.watching === true);
         if (activeFavoriteFilter) moviesToProcess = moviesToProcess.filter(movie => movie.favorite === true);
-        if (activeRelatedFilter) moviesToProcess = moviesToProcess.filter(movie => {
-            const terms = movie.searchTerms || [];
-            return terms.some(t => {
-                const exact = (t && typeof t === 'object') ? t.exact : true;
-                return exact === false;
+        if (activeRelatedFilter) {
+            moviesToProcess = moviesToProcess.filter(movie => {
+                const terms = movie.searchTerms || [];
+                return terms.some(t => t.exact === false);
             });
-        });
+        }
     }
     const moviesWithTerm = moviesToProcess.filter(movie => {
         const terms = movie.searchTerms || [];
-        return terms.some(t => {
-            const termValue = (t && typeof t === 'object') ? t.term : t;
-            return termValue === term;
-        });
+        return terms.some(t => t.term === term);
     });
     if (moviesWithTerm.length === 0) return;
 
@@ -442,45 +430,31 @@ async function loadAndDisplayAll() {
         if (activeTermFilter) {
             allMovies = allMovies.filter(movie => {
                 const terms = movie.searchTerms || [];
-                return terms.some(t => {
-                    const termValue = (t && typeof t === 'object') ? t.term : t;
-                    return termValue === activeTermFilter;
-                });
+                return terms.some(t => t.term === activeTermFilter);
             });
         }
     } else {
         allMovies = await getAllMovies();
         
-        // Filtrar por término exacto si está activo
         if (activeTermFilter) {
             allMovies = allMovies.filter(movie => {
                 const terms = movie.searchTerms || [];
-                return terms.some(t => {
-                    const termValue = (t && typeof t === 'object') ? t.term : t;
-                    return termValue === activeTermFilter;
-                });
+                return terms.some(t => t.term === activeTermFilter);
             });
         }
         
-        // Aplicar filtros de Watching, Favorites, Related
         if (activeWatchingFilter) allMovies = allMovies.filter(movie => movie.watching === true);
         if (activeFavoriteFilter) allMovies = allMovies.filter(movie => movie.favorite === true);
         if (activeRelatedFilter) {
             allMovies = allMovies.filter(movie => {
                 const terms = movie.searchTerms || [];
-                return terms.some(t => {
-                    const exact = (t && typeof t === 'object') ? t.exact : true;
-                    return exact === false;
-                });
+                return terms.some(t => t.exact === false);
             });
         } else {
-            // Si NO hay filtro Related activo, mostrar solo películas que tengan al menos un término exacto (true)
+            // Vista general: solo películas con al menos un término exacto (true)
             allMovies = allMovies.filter(movie => {
                 const terms = movie.searchTerms || [];
-                return terms.some(t => {
-                    const exact = (t && typeof t === 'object') ? t.exact : true;
-                    return exact === true;
-                });
+                return terms.some(t => t.exact === true);
             });
         }
     }
@@ -515,8 +489,7 @@ async function loadAndDisplayAll() {
         for (const movie of allMovies) {
             const terms = movie.searchTerms || [];
             terms.forEach(t => {
-                const termValue = (t && typeof t === 'object') ? t.term : t;
-                if (termValue) allTerms.add(termValue);
+                if (t.term) allTerms.add(t.term);
             });
         }
         termsToShow = Array.from(allTerms).sort();
@@ -624,7 +597,6 @@ searchBtn.onclick = async () => {
             }
             const termToSave = customTermName ? customTermName : (query || effectiveQuery);
             for (const movie of moviesFromAPI) {
-                // Comparar término contra title, description y tags (case insensitive)
                 const searchTermLower = termToSave.toLowerCase();
                 const titleMatch = movie.title && movie.title.toLowerCase().includes(searchTermLower);
                 const descMatch = movie.description && movie.description.toLowerCase().includes(searchTermLower);
@@ -663,8 +635,7 @@ searchBtn.onclick = async () => {
             let termsMatch = false;
             const terms = movie.searchTerms || [];
             terms.forEach(t => {
-                const termValue = (t && typeof t === 'object') ? t.term : t;
-                if (termValue && termValue.toLowerCase().includes(lowerQuery)) termsMatch = true;
+                if (t.term && t.term.toLowerCase().includes(lowerQuery)) termsMatch = true;
             });
             return titleMatch || descMatch || termsMatch;
         });
