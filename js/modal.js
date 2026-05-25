@@ -1,4 +1,4 @@
-// js/modal.js (sin etiquetas exact/related)
+// js/modal.js (con tags visibles en el modal)
 import { getExtraInfo } from './db.js';
 
 let currentMovie = null;
@@ -48,6 +48,11 @@ function renderModalContent(movie, source) {
     const isInTrash = (source === 'trash');
     const watchingIconName = movie.watching ? 'visibility' : 'visibility_off';
     const favoriteIconName = movie.favorite ? 'star_shine' : 'star';
+    
+    // Formatear tags para mostrar
+    const tagsHtml = movie.tags && Array.isArray(movie.tags) && movie.tags.length > 0
+        ? `<p><strong>Tags:</strong> ${escapeHtml(movie.tags.join(', '))}</p>`
+        : '';
 
     return `
         <div class="modal-header">
@@ -58,6 +63,7 @@ function renderModalContent(movie, source) {
         <img class="modal-image" src="${movie.imageUrl}" alt="${movie.title}">
         <p><strong>YouTube Premiere:</strong> ${movie.publishedAt ? new Date(movie.publishedAt).toLocaleDateString() : 'Unknown'}</p>
         <div class="modal-description">${escapeHtml(movie.description || 'No Description')}</div>
+        ${tagsHtml}
         <p><strong>Duration:</strong> ${formatDuration(movie.duration)}</p>
         <p><strong>Saved on:</strong> ${new Date(movie.dateSaved).toLocaleString()}</p>
         ${isInTrash ? `<p><strong>Deleted on:</strong> ${movie.deletedAt ? new Date(movie.deletedAt).toLocaleString() : 'Unknown'}</p>` : ''}
