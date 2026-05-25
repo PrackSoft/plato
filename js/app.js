@@ -450,6 +450,8 @@ async function loadAndDisplayAll() {
         }
     } else {
         allMovies = await getAllMovies();
+        
+        // Filtrar por término exacto si está activo
         if (activeTermFilter) {
             allMovies = allMovies.filter(movie => {
                 const terms = movie.searchTerms || [];
@@ -459,6 +461,8 @@ async function loadAndDisplayAll() {
                 });
             });
         }
+        
+        // Aplicar filtros de Watching, Favorites, Related
         if (activeWatchingFilter) allMovies = allMovies.filter(movie => movie.watching === true);
         if (activeFavoriteFilter) allMovies = allMovies.filter(movie => movie.favorite === true);
         if (activeRelatedFilter) {
@@ -467,6 +471,15 @@ async function loadAndDisplayAll() {
                 return terms.some(t => {
                     const exact = (t && typeof t === 'object') ? t.exact : true;
                     return exact === false;
+                });
+            });
+        } else {
+            // Si NO hay filtro Related activo, mostrar solo películas que tengan al menos un término exacto (true)
+            allMovies = allMovies.filter(movie => {
+                const terms = movie.searchTerms || [];
+                return terms.some(t => {
+                    const exact = (t && typeof t === 'object') ? t.exact : true;
+                    return exact === true;
                 });
             });
         }
