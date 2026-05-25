@@ -1,4 +1,4 @@
-// js/modal.js (modificado solo para leer {term, exact})
+// js/modal.js (sin etiquetas exact/related)
 import { getExtraInfo } from './db.js';
 
 let currentMovie = null;
@@ -48,7 +48,6 @@ function renderModalContent(movie, source) {
     const isInTrash = (source === 'trash');
     const watchingIconName = movie.watching ? 'visibility' : 'visibility_off';
     const favoriteIconName = movie.favorite ? 'star_shine' : 'star';
-    const termList = (movie.searchTerms || []).map(t => t.term).join(', ');
 
     return `
         <div class="modal-header">
@@ -68,7 +67,7 @@ function renderModalContent(movie, source) {
             <div id="termsList" class="terms-list">
                 ${(movie.searchTerms || []).map(t => `
                     <span class="term-chip">
-                        ${escapeHtml(t.term)} ${t.exact ? '(exact)' : '(related)'}
+                        ${escapeHtml(t.term)}
                         ${!isInTrash ? `<span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>` : ''}
                     </span>
                 `).join('')}
@@ -227,7 +226,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                 if (termsContainer) {
                     termsContainer.innerHTML = (movie.searchTerms || []).map(t => `
                         <span class="term-chip">
-                            ${escapeHtml(t.term)} ${t.exact ? '(exact)' : '(related)'}
+                            ${escapeHtml(t.term)}
                             <span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>
                         </span>
                     `).join('');
@@ -253,7 +252,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                     if (termsContainer) {
                         termsContainer.innerHTML = (movie.searchTerms || []).map(t => `
                             <span class="term-chip">
-                                ${escapeHtml(t.term)} ${t.exact ? '(exact)' : '(related)'}
+                                ${escapeHtml(t.term)}
                                 <span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>
                             </span>
                         `).join('');

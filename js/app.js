@@ -611,7 +611,13 @@ searchBtn.onclick = async () => {
             }
             const termToSave = customTermName ? customTermName : (query || effectiveQuery);
             for (const movie of moviesFromAPI) {
-                const isExact = movie.title.toLowerCase() === termToSave.toLowerCase();
+                // Comparar término contra title, description y tags (case insensitive)
+                const searchTermLower = termToSave.toLowerCase();
+                const titleMatch = movie.title && movie.title.toLowerCase().includes(searchTermLower);
+                const descMatch = movie.description && movie.description.toLowerCase().includes(searchTermLower);
+                const tagsMatch = movie.tags && Array.isArray(movie.tags) && movie.tags.some(tag => tag.toLowerCase().includes(searchTermLower));
+                const isExact = titleMatch || descMatch || tagsMatch;
+                
                 await saveMovie(movie, termToSave, isExact);
                 await saveExtraInfo(movie.youtubeId, {
                     categoryId: movie.categoryId,
