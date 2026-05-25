@@ -246,6 +246,8 @@ async function editTermGlobally(oldTerm, newTerm) {
 
 async function deleteMoviesWithTermFromCurrentView(term) {
     let moviesToProcess;
+    let onlyRelated = false;
+    
     if (activeTrashFilter) {
         moviesToProcess = await getTrashMovies();
     } else {
@@ -259,31 +261,60 @@ async function deleteMoviesWithTermFromCurrentView(term) {
         if (activeWatchingFilter) moviesToProcess = moviesToProcess.filter(movie => movie.watching === true);
         if (activeFavoriteFilter) moviesToProcess = moviesToProcess.filter(movie => movie.favorite === true);
         if (activeRelatedFilter) {
+            onlyRelated = true;
             moviesToProcess = moviesToProcess.filter(movie => {
                 const terms = movie.searchTerms || [];
                 return terms.some(t => t.exact === false);
             });
         }
     }
+    
+    // Filtrar películas que contienen el término a eliminar
     const moviesWithTerm = moviesToProcess.filter(movie => {
         const terms = movie.searchTerms || [];
-        return terms.some(t => t.term === term);
+        if (onlyRelated) {
+            // Solo películas donde el término existe Y es exact === false
+            return terms.some(t => t.term === term && t.exact === false);
+        } else {
+            return terms.some(t => t.term === term);
+        }
     });
+    
     if (moviesWithTerm.length === 0) return;
 
     const confirmMsg = activeTrashFilter
         ? `Permanently delete ${moviesWithTerm.length} movie(s) with term "${term}" from trash?`
-        : `Move ${moviesWithTerm.length} movie(s) with term "${term}" to trash?`;
+        : onlyRelated
+            ? `Remove term "${term}" from ${moviesWithTerm.length} related movie(s) (exact matches will be kept)`
+            : `Move ${moviesWithTerm.length} movie(s) with term "${term}" to trash?`;
+    
     if (!confirm(confirmMsg)) return;
 
+    const db = await openDB();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    
     for (const movie of moviesWithTerm) {
         if (activeTrashFilter) {
             await permanentlyDeleteMovie(movie.youtubeId);
         } else {
-            await moveMovieToTrash(movie.youtubeId);
+            if (onlyRelated) {
+                // Solo eliminar el término donde exact === false, conservar los exactos
+                const newTerms = movie.searchTerms.filter(t => !(t.term === term && t.exact === false));
+                movie.searchTerms = newTerms;
+                movie.lastUpdated = new Date().toISOString();
+                await new Promise((resolve, reject) => {
+                    const req = store.put(movie);
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
+            } else {
+                await moveMovieToTrash(movie.youtubeId);
+            }
         }
     }
-    if (activeTermFilter === term) activeTermFilter = null;
+    
+    if (activeTermFilter === term && !onlyRelated) activeTermFilter = null;
     await refreshAvailableTerms();
     await loadAndDisplayAll();
 }
