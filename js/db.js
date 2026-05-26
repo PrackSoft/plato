@@ -274,6 +274,7 @@ export async function toggleExact(youtubeId, term) {
                 if (termIndex !== -1) {
                     movie.searchTerms[termIndex].exact = !movie.searchTerms[termIndex].exact;
                     movie.lastUpdated = new Date().toISOString();
+                    console.log(`toggleExact: ${youtubeId} term=${term} newExact=${movie.searchTerms[termIndex].exact}`);
                     const putRequest = store.put(movie);
                     putRequest.onsuccess = () => resolve(movie.searchTerms[termIndex].exact);
                     putRequest.onerror = () => reject(putRequest.error);
