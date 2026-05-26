@@ -1,4 +1,4 @@
-// js/modal.js (con tags visibles en el modal)
+// js/modal.js (con botón para alternar exact/related)
 import { getExtraInfo } from './db.js';
 
 let currentMovie = null;
@@ -49,7 +49,12 @@ function renderModalContent(movie, source) {
     const watchingIconName = movie.watching ? 'visibility' : 'visibility_off';
     const favoriteIconName = movie.favorite ? 'star_shine' : 'star';
     
-    // Formatear tags para mostrar
+    // Determinar si mostrar el botón de toggle exact (solo si hay activeTermFilter)
+    const showExactToggle = window.activeTermFilter && !isInTrash;
+    const exactForCurrentTerm = showExactToggle && movie.searchTerms?.some(t => t.term === window.activeTermFilter && t.exact === true);
+    const toggleIcon = exactForCurrentTerm ? 'subscriptions' : 'graph_4';
+    const toggleLabel = exactForCurrentTerm ? 'Move to Related' : 'Move to Exact';
+    
     const tagsHtml = movie.tags && Array.isArray(movie.tags) && movie.tags.length > 0
         ? `<p><strong>Tags:</strong> ${escapeHtml(movie.tags.join(', '))}</p>`
         : '';
@@ -116,6 +121,13 @@ function renderModalContent(movie, source) {
         </div>
         `}
 
+        ${showExactToggle ? `
+        <div class="modal-section toggle-row" id="toggleExactRow">
+            <span>${toggleLabel}:</span>
+            <span class="material-symbols-outlined">${toggleIcon}</span>
+        </div>
+        ` : ''}
+
         <div class="modal-section">
             <button id="toggleExtraInfoBtn" class="btn btn-secondary btn-sm" style="width: 100%; margin-top: 0;">
                 <span class="material-symbols-outlined">info</span> Extra Info
@@ -178,6 +190,34 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
             movie.favorite = newStatus;
             if (favoriteIcon) favoriteIcon.textContent = newStatus ? 'star_shine' : 'star';
             if (currentOnUpdate) await currentOnUpdate();
+        };
+    }
+
+    const toggleExactRow = document.getElementById('toggleExactRow');
+    if (toggleExactRow && window.activeTermFilter && !isInTrash) {
+        toggleExactRow.onclick = async () => {
+            // Alternar exact para el término activo
+            const term = window.activeTermFilter;
+            const termIndex = movie.searchTerms.findIndex(t => t.term === term);
+            if (termIndex !== -1) {
+                const newExact = !movie.searchTerms[termIndex].exact;
+                movie.searchTerms[termIndex].exact = newExact;
+                
+                // Guardar cambios en la base de datos
+                const db = await import('./db.js').then(m => m.openDB());
+                const transaction = db.transaction(['movies'], 'readwrite');
+                const store = transaction.objectStore('movies');
+                movie.lastUpdated = new Date().toISOString();
+                await new Promise((resolve, reject) => {
+                    const req = store.put(movie);
+                    req.onsuccess = () => resolve();
+                    req.onerror = () => reject(req.error);
+                });
+                
+                // Cerrar modal y refrescar vista
+                closeModal();
+                if (currentOnUpdate) await currentOnUpdate();
+            }
         };
     }
 

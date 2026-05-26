@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con edición/eliminación de términos corregida)
+// js/app.js - Plato App (con edición/eliminación de términos corregida y window.activeTermFilter)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -37,6 +37,11 @@ let currentSort = 'date';
 let searchOrder = 'relevance';
 let searchDuration = 'long';
 let searchCategoryFilter = 'movies';
+
+// ---------------------- Helper: sincronizar window.activeTermFilter ----------------------
+function syncWindowTermFilter() {
+    window.activeTermFilter = activeTermFilter;
+}
 
 // ---------------------- Helper: close panels ----------------------
 function closeAllPanels() {
@@ -240,6 +245,7 @@ async function editTermGlobally(oldTerm, newTerm) {
     if (oldTerm === newTerm || !newTerm.trim()) return;
     await renameTermInAllMovies(oldTerm, newTerm.trim());
     if (activeTermFilter === oldTerm) activeTermFilter = newTerm.trim();
+    syncWindowTermFilter();
     await refreshAvailableTerms();
     await loadAndDisplayAll();
 }
@@ -269,11 +275,9 @@ async function deleteMoviesWithTermFromCurrentView(term) {
         }
     }
     
-    // Filtrar películas que contienen el término a eliminar
     const moviesWithTerm = moviesToProcess.filter(movie => {
         const terms = movie.searchTerms || [];
         if (onlyRelated) {
-            // Solo películas donde el término existe Y es exact === false
             return terms.some(t => t.term === term && t.exact === false);
         } else {
             return terms.some(t => t.term === term);
@@ -299,7 +303,6 @@ async function deleteMoviesWithTermFromCurrentView(term) {
             await permanentlyDeleteMovie(movie.youtubeId);
         } else {
             if (onlyRelated) {
-                // Solo eliminar el término donde exact === false, conservar los exactos
                 const newTerms = movie.searchTerms.filter(t => !(t.term === term && t.exact === false));
                 movie.searchTerms = newTerms;
                 movie.lastUpdated = new Date().toISOString();
@@ -315,6 +318,7 @@ async function deleteMoviesWithTermFromCurrentView(term) {
     }
     
     if (activeTermFilter === term && !onlyRelated) activeTermFilter = null;
+    syncWindowTermFilter();
     await refreshAvailableTerms();
     await loadAndDisplayAll();
 }
@@ -343,6 +347,7 @@ function renderTermsBar(termsArray = null) {
             if (e.target.classList.contains('term-edit') || e.target.classList.contains('term-delete')) return;
             if (activeTermFilter === term) activeTermFilter = null;
             else activeTermFilter = term;
+            syncWindowTermFilter();
             loadAndDisplayAll();
         });
     });
@@ -393,6 +398,7 @@ function updateFilterButtonsUI() {
 
 function toggleWatchingFilter() {
     activeTermFilter = null;
+    syncWindowTermFilter();
     activeRelatedFilter = false;
     if (activeTrashFilter) {
         activeTrashFilter = false;
@@ -408,6 +414,7 @@ function toggleWatchingFilter() {
 
 function toggleFavoriteFilter() {
     activeTermFilter = null;
+    syncWindowTermFilter();
     activeRelatedFilter = false;
     if (activeTrashFilter) {
         activeTrashFilter = false;
@@ -423,6 +430,7 @@ function toggleFavoriteFilter() {
 
 function toggleTrashFilter() {
     activeTermFilter = null;
+    syncWindowTermFilter();
     activeRelatedFilter = false;
     activeTrashFilter = !activeTrashFilter;
     if (activeTrashFilter) {
@@ -436,6 +444,7 @@ function toggleTrashFilter() {
 
 function toggleRelatedFilter() {
     activeTermFilter = null;
+    syncWindowTermFilter();
     activeTrashFilter = false;
     activeRelatedFilter = !activeRelatedFilter;
     if (activeRelatedFilter) {
@@ -482,7 +491,6 @@ async function loadAndDisplayAll() {
                 return terms.some(t => t.exact === false);
             });
         } else {
-            // Vista general: solo películas con al menos un término exacto (true)
             allMovies = allMovies.filter(movie => {
                 const terms = movie.searchTerms || [];
                 return terms.some(t => t.exact === true);
@@ -596,6 +604,7 @@ searchBtn.onclick = async () => {
         updateFilterButtonsUI();
     }
     activeTermFilter = null;
+    syncWindowTermFilter();
     
     let query = searchInput.value.trim();
     let effectiveQuery = query;
