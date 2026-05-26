@@ -517,11 +517,27 @@ export async function loadAndDisplayAll() {
         if (activeRelatedFilter) {
             allMovies = allMovies.filter(movie => {
                 const terms = movie.searchTerms || [];
+
+                if (activeTermFilter) {
+                    return terms.some(t =>
+                        t.term === activeTermFilter &&
+                        t.exact === false
+                    );
+                }
+
                 return terms.some(t => t.exact === false);
             });
         } else {
             allMovies = allMovies.filter(movie => {
                 const terms = movie.searchTerms || [];
+
+                if (activeTermFilter) {
+                    return terms.some(t =>
+                        t.term === activeTermFilter &&
+                        t.exact === true
+                    );
+                }
+
                 return terms.some(t => t.exact === true);
             });
         }
