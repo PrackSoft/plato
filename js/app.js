@@ -538,6 +538,7 @@ async function loadAndDisplayAll() {
         }
         termsToShow = Array.from(allTerms).sort();
     }
+    console.log('termsToShow antes de render:', termsToShow);
     renderTermsBar(termsToShow);
 }
 
