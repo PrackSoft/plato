@@ -217,6 +217,7 @@ async function refreshAvailableTerms() {
             }
         });
     }
+    console.log('Términos actualizados:', availableTerms);
     availableTerms = Array.from(termsSet).sort();
 }
 
