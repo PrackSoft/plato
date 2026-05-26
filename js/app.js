@@ -555,7 +555,13 @@ async function loadAndDisplayAll() {
                 if (t.term) allTerms.add(t.term);
             });
         }
-        termsToShow = Array.from(allTerms).sort();
+        // Filtrar términos que realmente tengan al menos una película en allMovies
+        const validTerms = Array.from(allTerms).filter(term => {
+            return allMovies.some(movie => {
+                return (movie.searchTerms || []).some(t => t.term === term);
+            });
+        });
+        termsToShow = validTerms.sort();
     }
     console.log('termsToShow antes de render:', termsToShow);
     renderTermsBar(termsToShow);
