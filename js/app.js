@@ -1,758 +1,318 @@
-// js/app.js - Plato App (con verificación de términos sin hijos después de toggleExact)
-import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
-import { searchYouTube } from './api/youtube.js';
-import { renderMovies } from './render.js';
-import { SEARCH_OPTIONS } from './channels.js';
-import { initModal, openModal } from './modal.js';
+// js/modal.js (con regeneración de vista después de toggleExact)
+import { getExtraInfo, toggleExact } from './db.js';
+import { refreshAvailableTerms, loadAndDisplayAll } from './app.js';
 
-// ---------------------- DOM elements ----------------------
-const searchInput = document.getElementById('searchInput');
-const searchBtn = document.getElementById('searchBtn');
-const resultsGrid = document.getElementById('resultsGrid');
-const searchInBtn = document.getElementById('searchInBtn');
-const searchInPanel = document.getElementById('searchInPanel');
-const filterWatchingBtn = document.getElementById('filterWatchingBtn');
-const filterFavoriteBtn = document.getElementById('filterFavoriteBtn');
-const filterTrashBtn = document.getElementById('filterTrashBtn');
-const filterRelatedBtn = document.getElementById('filterRelatedBtn');
-const termsBar = document.getElementById('termsBar');
-const toggleTermsBtn = document.getElementById('toggleTermsBtn');
-const settingsBtn = document.getElementById('settingsBtn');
-const settingsSidebar = document.getElementById('settingsSidebar');
-const sidebarOverlay = document.getElementById('sidebarOverlay');
-const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+let currentMovie = null;
+let currentOnUpdate = null;
+let currentMovieSource = null;
+let currentTrashFunctions = null;
+let extraInfoVisible = false;
 
-// ---------------------- Global state ----------------------
-let dbReady = openDB();
-let currentSearchOptionId = "UCuVPpxrm2VAgpH3Ktln4HXg";
+export function initModal(onUpdateCallback) {
+    currentOnUpdate = onUpdateCallback;
+    const modal = document.getElementById('movieModal');
+    const closeBtn = document.querySelector('.close-modal');
+    const watchBtn = document.getElementById('watchMovieBtn');
 
-let activeWatchingFilter = false;
-let activeFavoriteFilter = false;
-let activeTrashFilter = false;
-let activeRelatedFilter = false;
-let activeTermFilter = null;
-let availableTerms = [];
-let currentSort = 'date';
-
-let searchOrder = 'relevance';
-let searchDuration = 'long';
-let searchCategoryFilter = 'movies';
-
-// ---------------------- Helper: sincronizar window.activeTermFilter ----------------------
-function syncWindowTermFilter() {
-    window.activeTermFilter = activeTermFilter;
+    if (closeBtn) closeBtn.onclick = () => closeModal();
+    if (watchBtn) watchBtn.onclick = () => {
+        if (currentMovie && currentMovie.url) window.open(currentMovie.url);
+    };
+    window.onclick = (e) => { if (e.target === modal) closeModal(); };
 }
 
-// ---------------------- Helper: close panels ----------------------
-function closeAllPanels() {
-    searchInPanel.classList.add('hidden');
+export async function openModal(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source = 'main') {
+    currentMovie = movie;
+    currentMovieSource = source;
+    currentTrashFunctions = { moveToTrash, restoreFromTrash, permanentlyDelete };
+    const modal = document.getElementById('movieModal');
+    const modalBody = document.getElementById('modalBody');
+    if (!modal || !modalBody) return;
+
+    modalBody.innerHTML = renderModalContent(movie, source);
+    modal.style.display = 'flex';
+    extraInfoVisible = false;
+
+    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
 }
 
-function closePanelWithDelay(panel) {
-    setTimeout(() => panel.classList.add('hidden'), 150);
+function closeModal() {
+    const modal = document.getElementById('movieModal');
+    if (modal) modal.style.display = 'none';
+    currentMovie = null;
+    currentMovieSource = null;
+    currentTrashFunctions = null;
+    extraInfoVisible = false;
 }
 
-// ---------------------- Build Search In panel ----------------------
-function buildSearchInPanel() {
-    searchInPanel.innerHTML = '';
+function renderModalContent(movie, source) {
+    const isInTrash = (source === 'trash');
+    const watchingIconName = movie.watching ? 'visibility' : 'visibility_off';
+    const favoriteIconName = movie.favorite ? 'star_shine' : 'star';
+    
+    const showExactToggle = window.activeTermFilter && !isInTrash;
+    const exactForCurrentTerm = showExactToggle && movie.searchTerms?.some(t => t.term === window.activeTermFilter && t.exact === true);
+    const toggleIcon = exactForCurrentTerm ? 'graph_4' : 'subscriptions';
+    const toggleLabel = exactForCurrentTerm ? 'Move to Related' : 'Move to Exact';
+    
+    const tagsHtml = movie.tags && Array.isArray(movie.tags) && movie.tags.length > 0
+        ? `<p><strong>Tags:</strong> ${escapeHtml(movie.tags.join(', '))}</p>`
+        : '';
 
-    const header = document.createElement('div');
-    header.className = 'dropdown-header';
-    header.textContent = 'Search in';
-    searchInPanel.appendChild(header);
-
-    function setExclusive(clickedOptionId) {
-        currentSearchOptionId = clickedOptionId;
-        updateSearchInButtonText();
-        closePanelWithDelay(searchInPanel);
-    }
-
-    function updateSearchInButtonText() {
-        const option = SEARCH_OPTIONS.find(opt => opt.id === currentSearchOptionId);
-        const label = option ? option.name : 'Select';
-        searchInBtn.innerHTML = `
-            <span class="material-symbols-outlined">subscriptions</span>
-            ${label}
-            <span class="material-symbols-outlined">arrow_drop_down</span>
-        `;
-    }
-
-    SEARCH_OPTIONS.forEach(option => {
-        const label = document.createElement('label');
-        const radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.name = 'searchIn';
-        radio.value = option.id;
-        radio.checked = (currentSearchOptionId === option.id);
-        radio.addEventListener('change', () => {
-            if (radio.checked) {
-                setExclusive(option.id);
-            }
-        });
-        label.appendChild(radio);
-        label.appendChild(document.createTextNode(option.name));
-        searchInPanel.appendChild(label);
-    });
-
-    updateSearchInButtonText();
-}
-
-// ---------------------- Sidebar functions (settings) ----------------------
-function openSettingsSidebar() {
-    settingsSidebar.classList.remove('hidden');
-    sidebarOverlay.classList.remove('hidden');
-    const orderRadios = document.querySelectorAll('input[name="searchOrder"]');
-    orderRadios.forEach(radio => {
-        if (radio.value === searchOrder) radio.checked = true;
-    });
-    const durationRadios = document.querySelectorAll('input[name="searchDuration"]');
-    durationRadios.forEach(radio => {
-        if (radio.value === searchDuration) radio.checked = true;
-    });
-    const categoryRadios = document.querySelectorAll('input[name="searchCategory"]');
-    categoryRadios.forEach(radio => {
-        if (radio.value === searchCategoryFilter) radio.checked = true;
-    });
-}
-function closeSettingsSidebar() {
-    settingsSidebar.classList.add('hidden');
-    sidebarOverlay.classList.add('hidden');
-}
-settingsBtn.addEventListener('click', openSettingsSidebar);
-closeSidebarBtn.addEventListener('click', closeSettingsSidebar);
-sidebarOverlay.addEventListener('click', closeSettingsSidebar);
-
-function saveSearchOrder(value) {
-    searchOrder = value;
-    localStorage.setItem('plato_searchOrder', value);
-}
-function saveSearchDuration(value) {
-    searchDuration = value;
-    localStorage.setItem('plato_searchDuration', value);
-}
-function saveSearchCategory(value) {
-    searchCategoryFilter = value;
-    localStorage.setItem('plato_searchCategory', value);
-}
-function loadSearchPreferences() {
-    const savedOrder = localStorage.getItem('plato_searchOrder');
-    if (savedOrder && (savedOrder === 'relevance' || savedOrder === 'viewCount' || savedOrder === 'rating')) {
-        searchOrder = savedOrder;
-    }
-    const savedDuration = localStorage.getItem('plato_searchDuration');
-    if (savedDuration && (savedDuration === 'short' || savedDuration === 'medium' || savedDuration === 'long' || savedDuration === 'any')) {        
-        searchDuration = savedDuration;
-    }
-    const savedCategory = localStorage.getItem('plato_searchCategory');
-    if (savedCategory && (savedCategory === 'movies' || savedCategory === 'all')) {
-        searchCategoryFilter = savedCategory;
-    }
-}
-
-function buildSettingsSidebarContent() {
-    let sidebarContent = document.querySelector('.sidebar-content');
-    if (!sidebarContent) {
-        sidebarContent = document.createElement('div');
-        sidebarContent.className = 'sidebar-content';
-        settingsSidebar.appendChild(sidebarContent);
-    }
-    sidebarContent.innerHTML = `
-        <div class="sidebar-section">
-            <h3>Search Filters</h3>
-            <div class="settings-group">
-                <label class="settings-label">Content type:</label>
-                <div class="radio-group">
-                    <label><input type="radio" name="searchCategory" value="movies"> Include only movies</label>
-                    <label><input type="radio" name="searchCategory" value="all"> Include non‑movies</label>
-                </div>
+    return `
+        <div class="modal-header">
+            <div class="modal-spacer"></div>
+            <h2>${escapeHtml(movie.title)}</h2>
+            <div class="modal-spacer"></div>
+        </div>
+        <img class="modal-image" src="${movie.imageUrl}" alt="${movie.title}">
+        <p><strong>YouTube Premiere:</strong> ${movie.publishedAt ? new Date(movie.publishedAt).toLocaleDateString() : 'Unknown'}</p>
+        <div class="modal-description">${escapeHtml(movie.description || 'No Description')}</div>
+        ${tagsHtml}
+        <p><strong>Duration:</strong> ${formatDuration(movie.duration)}</p>
+        <p><strong>Saved on:</strong> ${new Date(movie.dateSaved).toLocaleString()}</p>
+        ${isInTrash ? `<p><strong>Deleted on:</strong> ${movie.deletedAt ? new Date(movie.deletedAt).toLocaleString() : 'Unknown'}</p>` : ''}
+        
+        <div class="modal-section">
+            <strong>Search Terms:</strong>
+            <div id="termsList" class="terms-list">
+                ${(movie.searchTerms || []).map(t => `
+                    <span class="term-chip">
+                        ${escapeHtml(t.term)}
+                        ${!isInTrash ? `<span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>` : ''}
+                    </span>
+                `).join('')}
             </div>
-            <div class="settings-group">
-                <label class="settings-label">Order by:</label>
-                <div class="radio-group">
-                    <label><input type="radio" name="searchOrder" value="relevance"> Best match</label>
-                    <label><input type="radio" name="searchOrder" value="viewCount"> Most viewed</label>
-                    <label><input type="radio" name="searchOrder" value="rating"> Most liked</label>
-                </div>
+            ${!isInTrash ? `
+            <div class="add-term-row">
+                <input type="text" id="newTermInput" class="modal-input" placeholder="Add new term">
+                <span id="addTermBtn" class="modal-add-icon" title="Add term">
+                    <span class="material-symbols-outlined">add</span>
+                </span>
             </div>
-            <div class="settings-group">
-                <label class="settings-label">Duration:</label>
-                <div class="radio-group">
-                    <label><input type="radio" name="searchDuration" value="long"> Long (&gt;20 min)</label>
-                    <label><input type="radio" name="searchDuration" value="medium"> Medium (4-20 min)</label>
-                    <label><input type="radio" name="searchDuration" value="short"> Short (&lt;4 min)</label>
-                    <label><input type="radio" name="searchDuration" value="any"> Any duration</label>
-                </div>
+            ` : ''}
+        </div>
+
+        <div class="modal-section toggle-row ${isInTrash ? 'disabled' : ''}" id="watchingToggleRow">
+            <span>Watching:</span>
+            <span class="material-symbols-outlined" id="modalWatchingIcon">${watchingIconName}</span>
+        </div>
+
+        <div class="modal-section toggle-row ${isInTrash ? 'disabled' : ''}" id="favoriteToggleRow">
+            <span>Favorite:</span>
+            <span class="material-symbols-outlined" id="modalFavoriteIcon">${favoriteIconName}</span>
+        </div>
+
+        ${!isInTrash ? `
+        <div class="modal-section toggle-row" id="moveToTrashRow">
+            <span>Move to Trash:</span>
+            <span class="material-symbols-outlined">delete</span>
+        </div>
+        ` : `
+        <div class="modal-section trash-actions">
+            <div class="toggle-row" id="restoreRow">
+                <span>Restore:</span>
+                <span class="material-symbols-outlined">restore_from_trash</span>
+            </div>
+            <div class="toggle-row" id="permanentDeleteRow">
+                <span>Delete Permanently:</span>
+                <span class="material-symbols-outlined">delete_forever</span>
             </div>
         </div>
-    `;
+        `}
 
-    const orderRadios = document.querySelectorAll('input[name="searchOrder"]');
-    orderRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            if (e.target.checked) saveSearchOrder(e.target.value);
-        });
-    });
-    const durationRadios = document.querySelectorAll('input[name="searchDuration"]');
-    durationRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            if (e.target.checked) saveSearchDuration(e.target.value);
-        });
-    });
-    const categoryRadios = document.querySelectorAll('input[name="searchCategory"]');
-    categoryRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            if (e.target.checked) saveSearchCategory(e.target.value);
-        });
-    });
-}
+        ${showExactToggle ? `
+        <div class="modal-section toggle-row" id="toggleExactRow">
+            <span>${toggleLabel}:</span>
+            <span class="material-symbols-outlined">${toggleIcon}</span>
+        </div>
+        ` : ''}
 
-// ---------------------- Terms Bar ----------------------
-async function refreshAvailableTerms() {
-    const allMovies = await getAllMovies();
-    const termsSet = new Set();
-    for (const movie of allMovies) {
-        (movie.searchTerms || []).forEach(t => {
-            if (t && typeof t === 'object' && t.term) {
-                if (activeRelatedFilter) {
-                    if (t.exact === false) termsSet.add(t.term);
-                } else {
-                    if (t.exact === true) termsSet.add(t.term);
-                }
-            }
-        });
-    }
-    availableTerms = Array.from(termsSet).sort();
-    console.log('Términos actualizados:', availableTerms);
-}
-
-// Función para verificar si un término tiene al menos un hijo en el contexto actual
-async function termHasChildren(term) {
-    const allMovies = await getAllMovies();
-    for (const movie of allMovies) {
-        const found = (movie.searchTerms || []).some(t => {
-            if (t && typeof t === 'object' && t.term === term) {
-                if (activeRelatedFilter) {
-                    return t.exact === false;
-                } else {
-                    return t.exact === true;
-                }
-            }
-            return false;
-        });
-        if (found) return true;
-    }
-    return false;
-}
-
-async function removeTermFromAllMovies(term) {
-    const db = await openDB();
-    const allMovies = await getAllMovies();
-    const transaction = db.transaction(['movies'], 'readwrite');
-    const store = transaction.objectStore('movies');
-    for (const movie of allMovies) {
-        if (movie.searchTerms) {
-            const newTerms = movie.searchTerms.filter(t => t.term !== term);
-            if (newTerms.length !== movie.searchTerms.length) {
-                movie.searchTerms = newTerms;
-                movie.lastUpdated = new Date().toISOString();
-                await new Promise((resolve, reject) => {
-                    const req = store.put(movie);
-                    req.onsuccess = () => resolve();
-                    req.onerror = () => reject(req.error);
-                });
-            }
-        }
-    }
-}
-
-async function editTermGlobally(oldTerm, newTerm) {
-    if (oldTerm === newTerm || !newTerm.trim()) return;
-    await renameTermInAllMovies(oldTerm, newTerm.trim());
-    if (activeTermFilter === oldTerm) activeTermFilter = newTerm.trim();
-    syncWindowTermFilter();
-    await refreshAvailableTerms();
-    await loadAndDisplayAll();
-}
-
-async function deleteMoviesWithTermFromCurrentView(term) {
-    let moviesToProcess;
-    let onlyRelated = false;
-    
-    if (activeTrashFilter) {
-        moviesToProcess = await getTrashMovies();
-    } else {
-        moviesToProcess = await getAllMovies();
-        if (activeTermFilter) {
-            moviesToProcess = moviesToProcess.filter(movie => {
-                const terms = movie.searchTerms || [];
-                return terms.some(t => t.term === activeTermFilter);
-            });
-        }
-        if (activeWatchingFilter) moviesToProcess = moviesToProcess.filter(movie => movie.watching === true);
-        if (activeFavoriteFilter) moviesToProcess = moviesToProcess.filter(movie => movie.favorite === true);
-        if (activeRelatedFilter) {
-            onlyRelated = true;
-            moviesToProcess = moviesToProcess.filter(movie => {
-                const terms = movie.searchTerms || [];
-                return terms.some(t => t.exact === false);
-            });
-        }
-    }
-    
-    const moviesWithTerm = moviesToProcess.filter(movie => {
-        const terms = movie.searchTerms || [];
-        if (onlyRelated) {
-            return terms.some(t => t.term === term && t.exact === false);
-        } else {
-            return terms.some(t => t.term === term);
-        }
-    });
-    
-    if (moviesWithTerm.length === 0) return;
-
-    const confirmMsg = activeTrashFilter
-        ? `Permanently delete ${moviesWithTerm.length} movie(s) with term "${term}" from trash?`
-        : onlyRelated
-            ? `Remove term "${term}" from ${moviesWithTerm.length} related movie(s) (exact matches will be kept)`
-            : `Move ${moviesWithTerm.length} movie(s) with term "${term}" to trash?`;
-    
-    if (!confirm(confirmMsg)) return;
-
-    const db = await openDB();
-    const transaction = db.transaction(['movies'], 'readwrite');
-    const store = transaction.objectStore('movies');
-    
-    for (const movie of moviesWithTerm) {
-        if (activeTrashFilter) {
-            await permanentlyDeleteMovie(movie.youtubeId);
-        } else {
-            if (onlyRelated) {
-                const newTerms = movie.searchTerms.filter(t => !(t.term === term && t.exact === false));
-                movie.searchTerms = newTerms;
-                movie.lastUpdated = new Date().toISOString();
-                await new Promise((resolve, reject) => {
-                    const req = store.put(movie);
-                    req.onsuccess = () => resolve();
-                    req.onerror = () => reject(req.error);
-                });
-            } else {
-                await moveMovieToTrash(movie.youtubeId);
-            }
-        }
-    }
-    
-    if (activeTermFilter === term && !onlyRelated) activeTermFilter = null;
-    syncWindowTermFilter();
-    await refreshAvailableTerms();
-    await loadAndDisplayAll();
-}
-
-function renderTermsBar(termsArray = null) {
-    const terms = termsArray !== null ? termsArray : availableTerms;
-    if (!terms || terms.length === 0) {
-        termsBar.innerHTML = '<div class="terms-placeholder">No search terms yet</div>';
-        return;
-    }
-    const html = terms.map(term => {
-        const termStr = String(term);
-        return `
-            <button class="btn btn-secondary btn-sm ${activeTermFilter === termStr ? 'active' : ''}" data-term="${escapeHtml(termStr)}">
-                ${escapeHtml(termStr)}
-                <span class="term-edit material-symbols-outlined" data-term="${escapeHtml(termStr)}" title="Edit term globally">edit</span>
-                <span class="term-delete" data-term="${escapeHtml(termStr)}" title="Delete term from all movies">✖</span>
+        <div class="modal-section">
+            <button id="toggleExtraInfoBtn" class="btn btn-secondary btn-sm" style="width: 100%; margin-top: 0;">
+                <span class="material-symbols-outlined">info</span> Extra Info
             </button>
-        `;
-    }).join('');
-    termsBar.innerHTML = html;
+            <div id="extraInfoPanel" class="extra-info-panel hidden" style="margin-top: 12px;"></div>
+        </div>
+    `;
+}
 
-    document.querySelectorAll('#termsBar .btn').forEach(btn => {
-        const term = btn.dataset.term;
-        btn.addEventListener('click', (e) => {
-            if (e.target.classList.contains('term-edit') || e.target.classList.contains('term-delete')) return;
-            if (activeTermFilter === term) activeTermFilter = null;
-            else activeTermFilter = term;
-            syncWindowTermFilter();
-            loadAndDisplayAll();
-        });
-    });
+async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source) {
+    const isInTrash = (source === 'trash');
 
-    document.querySelectorAll('.term-edit').forEach(editSpan => {
-        editSpan.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            const oldTerm = editSpan.dataset.term;
-            const newTerm = prompt(`Edit term "${oldTerm}":`, oldTerm);
-            if (newTerm && newTerm !== oldTerm) {
-                await editTermGlobally(oldTerm, newTerm);
+    const moveToTrashRow = document.getElementById('moveToTrashRow');
+    if (moveToTrashRow && !isInTrash) {
+        moveToTrashRow.onclick = async () => {
+            if (confirm('Move this movie to trash?')) {
+                await moveToTrash(movie.youtubeId);
+                closeModal();
+                if (currentOnUpdate) await currentOnUpdate();
             }
-        });
-    });
-
-    document.querySelectorAll('.term-delete').forEach(deleteSpan => {
-        deleteSpan.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            const term = deleteSpan.dataset.term;
-            await deleteMoviesWithTermFromCurrentView(term);
-        });
-    });
-}
-
-// ---------------------- Toggle Terms Bar visibility ----------------------
-if (toggleTermsBtn && termsBar) {
-    toggleTermsBtn.addEventListener('click', () => {
-        const isHidden = termsBar.classList.toggle('hidden');
-        if (isHidden) {
-            toggleTermsBtn.classList.remove('active');
-        } else {
-            toggleTermsBtn.classList.add('active');
-        }
-    });
-}
-
-// ---------------------- Filter buttons ----------------------
-function updateFilterButtonsUI() {
-    if (activeWatchingFilter) filterWatchingBtn.classList.add('active');
-    else filterWatchingBtn.classList.remove('active');
-    if (activeFavoriteFilter) filterFavoriteBtn.classList.add('active');
-    else filterFavoriteBtn.classList.remove('active');
-    if (activeTrashFilter) filterTrashBtn.classList.add('active');
-    else filterTrashBtn.classList.remove('active');
-    if (activeRelatedFilter && filterRelatedBtn) filterRelatedBtn.classList.add('active');
-    else if (filterRelatedBtn) filterRelatedBtn.classList.remove('active');
-}
-
-function toggleWatchingFilter() {
-    activeTermFilter = null;
-    syncWindowTermFilter();
-    activeRelatedFilter = false;
-    if (activeTrashFilter) {
-        activeTrashFilter = false;
-    }
-    activeWatchingFilter = !activeWatchingFilter;
-    if (activeWatchingFilter) {
-        activeFavoriteFilter = false;
-        activeRelatedFilter = false;
-    }
-    updateFilterButtonsUI();
-    loadAndDisplayAll();
-}
-
-function toggleFavoriteFilter() {
-    activeTermFilter = null;
-    syncWindowTermFilter();
-    activeRelatedFilter = false;
-    if (activeTrashFilter) {
-        activeTrashFilter = false;
-    }
-    activeFavoriteFilter = !activeFavoriteFilter;
-    if (activeFavoriteFilter) {
-        activeWatchingFilter = false;
-        activeRelatedFilter = false;
-    }
-    updateFilterButtonsUI();
-    loadAndDisplayAll();
-}
-
-function toggleTrashFilter() {
-    activeTermFilter = null;
-    syncWindowTermFilter();
-    activeRelatedFilter = false;
-    activeTrashFilter = !activeTrashFilter;
-    if (activeTrashFilter) {
-        activeWatchingFilter = false;
-        activeFavoriteFilter = false;
-        activeRelatedFilter = false;
-    }
-    updateFilterButtonsUI();
-    loadAndDisplayAll();
-}
-
-function toggleRelatedFilter() {
-    activeTermFilter = null;
-    syncWindowTermFilter();
-    activeTrashFilter = false;
-    activeRelatedFilter = !activeRelatedFilter;
-    if (activeRelatedFilter) {
-        activeWatchingFilter = false;
-        activeFavoriteFilter = false;
-    }
-    updateFilterButtonsUI();
-    loadAndDisplayAll();
-}
-
-if (filterWatchingBtn) filterWatchingBtn.addEventListener('click', toggleWatchingFilter);
-if (filterFavoriteBtn) filterFavoriteBtn.addEventListener('click', toggleFavoriteFilter);
-if (filterTrashBtn) filterTrashBtn.addEventListener('click', toggleTrashFilter);
-if (filterRelatedBtn) filterRelatedBtn.addEventListener('click', toggleRelatedFilter);
-
-// ---------------------- Load and display ----------------------
-async function loadAndDisplayAll() {
-    await dbReady;
-    let allMovies;
-
-    if (activeTrashFilter) {
-        allMovies = await getTrashMovies();
-        if (activeTermFilter) {
-            allMovies = allMovies.filter(movie => {
-                const terms = movie.searchTerms || [];
-                return terms.some(t => t.term === activeTermFilter);
-            });
-        }
-    } else {
-        allMovies = await getAllMovies();
-        
-        if (activeTermFilter) {
-            allMovies = allMovies.filter(movie => {
-                const terms = movie.searchTerms || [];
-                return terms.some(t => t.term === activeTermFilter);
-            });
-        }
-        
-        if (activeWatchingFilter) allMovies = allMovies.filter(movie => movie.watching === true);
-        if (activeFavoriteFilter) allMovies = allMovies.filter(movie => movie.favorite === true);
-        if (activeRelatedFilter) {
-            allMovies = allMovies.filter(movie => {
-                const terms = movie.searchTerms || [];
-                return terms.some(t => t.exact === false);
-            });
-        } else {
-            allMovies = allMovies.filter(movie => {
-                const terms = movie.searchTerms || [];
-                return terms.some(t => t.exact === true);
-            });
-        }
+        };
     }
 
-    let title;
-    if (activeTrashFilter) {
-        title = `Trash (${allMovies.length})`;
-    } else if (activeWatchingFilter) {
-        title = `Watching (${allMovies.length})`;
-    } else if (activeFavoriteFilter) {
-        title = `Favorites (${allMovies.length})`;
-    } else if (activeRelatedFilter) {
-        title = `Related results (${allMovies.length})`;
-    } else if (activeTermFilter) {
-        title = `Search term: "${activeTermFilter}" (${allMovies.length})`;
-    } else {
-        title = `Exact match (${allMovies.length})`;
+    const restoreRow = document.getElementById('restoreRow');
+    if (restoreRow && isInTrash) {
+        restoreRow.onclick = async () => {
+            await restoreFromTrash(movie.youtubeId);
+            closeModal();
+            if (currentOnUpdate) await currentOnUpdate();
+        };
     }
 
-    const onSortChange = (newSort) => {
-        currentSort = newSort;
-        loadAndDisplayAll();
-    };
-
-    renderMovies(resultsGrid, allMovies, title, activeTrashFilter ? 'trash' : 'main', currentSort, onSortChange);
-
-    let termsToShow;
-    if (activeTermFilter) {
-        termsToShow = [activeTermFilter];
-    } else {
-        const allTerms = new Set();
-        for (const movie of allMovies) {
-            const terms = movie.searchTerms || [];
-            terms.forEach(t => {
-                if (t.term) allTerms.add(t.term);
-            });
-        }
-        // Filtrar términos que realmente tengan al menos una película en allMovies
-        const validTerms = Array.from(allTerms).filter(term => {
-            return allMovies.some(movie => {
-                return (movie.searchTerms || []).some(t => t.term === term);
-            });
-        });
-        termsToShow = validTerms.sort();
-    }
-    console.log('termsToShow antes de render:', termsToShow);
-    renderTermsBar(termsToShow);
-}
-
-// ---------------------- Modal helpers ----------------------
-async function updateMovieTerms(youtubeId, newTerms) {
-    const db = await openDB();
-    const transaction = db.transaction(['movies'], 'readwrite');
-    const store = transaction.objectStore('movies');
-    const movie = await new Promise((resolve, reject) => {
-        const req = store.get(youtubeId);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-    });
-    if (movie) {
-        movie.searchTerms = newTerms.map(term => ({ term: String(term), exact: true }));
-        movie.lastUpdated = new Date().toISOString();
-        await new Promise((resolve, reject) => {
-            const req = store.put(movie);
-            req.onsuccess = () => resolve();
-            req.onerror = () => reject(req.error);
-        });
-        await refreshAvailableTerms();
-        if (activeTermFilter && !movie.searchTerms.some(t => t.term === activeTermFilter)) {
-            loadAndDisplayAll();
-        }
-    }
-}
-
-async function toggleFavorite(youtubeId) {
-    const db = await openDB();
-    const transaction = db.transaction(['movies'], 'readwrite');
-    const store = transaction.objectStore('movies');
-    const movie = await new Promise((resolve, reject) => {
-        const req = store.get(youtubeId);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-    });
-    if (movie) {
-        movie.favorite = !movie.favorite;
-        movie.lastUpdated = new Date().toISOString();
-        await new Promise((resolve, reject) => {
-            const req = store.put(movie);
-            req.onsuccess = () => resolve(movie.favorite);
-            req.onerror = () => reject(req.error);
-        });
-        return movie.favorite;
-    }
-    return false;
-}
-
-window.openMovieModal = (movie, source = 'main') => {
-    openModal(movie, {
-        updateMovieTerms,
-        toggleWatching,
-        toggleFavorite,
-        moveToTrash: moveMovieToTrash,
-        restoreFromTrash: restoreMovieFromTrash,
-        permanentlyDelete: permanentlyDeleteMovie
-    }, source);
-};
-
-// ---------------------- Search ----------------------
-searchBtn.onclick = async () => {
-    if (activeTrashFilter || activeWatchingFilter || activeFavoriteFilter || activeRelatedFilter) {
-        activeTrashFilter = false;
-        activeWatchingFilter = false;
-        activeFavoriteFilter = false;
-        activeRelatedFilter = false;
-        updateFilterButtonsUI();
-    }
-    activeTermFilter = null;
-    syncWindowTermFilter();
-    
-    let query = searchInput.value.trim();
-    let effectiveQuery = query;
-    let customTermName = null;
-    
-    if (!query) {
-        if (searchOrder === 'viewCount') {
-            effectiveQuery = 'movie';
-            customTermName = 'Most viewed';
-        } else if (searchOrder === 'rating') {
-            effectiveQuery = 'movie';
-            customTermName = 'Most rated';
-        } else {
-            resultsGrid.innerHTML = '<div class="stats">Enter a search term</div>';
-            return;
-        }
-    }
-    
-    const selectedOption = SEARCH_OPTIONS.find(opt => opt.id === currentSearchOptionId);
-    if (!selectedOption) return;
-    
-    if (selectedOption.type === 'api') {
-        resultsGrid.innerHTML = '<div class="stats">Searching YouTube...</div>';
-        try {
-            const channelId = selectedOption.id === 'plato_db' ? null : selectedOption.id;
-            const moviesFromAPI = await searchYouTube(effectiveQuery, channelId, searchOrder, searchDuration, searchCategoryFilter);
-            if (moviesFromAPI.length === 0) {
-                resultsGrid.innerHTML = '<div class="stats">No movies found on YouTube</div>';
-                return;
+    const permanentDeleteRow = document.getElementById('permanentDeleteRow');
+    if (permanentDeleteRow && isInTrash) {
+        permanentDeleteRow.onclick = async () => {
+            if (confirm('Permanently delete this movie? This action cannot be undone.')) {
+                await permanentlyDelete(movie.youtubeId);
+                closeModal();
+                if (currentOnUpdate) await currentOnUpdate();
             }
-            const termToSave = customTermName ? customTermName : (query || effectiveQuery);
-            for (const movie of moviesFromAPI) {
-                const searchTermLower = termToSave.toLowerCase();
-                const titleMatch = movie.title && movie.title.toLowerCase().includes(searchTermLower);
-                const descMatch = movie.description && movie.description.toLowerCase().includes(searchTermLower);
-                const tagsMatch = movie.tags && Array.isArray(movie.tags) && movie.tags.some(tag => tag.toLowerCase().includes(searchTermLower));
-                const isExact = titleMatch || descMatch || tagsMatch;
-                
-                await saveMovie(movie, termToSave, isExact);
-                await saveExtraInfo(movie.youtubeId, {
-                    categoryId: movie.categoryId,
-                    defaultLanguage: movie.defaultLanguage,
-                    defaultAudioLanguage: movie.defaultAudioLanguage,
-                    dimension: movie.dimension,
-                    definition: movie.definition,
-                    caption: movie.caption,
-                    licensedContent: movie.licensedContent,
-                    projection: movie.projection,
-                    publicStatsViewable: movie.publicStatsViewable,
-                    madeForKids: movie.madeForKids,
-                    selfDeclaredMadeForKids: movie.selfDeclaredMadeForKids
-                });
-            }
+        };
+    }
+
+    const watchingRow = document.getElementById('watchingToggleRow');
+    if (watchingRow && !isInTrash) {
+        const watchingIcon = document.getElementById('modalWatchingIcon');
+        watchingRow.onclick = async () => {
+            const newStatus = await toggleWatching(movie.youtubeId);
+            movie.watching = newStatus;
+            if (watchingIcon) watchingIcon.textContent = newStatus ? 'visibility' : 'visibility_off';
+            if (currentOnUpdate) await currentOnUpdate();
+        };
+    }
+
+    const favoriteRow = document.getElementById('favoriteToggleRow');
+    if (favoriteRow && !isInTrash) {
+        const favoriteIcon = document.getElementById('modalFavoriteIcon');
+        favoriteRow.onclick = async () => {
+            const newStatus = await toggleFavorite(movie.youtubeId);
+            movie.favorite = newStatus;
+            if (favoriteIcon) favoriteIcon.textContent = newStatus ? 'star_shine' : 'star';
+            if (currentOnUpdate) await currentOnUpdate();
+        };
+    }
+
+    const toggleExactRow = document.getElementById('toggleExactRow');
+    if (toggleExactRow && window.activeTermFilter && !isInTrash) {
+        toggleExactRow.onclick = async () => {
+            const term = window.activeTermFilter;
+            await toggleExact(movie.youtubeId, term);
+            
+            // Pequeño retraso para asegurar escritura en IndexedDB
+            await new Promise(r => setTimeout(r, 100));
+            
             await refreshAvailableTerms();
             await loadAndDisplayAll();
-            searchInput.value = '';
-        } catch (err) {
-            console.error(err);
-            resultsGrid.innerHTML = `<div class="stats">Error: ${err.message}</div>`;
-        }
-    } else {
-        resultsGrid.innerHTML = '<div class="stats">Searching in Plato DB...</div>';
-        const allMovies = await getAllMovies();
-        const lowerQuery = effectiveQuery.toLowerCase();
-        const filtered = allMovies.filter(movie => {
-            const titleMatch = movie.title.toLowerCase().includes(lowerQuery);
-            const descMatch = movie.description && movie.description.toLowerCase().includes(lowerQuery);
-            let termsMatch = false;
-            const terms = movie.searchTerms || [];
-            terms.forEach(t => {
-                if (t.term && t.term.toLowerCase().includes(lowerQuery)) termsMatch = true;
-            });
-            return titleMatch || descMatch || termsMatch;
-        });
-        if (filtered.length === 0) {
-            resultsGrid.innerHTML = '<div class="stats">No matching movies found in Plato DB</div>';
-        } else {
-            const onSortChange = (newSort) => {
-                currentSort = newSort;
-                renderMovies(resultsGrid, filtered, `Search results for "${effectiveQuery}" (${filtered.length})`, 'main', currentSort, onSortChange);
-            };
-            renderMovies(resultsGrid, filtered, `Search results for "${effectiveQuery}" (${filtered.length})`, 'main', currentSort, onSortChange);
-        }
-        searchInput.value = '';
+            
+            closeModal();
+            if (currentOnUpdate) await currentOnUpdate();
+        };
     }
-};
 
-// ---------------------- Initialization ----------------------
-async function init() {
-    await dbReady;
-    loadSearchPreferences();
-    buildSearchInPanel();
-    buildSettingsSidebarContent();
-    
-    searchInBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        searchInPanel.classList.toggle('hidden');
-    });
-    document.addEventListener('click', (e) => {
-        if (!searchInBtn.contains(e.target) && !searchInPanel.contains(e.target)) {
-            searchInPanel.classList.add('hidden');
+    const toggleExtraInfoBtn = document.getElementById('toggleExtraInfoBtn');
+    const extraInfoPanel = document.getElementById('extraInfoPanel');
+    if (toggleExtraInfoBtn && extraInfoPanel) {
+        toggleExtraInfoBtn.onclick = async () => {
+            if (extraInfoPanel.classList.contains('hidden')) {
+                const extra = await getExtraInfo(movie.youtubeId);
+                const fields = [
+                    { label: 'channelId', value: movie.channelId || 'N/A' },
+                    { label: 'channelTitle', value: movie.channelTitle || 'N/A' },
+                    { label: 'tags', value: (movie.tags && movie.tags.length) ? movie.tags.join(', ') : 'N/A' },
+                    { label: 'viewCount', value: movie.viewCount || 'N/A' },
+                    { label: 'duration', value: movie.duration || 'N/A' },
+                    { label: 'categoryId', value: extra?.categoryId || 'N/A' },
+                    { label: 'defaultLanguage', value: extra?.defaultLanguage || 'N/A' },
+                    { label: 'defaultAudioLanguage', value: extra?.defaultAudioLanguage || 'N/A' },
+                    { label: 'dimension', value: extra?.dimension || 'N/A' },
+                    { label: 'definition', value: extra?.definition || 'N/A' },
+                    { label: 'caption', value: extra?.caption || 'N/A' },
+                    { label: 'licensedContent', value: extra?.licensedContent !== undefined ? extra.licensedContent : 'N/A' },
+                    { label: 'projection', value: extra?.projection || 'N/A' },
+                    { label: 'publicStatsViewable', value: extra?.publicStatsViewable !== undefined ? extra.publicStatsViewable : 'N/A' },
+                    { label: 'madeForKids', value: extra?.madeForKids !== undefined ? extra.madeForKids : 'N/A' },
+                    { label: 'selfDeclaredMadeForKids', value: extra?.selfDeclaredMadeForKids !== undefined ? extra.selfDeclaredMadeForKids : 'N/A' }
+                ];
+                extraInfoPanel.innerHTML = fields.map(f => `
+                    <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border-light);">
+                        <strong>${escapeHtml(f.label)}</strong>
+                        <span>${escapeHtml(String(f.value))}</span>
+                    </div>
+                `).join('');
+                extraInfoPanel.classList.remove('hidden');
+                toggleExtraInfoBtn.innerHTML = '<span class="material-symbols-outlined">info</span> Hide Extra Info';
+            } else {
+                extraInfoPanel.classList.add('hidden');
+                toggleExtraInfoBtn.innerHTML = '<span class="material-symbols-outlined">info</span> Extra Info';
+            }
+        };
+    }
+
+    if (!isInTrash) {
+        document.querySelectorAll('.remove-term').forEach(el => {
+            el.onclick = async (e) => {
+                e.stopPropagation();
+                const term = el.dataset.term;
+                const newTerms = (movie.searchTerms || []).filter(t => t.term !== term).map(t => t.term);
+                await updateMovieTerms(movie.youtubeId, newTerms);
+                movie.searchTerms = movie.searchTerms.filter(t => t.term !== term);
+                const termsContainer = document.getElementById('termsList');
+                if (termsContainer) {
+                    termsContainer.innerHTML = (movie.searchTerms || []).map(t => `
+                        <span class="term-chip">
+                            ${escapeHtml(t.term)}
+                            <span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>
+                        </span>
+                    `).join('');
+                    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                }
+                if (currentOnUpdate) await currentOnUpdate();
+            };
+        });
+    }
+
+    if (!isInTrash) {
+        const addBtn = document.getElementById('addTermBtn');
+        const newTermInput = document.getElementById('newTermInput');
+        if (addBtn && newTermInput) {
+            addBtn.onclick = async () => {
+                const newTerm = newTermInput.value.trim();
+                if (newTerm && !(movie.searchTerms || []).some(t => t.term === newTerm)) {
+                    const newTerms = [...(movie.searchTerms || []).map(t => t.term), newTerm];
+                    await updateMovieTerms(movie.youtubeId, newTerms);
+                    movie.searchTerms.push({ term: newTerm, exact: true });
+                    newTermInput.value = '';
+                    const termsContainer = document.getElementById('termsList');
+                    if (termsContainer) {
+                        termsContainer.innerHTML = (movie.searchTerms || []).map(t => `
+                            <span class="term-chip">
+                                ${escapeHtml(t.term)}
+                                <span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>
+                            </span>
+                        `).join('');
+                        attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                    }
+                    if (currentOnUpdate) await currentOnUpdate();
+                }
+            };
+            newTermInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addBtn.click();
+            });
         }
-    });
-    
-    initModal(async () => {
-        await refreshAvailableTerms();
-        await loadAndDisplayAll();
-    });
-    await refreshAvailableTerms();
-    await loadAndDisplayAll();
+    }
 }
-// Exportar funciones para usar desde modal.js
-export { refreshAvailableTerms, loadAndDisplayAll, termHasChildren };
-
-init();
 
 function escapeHtml(str) {
     if (!str) return '';
-    return String(str).replace(/[&<>]/g, c => c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;');
+    return str.replace(/[&<>]/g, c => c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;');
+}
+
+function formatDuration(duration) {
+    if (!duration || duration === 'N/A') return 'Unknown';
+    const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
+    const hours = (match[1] ? match[1].slice(0,-1) : 0);
+    const minutes = (match[2] ? match[2].slice(0,-1) : 0);
+    const seconds = (match[3] ? match[3].slice(0,-1) : 0);
+    return `${hours ? hours+':' : ''}${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
 }

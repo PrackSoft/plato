@@ -1,6 +1,6 @@
-// js/modal.js (con recarga forzada después de toggleExact)
+// js/modal.js (con regeneración de vista después de toggleExact)
 import { getExtraInfo, toggleExact } from './db.js';
-import { refreshAvailableTerms, loadAndDisplayAll, termHasChildren } from './app.js';
+import { refreshAvailableTerms, loadAndDisplayAll, syncWindowTermFilter, getActiveTermFilter } from './app.js';
 
 let currentMovie = null;
 let currentOnUpdate = null;
@@ -198,9 +198,20 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         toggleExactRow.onclick = async () => {
             const term = window.activeTermFilter;
             await toggleExact(movie.youtubeId, term);
+            
+            await refreshAvailableTerms();
+            await loadAndDisplayAll();
+            
+            const stillExists = window.availableTerms ? window.availableTerms.includes(term) : false;
+            if (!stillExists && getActiveTermFilter() === term) {
+                // El término desapareció, desactivar filtro de término
+                window.activeTermFilter = null;
+                if (syncWindowTermFilter) syncWindowTermFilter();
+                await loadAndDisplayAll();
+            }
+            
             closeModal();
-            // Recargar la página para forzar actualización completa
-            window.location.reload();
+            if (currentOnUpdate) await currentOnUpdate();
         };
     }
 
