@@ -502,7 +502,7 @@ async function loadAndDisplayAll() {
     } else if (activeTermFilter) {
         title = `Movies: "${activeTermFilter}" (${allMovies.length})`;
     } else {
-        title = `All Movies (${allMovies.length})`;
+        title = `Exact match (${allMovies.length})`;
     }
 
     const onSortChange = (newSort) => {
