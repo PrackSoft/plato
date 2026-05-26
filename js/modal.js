@@ -207,11 +207,18 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                 const store = transaction.objectStore('movies');
                 movie.lastUpdated = new Date().toISOString();
                 await new Promise((resolve, reject) => {
+                    console.log('1. Cambio guardado en DB');
                     const req = store.put(movie);
                     req.onsuccess = () => resolve();
                     req.onerror = () => reject(req.error);
                 });
                 
+                console.log('2. Antes de refreshAvailableTerms');
+                await refreshAvailableTerms();
+                console.log('3. Después de refreshAvailableTerms');
+                await loadAndDisplayAll();
+                console.log('4. Después de loadAndDisplayAll');
+
                 closeModal();
                 // Actualizar términos y vista dinámicamente
                 await refreshAvailableTerms();

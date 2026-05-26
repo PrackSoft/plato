@@ -213,7 +213,6 @@ async function refreshAvailableTerms() {
     for (const movie of allMovies) {
         (movie.searchTerms || []).forEach(t => {
             if (t && typeof t === 'object' && t.term) {
-                // Filtrar según el contexto actual (Related o Exact)
                 if (activeRelatedFilter) {
                     if (t.exact === false) termsSet.add(t.term);
                 } else {
@@ -223,6 +222,7 @@ async function refreshAvailableTerms() {
         });
     }
     availableTerms = Array.from(termsSet).sort();
+    console.log('Términos actualizados:', availableTerms);
 }
 
 async function removeTermFromAllMovies(term) {
