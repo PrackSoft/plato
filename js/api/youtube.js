@@ -1,100 +1,158 @@
-import { API_KEY } from '../config.js';
+// js/render.js
+import { toggleWatching } from './db.js';
 
-const MAX_RESULTS_PER_PAGE = 50;
+function formatNumber(num) {
+    if (num === undefined || num === null || num === 'N/A') return 'N/A';
+    let n = parseInt(num, 10);
+    if (isNaN(n)) return num;
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+    if (n >= 1_000) return (n / 1_000).toFixed(1) + 'K';
+    return n.toString();
+}
 
-export async function searchYouTube(query, channelId = null, order = 'relevance', duration = 'long', categoryFilter = 'movies') {
-    if (!query || query.trim() === "") {
-        throw new Error("Search query cannot be empty");
-    }
-    let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=${MAX_RESULTS_PER_PAGE}&q=${encodeURIComponent(query)}&key=${API_KEY}`;
-    
-    if (channelId) {
-        url += `&channelId=${channelId}`;
-    }
-    
-    if (order && order !== 'relevance') {
-        url += `&order=${order}`;
-    }
-    
-    // Corrección: paréntesis alrededor de toda la condición
-    if (duration === 'long' || duration === 'medium' || duration === 'short') {
-        url += `&videoDuration=${duration}`;
-    }
-    // Si duration es 'any', no se añade parámetro
-    
-    // Filtrar solo películas (categoryId 30) si está activado
-    if (categoryFilter === 'movies') {
-        url += `&videoCategoryId=30`;
-    }
-    
-    const searchResponse = await fetch(url);
-    const searchData = await searchResponse.json();
-    if (!searchData.items || searchData.items.length === 0) return [];
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, c => c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;');
+}
 
-    const videoIds = searchData.items.map(item => item.id.videoId).filter(id => id);
-    const videosUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails,status&id=${videoIds.join(',')}&key=${API_KEY}`;
-    const videosResponse = await fetch(videosUrl);
-    const videosData = await videosResponse.json();
+function getLocalDateKey(utcDateString) {
+    const date = new Date(utcDateString);
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
 
-    const detailsMap = new Map();
-    if (videosData.items) {
-        videosData.items.forEach(video => {
-            detailsMap.set(video.id, {
-                fullDescription: video.snippet.description,
-                tags: video.snippet.tags || [],
-                viewCount: video.statistics?.viewCount || 'N/A',
-                likeCount: video.statistics?.likeCount || 'N/A',
-                commentCount: video.statistics?.commentCount || 'N/A',
-                duration: video.contentDetails?.duration || 'N/A',
-                channelId: video.snippet.channelId,
-                channelTitle: video.snippet.channelTitle,
-                title: video.snippet.title,
-                publishedAt: video.snippet.publishedAt,
-                thumbnails: video.snippet.thumbnails,
-                categoryId: video.snippet.categoryId || 'N/A',
-                defaultLanguage: video.snippet.defaultLanguage || 'N/A',
-                defaultAudioLanguage: video.snippet.defaultAudioLanguage || 'N/A',
-                dimension: video.contentDetails.dimension || 'N/A',
-                definition: video.contentDetails.definition || 'N/A',
-                caption: video.contentDetails.caption || 'N/A',
-                licensedContent: video.contentDetails.licensedContent !== undefined ? video.contentDetails.licensedContent : 'N/A',
-                projection: video.contentDetails.projection || 'N/A',
-                publicStatsViewable: video.status.publicStatsViewable !== undefined ? video.status.publicStatsViewable : 'N/A',
-                madeForKids: video.status.madeForKids !== undefined ? video.status.madeForKids : 'N/A',
-                selfDeclaredMadeForKids: video.status.selfDeclaredMadeForKids !== undefined ? video.status.selfDeclaredMadeForKids : 'N/A'
-            });
+export function renderMovies(container, movies, title, source = 'main', currentSort = 'date', onSortChange = null) {
+    if (!movies.length) {
+        container.innerHTML = `<div class="stats">No movies ${source === 'trash' ? 'in trash' : 'saved yet'}.</div>`;
+        return;
+    }
+
+    const sorted = sortMovies(movies, currentSort);
+    const isDateSort = (currentSort === 'date');
+
+    const sortOptions = [
+        { value: 'date', label: 'Date' },
+        { value: 'title', label: 'Title' },
+        { value: 'channel', label: 'Channel' },
+        { value: 'mostLiked', label: 'Most liked' },
+        { value: 'mostCommented', label: 'Most commented' },
+        { value: 'watching', label: 'Watching' },
+        { value: 'favorite', label: 'Favorites' }
+    ];
+    const sortSelectHtml = `
+        <div class="sort-control">
+            <label>Sort by:</label>
+            <select id="sortSelect">
+                ${sortOptions.map(opt => `<option value="${opt.value}" ${currentSort === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
+            </select>
+        </div>
+    `;
+
+    function generateCard(movie) {
+        return `
+            <div class="video-card" data-id="${movie.youtubeId}">
+                <img src="${movie.imageUrl}" alt="${movie.title}">
+                <div class="info">
+                    <h3>${escapeHtml(movie.title)}</h3>
+                    <div class="channel">${escapeHtml(movie.channelTitle)}</div>
+                    <div class="card-stats">
+                        <span class="comments">
+                            <span class="material-symbols-outlined stat-icon">forum</span>
+                            ${formatNumber(movie.commentCount)}
+                        </span>
+                        <span class="likes">
+                            <span class="material-symbols-outlined stat-icon">thumb_up</span>
+                            ${formatNumber(movie.likeCount)}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    let bodyHtml = '';
+    if (isDateSort) {
+        const todayKey = getLocalDateKey(new Date().toISOString());
+        const yesterdayDate = new Date();
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+        const yesterdayKey = getLocalDateKey(yesterdayDate.toISOString());
+        const groups = new Map();
+        sorted.forEach(movie => {
+            const key = getLocalDateKey(movie.dateSaved);
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key).push(movie);
+        });
+        const sortedGroups = Array.from(groups.entries()).sort((a, b) => new Date(b[0]) - new Date(a[0]));
+        bodyHtml = sortedGroups.map(([dateKey, movieList]) => {
+            let label;
+            if (dateKey === todayKey) label = 'Today';
+            else if (dateKey === yesterdayKey) label = 'Yesterday';
+            else {
+                const [year, month, day] = dateKey.split('-');
+                const dateObj = new Date(year, month - 1, day);
+                label = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            }
+            return `
+                <div class="date-group">
+                    <div class="group-date">${label}</div>
+                    <div class="results-group">
+                        ${movieList.map(m => generateCard(m)).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } else {
+        bodyHtml = `<div class="movies-grid">${sorted.map(m => generateCard(m)).join('')}</div>`;
+    }
+
+    container.innerHTML = `
+        <div class="history-header">
+            <h2>${escapeHtml(title)}</h2>
+            ${sortSelectHtml}
+        </div>
+        ${bodyHtml}
+    `;
+
+    const sortSelect = document.getElementById('sortSelect');
+    if (sortSelect && onSortChange) {
+        sortSelect.addEventListener('change', (e) => {
+            onSortChange(e.target.value);
         });
     }
 
-    const enrichedItems = searchData.items.map(item => {
-        const videoId = item.id.videoId;
-        const extra = detailsMap.get(videoId) || {};
-        return {
-            youtubeId: videoId,
-            title: extra.title || item.snippet.title,
-            channelId: extra.channelId || item.snippet.channelId,
-            channelTitle: extra.channelTitle || item.snippet.channelTitle,
-            imageUrl: extra.thumbnails?.medium?.url || item.snippet.thumbnails.medium.url,
-            url: `https://youtube.com/watch?v=${videoId}`,
-            description: extra.fullDescription || item.snippet.description,
-            publishedAt: extra.publishedAt || item.snippet.publishedAt,
-            duration: extra.duration,
-            viewCount: extra.viewCount,
-            likeCount: extra.likeCount,
-            commentCount: extra.commentCount,
-            tags: extra.tags,
-            categoryId: extra.categoryId,
-            defaultLanguage: extra.defaultLanguage,
-            defaultAudioLanguage: extra.defaultAudioLanguage,
-            dimension: extra.dimension,
-            definition: extra.definition,
-            caption: extra.caption,
-            licensedContent: extra.licensedContent,
-            projection: extra.projection,
-            publicStatsViewable: extra.publicStatsViewable,
-            madeForKids: extra.madeForKids,
-            selfDeclaredMadeForKids: extra.selfDeclaredMadeForKids
-        };
+    document.querySelectorAll('.video-card').forEach(card => {
+        const movieId = card.dataset.id;
+        const movie = movies.find(m => m.youtubeId === movieId);
+        if (movie && window.openMovieModal) {
+            card.onclick = () => {
+                window.openMovieModal(movie, source);
+            };
+        }
     });
-    return enrichedItems;
+}
+
+function sortMovies(movies, sortBy) {
+    const sorted = [...movies];
+    switch (sortBy) {
+        case 'title':
+            sorted.sort((a, b) => a.title.localeCompare(b.title));
+            break;
+        case 'channel':
+            sorted.sort((a, b) => a.channelTitle.localeCompare(b.channelTitle));
+            break;
+        case 'mostLiked':
+            sorted.sort((a, b) => (parseInt(b.likeCount) || 0) - (parseInt(a.likeCount) || 0));
+            break;
+        case 'mostCommented':
+            sorted.sort((a, b) => (parseInt(b.commentCount) || 0) - (parseInt(a.commentCount) || 0));
+            break;
+        case 'watching':
+            sorted.sort((a, b) => (b.watching ? 1 : 0) - (a.watching ? 1 : 0));
+            break;
+        case 'favorite':
+            sorted.sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0));
+            break;
+        default:
+            sorted.sort((a, b) => new Date(b.dateSaved) - new Date(a.dateSaved));
+    }
+    return sorted;
 }
