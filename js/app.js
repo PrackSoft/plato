@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con edición/eliminación de términos corregida y window.activeTermFilter)
+// js/app.js - Plato App (con términos filtrados por activeRelatedFilter)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -213,11 +213,15 @@ async function refreshAvailableTerms() {
     for (const movie of allMovies) {
         (movie.searchTerms || []).forEach(t => {
             if (t && typeof t === 'object' && t.term) {
-                termsSet.add(t.term);
+                // Filtrar según el contexto actual (Related o Exact)
+                if (activeRelatedFilter) {
+                    if (t.exact === false) termsSet.add(t.term);
+                } else {
+                    if (t.exact === true) termsSet.add(t.term);
+                }
             }
         });
     }
-    console.log('Términos actualizados:', availableTerms);
     availableTerms = Array.from(termsSet).sort();
 }
 
