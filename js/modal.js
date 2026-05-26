@@ -52,7 +52,7 @@ function renderModalContent(movie, source) {
     // Determinar si mostrar el botón de toggle exact (solo si hay activeTermFilter)
     const showExactToggle = window.activeTermFilter && !isInTrash;
     const exactForCurrentTerm = showExactToggle && movie.searchTerms?.some(t => t.term === window.activeTermFilter && t.exact === true);
-    const toggleIcon = exactForCurrentTerm ? 'subscriptions' : 'graph_4';
+    const toggleIcon = exactForCurrentTerm ? 'graph_4' : 'subscriptions';
     const toggleLabel = exactForCurrentTerm ? 'Move to Related' : 'Move to Exact';
     
     const tagsHtml = movie.tags && Array.isArray(movie.tags) && movie.tags.length > 0
