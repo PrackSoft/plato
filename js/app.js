@@ -526,31 +526,68 @@ export async function loadAndDisplayAll() {
             });
         }
     }
-let termsToShow;
 
-const allTerms = new Set();
-for (const movie of allMovies) {
-    const terms = movie.searchTerms || [];
-    terms.forEach(t => {
-        if (t.term) allTerms.add(t.term);
-    });
+    let title;
+    if (activeTrashFilter) {
+        title = `Trash (${allMovies.length})`;
+    } else if (activeWatchingFilter) {
+        title = `Watching (${allMovies.length})`;
+    } else if (activeFavoriteFilter) {
+        title = `Favorites (${allMovies.length})`;
+    } else if (activeRelatedFilter) {
+        title = `Related results (${allMovies.length})`;
+    } else if (activeTermFilter) {
+        title = `Search term: "${activeTermFilter}" (${allMovies.length})`;
+    } else {
+        title = `Exact match (${allMovies.length})`;
+    }
+
+    const onSortChange = (newSort) => {
+        currentSort = newSort;
+        loadAndDisplayAll();
+    };
+
+    renderMovies(resultsGrid, allMovies, title, activeTrashFilter ? 'trash' : 'main', currentSort, onSortChange);
+
+    let termsToShow;
+
+    if (activeTermFilter) {
+        const stillExists = await termHasChildren(activeTermFilter);
+
+        if (!stillExists) {
+            activeTermFilter = null;
+            syncWindowTermFilter();
+        }
+    }
+
+    if (activeTermFilter) {
+        termsToShow = [activeTermFilter];
+    } else {
+        const allTerms = new Set();
+
+        for (const movie of allMovies) {
+            const terms = movie.searchTerms || [];
+
+            terms.forEach(t => {
+                if (!t.term) return;
+
+                if (activeRelatedFilter) {
+                    if (t.exact === false) {
+                        allTerms.add(t.term);
+                    }
+                } else {
+                    if (t.exact === true) {
+                        allTerms.add(t.term);
+                    }
+                }
+            });
+        }
+
+        termsToShow = Array.from(allTerms).sort();
+    }
+    console.log('termsToShow antes de render:', termsToShow);
+    renderTermsBar(termsToShow);
 }
-
-const validTerms = Array.from(allTerms).filter(term => {
-    return allMovies.some(movie => {
-        return (movie.searchTerms || []).some(t => t.term === term);
-    });
-}).sort();
-
-// Si el término activo ya no tiene hijos en esta vista, eliminarlo
-if (activeTermFilter && !validTerms.includes(activeTermFilter)) {
-    activeTermFilter = null;
-    syncWindowTermFilter();
-}
-
-termsToShow = activeTermFilter
-    ? [activeTermFilter]
-    : validTerms;
 
 // ---------------------- Modal helpers ----------------------
 async function updateMovieTerms(youtubeId, newTerms) {
