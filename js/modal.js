@@ -1,5 +1,6 @@
-// js/modal.js (con botón para alternar exact/related)
+// js/modal.js (con importación de refreshAvailableTerms y loadAndDisplayAll)
 import { getExtraInfo } from './db.js';
+import { refreshAvailableTerms, loadAndDisplayAll } from './app.js';
 
 let currentMovie = null;
 let currentOnUpdate = null;
@@ -49,7 +50,6 @@ function renderModalContent(movie, source) {
     const watchingIconName = movie.watching ? 'visibility' : 'visibility_off';
     const favoriteIconName = movie.favorite ? 'star_shine' : 'star';
     
-    // Determinar si mostrar el botón de toggle exact (solo si hay activeTermFilter)
     const showExactToggle = window.activeTermFilter && !isInTrash;
     const exactForCurrentTerm = showExactToggle && movie.searchTerms?.some(t => t.term === window.activeTermFilter && t.exact === true);
     const toggleIcon = exactForCurrentTerm ? 'graph_4' : 'subscriptions';
@@ -196,14 +196,12 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
     const toggleExactRow = document.getElementById('toggleExactRow');
     if (toggleExactRow && window.activeTermFilter && !isInTrash) {
         toggleExactRow.onclick = async () => {
-            // Alternar exact para el término activo
             const term = window.activeTermFilter;
             const termIndex = movie.searchTerms.findIndex(t => t.term === term);
             if (termIndex !== -1) {
                 const newExact = !movie.searchTerms[termIndex].exact;
                 movie.searchTerms[termIndex].exact = newExact;
                 
-                // Guardar cambios en la base de datos
                 const db = await import('./db.js').then(m => m.openDB());
                 const transaction = db.transaction(['movies'], 'readwrite');
                 const store = transaction.objectStore('movies');
@@ -214,8 +212,10 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                     req.onerror = () => reject(req.error);
                 });
                 
-                // Cerrar modal y refrescar vista
                 closeModal();
+                // Actualizar términos y vista dinámicamente
+                await refreshAvailableTerms();
+                await loadAndDisplayAll();
                 if (currentOnUpdate) await currentOnUpdate();
             }
         };

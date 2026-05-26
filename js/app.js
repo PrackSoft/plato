@@ -716,6 +716,9 @@ async function init() {
     await refreshAvailableTerms();
     await loadAndDisplayAll();
 }
+// Exportar funciones para usar desde modal.js
+export { refreshAvailableTerms, loadAndDisplayAll };
+
 init();
 
 function escapeHtml(str) {
