@@ -260,3 +260,30 @@ export async function getExtraInfo(youtubeId) {
         req.onerror = () => reject(req.error);
     });
 }
+
+export async function toggleExact(youtubeId, term) {
+    const db = await openDB();
+    const transaction = db.transaction([STORE_MOVIES], 'readwrite');
+    const store = transaction.objectStore(STORE_MOVIES);
+    return new Promise((resolve, reject) => {
+        const getRequest = store.get(youtubeId);
+        getRequest.onsuccess = () => {
+            const movie = getRequest.result;
+            if (movie) {
+                const termIndex = movie.searchTerms.findIndex(t => t.term === term);
+                if (termIndex !== -1) {
+                    movie.searchTerms[termIndex].exact = !movie.searchTerms[termIndex].exact;
+                    movie.lastUpdated = new Date().toISOString();
+                    const putRequest = store.put(movie);
+                    putRequest.onsuccess = () => resolve(movie.searchTerms[termIndex].exact);
+                    putRequest.onerror = () => reject(putRequest.error);
+                } else {
+                    reject(new Error('Term not found in movie'));
+                }
+            } else {
+                reject(new Error('Movie not found'));
+            }
+        };
+        getRequest.onerror = () => reject(getRequest.error);
+    });
+}

@@ -197,32 +197,11 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
     if (toggleExactRow && window.activeTermFilter && !isInTrash) {
         toggleExactRow.onclick = async () => {
             const term = window.activeTermFilter;
-            const termIndex = movie.searchTerms.findIndex(t => t.term === term);
-            if (termIndex !== -1) {
-                const newExact = !movie.searchTerms[termIndex].exact;
-                movie.searchTerms[termIndex].exact = newExact;
-                
-                const db = await import('./db.js').then(m => m.openDB());
-                const transaction = db.transaction(['movies'], 'readwrite');
-                const store = transaction.objectStore('movies');
-                movie.lastUpdated = new Date().toISOString();
-                
-                await new Promise((resolve, reject) => {
-                    const req = store.put(movie);
-                    req.onsuccess = () => resolve();
-                    req.onerror = () => reject(req.error);
-                });
-                
-                // Pequeño retraso para asegurar escritura en IndexedDB
-                await new Promise(r => setTimeout(r, 50));
-                
-                // Actualizar términos y vista
-                await refreshAvailableTerms();
-                await loadAndDisplayAll();
-                
-                closeModal();
-                if (currentOnUpdate) await currentOnUpdate();
-            }
+            await import('./db.js').then(m => m.toggleExact(movie.youtubeId, term));
+            await refreshAvailableTerms();
+            await loadAndDisplayAll();
+            closeModal();
+            if (currentOnUpdate) await currentOnUpdate();
         };
     }
 
