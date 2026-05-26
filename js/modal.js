@@ -209,6 +209,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                 await new Promise((resolve, reject) => {
                     console.log('1. Cambio guardado en DB');
                     const req = store.put(movie);
+                    await new Promise(r => setTimeout(r, 50));
                     req.onsuccess = () => resolve();
                     req.onerror = () => reject(req.error);
                 });
