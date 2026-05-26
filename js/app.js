@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con términos filtrados por activeRelatedFilter)
+// js/app.js - Plato App (con verificación de términos sin hijos después de toggleExact)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -223,6 +223,25 @@ async function refreshAvailableTerms() {
     }
     availableTerms = Array.from(termsSet).sort();
     console.log('Términos actualizados:', availableTerms);
+}
+
+// Función para verificar si un término tiene al menos un hijo en el contexto actual
+async function termHasChildren(term) {
+    const allMovies = await getAllMovies();
+    for (const movie of allMovies) {
+        const found = (movie.searchTerms || []).some(t => {
+            if (t && typeof t === 'object' && t.term === term) {
+                if (activeRelatedFilter) {
+                    return t.exact === false;
+                } else {
+                    return t.exact === true;
+                }
+            }
+            return false;
+        });
+        if (found) return true;
+    }
+    return false;
 }
 
 async function removeTermFromAllMovies(term) {
@@ -723,7 +742,7 @@ async function init() {
     await loadAndDisplayAll();
 }
 // Exportar funciones para usar desde modal.js
-export { refreshAvailableTerms, loadAndDisplayAll };
+export { refreshAvailableTerms, loadAndDisplayAll, termHasChildren };
 
 init();
 

@@ -1,6 +1,6 @@
-// js/modal.js (con importación de refreshAvailableTerms, loadAndDisplayAll y toggleExact)
+// js/modal.js (con verificación de término sin hijos)
 import { getExtraInfo, toggleExact } from './db.js';
-import { refreshAvailableTerms, loadAndDisplayAll } from './app.js';
+import { refreshAvailableTerms, loadAndDisplayAll, termHasChildren } from './app.js';
 
 let currentMovie = null;
 let currentOnUpdate = null;
@@ -198,8 +198,19 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         toggleExactRow.onclick = async () => {
             const term = window.activeTermFilter;
             await toggleExact(movie.youtubeId, term);
-            await refreshAvailableTerms();
-            await loadAndDisplayAll();
+            
+            // Verificar si el término se quedó sin hijos en el contexto actual
+            const hasChildren = await termHasChildren(term);
+            if (!hasChildren) {
+                // Forzar actualización de availableTerms y re-render
+                await refreshAvailableTerms();
+                await loadAndDisplayAll();
+            } else {
+                // Solo refrescar términos y vista
+                await refreshAvailableTerms();
+                await loadAndDisplayAll();
+            }
+            
             closeModal();
             if (currentOnUpdate) await currentOnUpdate();
         };
