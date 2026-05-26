@@ -199,14 +199,15 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
             const term = window.activeTermFilter;
             await toggleExact(movie.youtubeId, term);
             
+            // Pequeño retraso para asegurar escritura en IndexedDB
+            await new Promise(r => setTimeout(r, 100));
+            
             // Verificar si el término se quedó sin hijos en el contexto actual
             const hasChildren = await termHasChildren(term);
             if (!hasChildren) {
-                // Forzar actualización de availableTerms y re-render
                 await refreshAvailableTerms();
                 await loadAndDisplayAll();
             } else {
-                // Solo refrescar términos y vista
                 await refreshAvailableTerms();
                 await loadAndDisplayAll();
             }
