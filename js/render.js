@@ -33,7 +33,6 @@ export function renderMovies(container, movies, title, source = 'main', currentS
         { value: 'date', label: 'Date' },
         { value: 'title', label: 'Title' },
         { value: 'channel', label: 'Channel' },
-        { value: 'mostViewed', label: 'Most viewed' },
         { value: 'mostLiked', label: 'Most liked' },
         { value: 'mostCommented', label: 'Most commented' },
         { value: 'watching', label: 'Watching' },
@@ -120,9 +119,6 @@ export function renderMovies(container, movies, title, source = 'main', currentS
         });
     }
 
-    // No more watching-icon handlers on cards
-    // The watching filter and modal toggle remain functional
-
     document.querySelectorAll('.video-card').forEach(card => {
         const movieId = card.dataset.id;
         const movie = movies.find(m => m.youtubeId === movieId);
@@ -142,9 +138,6 @@ function sortMovies(movies, sortBy) {
             break;
         case 'channel':
             sorted.sort((a, b) => a.channelTitle.localeCompare(b.channelTitle));
-            break;
-        case 'mostViewed':
-            sorted.sort((a, b) => (parseInt(b.viewCount) || 0) - (parseInt(a.viewCount) || 0));
             break;
         case 'mostLiked':
             sorted.sort((a, b) => (parseInt(b.likeCount) || 0) - (parseInt(a.likeCount) || 0));
