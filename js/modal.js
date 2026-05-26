@@ -1,5 +1,5 @@
-// js/modal.js (con importación de refreshAvailableTerms y loadAndDisplayAll)
-import { getExtraInfo } from './db.js';
+// js/modal.js (con importación de refreshAvailableTerms, loadAndDisplayAll y toggleExact)
+import { getExtraInfo, toggleExact } from './db.js';
 import { refreshAvailableTerms, loadAndDisplayAll } from './app.js';
 
 let currentMovie = null;
@@ -197,7 +197,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
     if (toggleExactRow && window.activeTermFilter && !isInTrash) {
         toggleExactRow.onclick = async () => {
             const term = window.activeTermFilter;
-            await import('./db.js').then(m => m.toggleExact(movie.youtubeId, term));
+            await toggleExact(movie.youtubeId, term);
             await refreshAvailableTerms();
             await loadAndDisplayAll();
             closeModal();
