@@ -500,7 +500,7 @@ async function loadAndDisplayAll() {
     } else if (activeRelatedFilter) {
         title = `Related results (${allMovies.length})`;
     } else if (activeTermFilter) {
-        title = `Sort by: "${activeTermFilter}" (${allMovies.length})`;
+        title = `Search term: "${activeTermFilter}" (${allMovies.length})`;
     } else {
         title = `Exact match (${allMovies.length})`;
     }
