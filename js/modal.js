@@ -1,6 +1,7 @@
 // js/modal.js (con secciones Directors y Actors - solo interfaz)
-import { getExtraInfo, toggleExact } from './db.js';
+import { getExtraInfo, toggleExact, addDirector, removeDirector, addActor, removeActor } from './db.js';
 import { refreshAvailableTerms, loadAndDisplayAll, syncWindowTermFilter, getActiveTermFilter } from './app.js';
+
 
 let currentMovie = null;
 let currentOnUpdate = null;
