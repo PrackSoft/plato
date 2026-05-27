@@ -258,20 +258,51 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         document.querySelectorAll('.remove-term').forEach(el => {
             el.onclick = async (e) => {
                 e.stopPropagation();
+
                 const term = el.dataset.term;
-                const newTerms = (movie.searchTerms || []).filter(t => t.term !== term).map(t => t.term);
+                const remainingTerms = (movie.searchTerms || [])
+                    .filter(t => t.term !== term);
+
+                // Si intentan borrar el último término → enviar a Trash SIN perderlo
+                if (remainingTerms.length === 0) {
+                    if (confirm('Removing the last term will move this movie to Trash. Continue?')) {
+                        await moveToTrash(movie.youtubeId);
+                        closeModal();
+                        if (currentOnUpdate) await currentOnUpdate();
+                    }
+                    return;
+                }
+
+                const newTerms = remainingTerms.map(t => t.term);
+
                 await updateMovieTerms(movie.youtubeId, newTerms);
-                movie.searchTerms = movie.searchTerms.filter(t => t.term !== term);
+
+                movie.searchTerms = remainingTerms;
+
                 const termsContainer = document.getElementById('termsList');
+
                 if (termsContainer) {
-                    termsContainer.innerHTML = (movie.searchTerms || []).map(t => `
+                    termsContainer.innerHTML = movie.searchTerms.map(t => `
                         <span class="term-chip">
                             ${escapeHtml(t.term)}
                             <span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>
                         </span>
                     `).join('');
-                    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+
+                    attachModalEvents(
+                        movie,
+                        {
+                            updateMovieTerms,
+                            toggleWatching,
+                            toggleFavorite,
+                            moveToTrash,
+                            restoreFromTrash,
+                            permanentlyDelete
+                        },
+                        source
+                    );
                 }
+
                 if (currentOnUpdate) await currentOnUpdate();
             };
         });
