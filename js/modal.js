@@ -1,4 +1,4 @@
-// js/modal.js (con regeneración de vista después de toggleExact)
+// js/modal.js (con secciones Directors y Actors - solo interfaz)
 import { getExtraInfo, toggleExact } from './db.js';
 import { refreshAvailableTerms, loadAndDisplayAll, syncWindowTermFilter, getActiveTermFilter } from './app.js';
 
@@ -59,6 +59,10 @@ function renderModalContent(movie, source) {
         ? `<p><strong>Tags:</strong> ${escapeHtml(movie.tags.join(', '))}</p>`
         : '';
 
+    // Directores y Actores (por ahora solo interfaz, sin datos reales)
+    const directors = movie.directors || [];
+    const actors = movie.actors || [];
+
     return `
         <div class="modal-header">
             <div class="modal-spacer"></div>
@@ -87,6 +91,48 @@ function renderModalContent(movie, source) {
             <div class="add-term-row">
                 <input type="text" id="newTermInput" class="modal-input" placeholder="Add new term">
                 <span id="addTermBtn" class="modal-add-icon" title="Add term">
+                    <span class="material-symbols-outlined">add</span>
+                </span>
+            </div>
+            ` : ''}
+        </div>
+
+        <!-- Sección Directores -->
+        <div class="modal-section">
+            <strong>Directors:</strong>
+            <div id="directorsList" class="terms-list">
+                ${directors.map(name => `
+                    <span class="term-chip">
+                        ${escapeHtml(name)}
+                        ${!isInTrash ? `<span class="remove-director" data-name="${escapeHtml(name)}">✖</span>` : ''}
+                    </span>
+                `).join('')}
+            </div>
+            ${!isInTrash ? `
+            <div class="add-term-row">
+                <input type="text" id="newDirectorInput" class="modal-input" placeholder="Add director">
+                <span id="addDirectorBtn" class="modal-add-icon" title="Add director">
+                    <span class="material-symbols-outlined">add</span>
+                </span>
+            </div>
+            ` : ''}
+        </div>
+
+        <!-- Sección Actores -->
+        <div class="modal-section">
+            <strong>Actors:</strong>
+            <div id="actorsList" class="terms-list">
+                ${actors.map(name => `
+                    <span class="term-chip">
+                        ${escapeHtml(name)}
+                        ${!isInTrash ? `<span class="remove-actor" data-name="${escapeHtml(name)}">✖</span>` : ''}
+                    </span>
+                `).join('')}
+            </div>
+            ${!isInTrash ? `
+            <div class="add-term-row">
+                <input type="text" id="newActorInput" class="modal-input" placeholder="Add actor">
+                <span id="addActorBtn" class="modal-add-icon" title="Add actor">
                     <span class="material-symbols-outlined">add</span>
                 </span>
             </div>
@@ -204,7 +250,6 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
             
             const stillExists = window.availableTerms ? window.availableTerms.includes(term) : false;
             if (!stillExists && getActiveTermFilter() === term) {
-                // El término desapareció, desactivar filtro de término
                 window.activeTermFilter = null;
                 if (syncWindowTermFilter) syncWindowTermFilter();
                 await loadAndDisplayAll();
@@ -263,7 +308,6 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                 const remainingTerms = (movie.searchTerms || [])
                     .filter(t => t.term !== term);
 
-                // Si intentan borrar el último término → enviar a Trash SIN perderlo
                 if (remainingTerms.length === 0) {
                     if (confirm('Removing the last term will move this movie to Trash. Continue?')) {
                         await moveToTrash(movie.youtubeId);
@@ -336,6 +380,62 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                 if (e.key === 'Enter') addBtn.click();
             });
         }
+    }
+
+    // Eventos para Directores (placeholder)
+    if (!isInTrash) {
+        const addDirectorBtn = document.getElementById('addDirectorBtn');
+        const newDirectorInput = document.getElementById('newDirectorInput');
+        if (addDirectorBtn && newDirectorInput) {
+            addDirectorBtn.onclick = () => {
+                const newDirector = newDirectorInput.value.trim();
+                if (newDirector) {
+                    // TODO: implementar guardado
+                    console.log('Add director:', newDirector);
+                    newDirectorInput.value = '';
+                }
+            };
+            newDirectorInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addDirectorBtn.click();
+            });
+        }
+
+        document.querySelectorAll('.remove-director').forEach(el => {
+            el.onclick = (e) => {
+                e.stopPropagation();
+                const name = el.dataset.name;
+                // TODO: implementar eliminación
+                console.log('Remove director:', name);
+            };
+        });
+    }
+
+    // Eventos para Actores (placeholder)
+    if (!isInTrash) {
+        const addActorBtn = document.getElementById('addActorBtn');
+        const newActorInput = document.getElementById('newActorInput');
+        if (addActorBtn && newActorInput) {
+            addActorBtn.onclick = () => {
+                const newActor = newActorInput.value.trim();
+                if (newActor) {
+                    // TODO: implementar guardado
+                    console.log('Add actor:', newActor);
+                    newActorInput.value = '';
+                }
+            };
+            newActorInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addActorBtn.click();
+            });
+        }
+
+        document.querySelectorAll('.remove-actor').forEach(el => {
+            el.onclick = (e) => {
+                e.stopPropagation();
+                const name = el.dataset.name;
+                // TODO: implementar eliminación
+                console.log('Remove actor:', name);
+            };
+        });
     }
 }
 
