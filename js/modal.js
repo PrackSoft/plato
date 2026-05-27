@@ -353,10 +353,10 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
     }
 
     if (!isInTrash) {
-        const addBtn = document.getElementById('addTermBtn');
+        const addTermBtn = document.getElementById('addTermBtn');
         const newTermInput = document.getElementById('newTermInput');
-        if (addBtn && newTermInput) {
-            addBtn.onclick = async () => {
+        if (addTermBtn && newTermInput) {
+            addTermBtn.onclick = async () => {
                 const newTerm = newTermInput.value.trim();
                 if (newTerm && !(movie.searchTerms || []).some(t => t.term === newTerm)) {
                     const newTerms = [...(movie.searchTerms || []).map(t => t.term), newTerm];
@@ -377,22 +377,33 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                 }
             };
             newTermInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') addBtn.click();
+                if (e.key === 'Enter') addTermBtn.click();
             });
         }
     }
 
-    // Eventos para Directores (placeholder)
+    // ========== DIRECTORES ==========
     if (!isInTrash) {
         const addDirectorBtn = document.getElementById('addDirectorBtn');
         const newDirectorInput = document.getElementById('newDirectorInput');
         if (addDirectorBtn && newDirectorInput) {
-            addDirectorBtn.onclick = () => {
+            addDirectorBtn.onclick = async () => {
                 const newDirector = newDirectorInput.value.trim();
                 if (newDirector) {
-                    // TODO: implementar guardado
-                    console.log('Add director:', newDirector);
+                    await addDirector(movie.youtubeId, newDirector);
+                    movie.directors = [...(movie.directors || []), newDirector];
                     newDirectorInput.value = '';
+                    const directorsContainer = document.getElementById('directorsList');
+                    if (directorsContainer) {
+                        directorsContainer.innerHTML = movie.directors.map(name => `
+                            <span class="term-chip">
+                                ${escapeHtml(name)}
+                                <span class="remove-director" data-name="${escapeHtml(name)}">✖</span>
+                            </span>
+                        `).join('');
+                        attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                    }
+                    if (currentOnUpdate) await currentOnUpdate();
                 }
             };
             newDirectorInput.addEventListener('keypress', (e) => {
@@ -401,26 +412,48 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         }
 
         document.querySelectorAll('.remove-director').forEach(el => {
-            el.onclick = (e) => {
+            el.onclick = async (e) => {
                 e.stopPropagation();
                 const name = el.dataset.name;
-                // TODO: implementar eliminación
-                console.log('Remove director:', name);
+                await removeDirector(movie.youtubeId, name);
+                movie.directors = (movie.directors || []).filter(d => d !== name);
+                const directorsContainer = document.getElementById('directorsList');
+                if (directorsContainer) {
+                    directorsContainer.innerHTML = movie.directors.map(name => `
+                        <span class="term-chip">
+                            ${escapeHtml(name)}
+                            <span class="remove-director" data-name="${escapeHtml(name)}">✖</span>
+                        </span>
+                    `).join('');
+                    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                }
+                if (currentOnUpdate) await currentOnUpdate();
             };
         });
     }
 
-    // Eventos para Actores (placeholder)
+    // ========== ACTORES ==========
     if (!isInTrash) {
         const addActorBtn = document.getElementById('addActorBtn');
         const newActorInput = document.getElementById('newActorInput');
         if (addActorBtn && newActorInput) {
-            addActorBtn.onclick = () => {
+            addActorBtn.onclick = async () => {
                 const newActor = newActorInput.value.trim();
                 if (newActor) {
-                    // TODO: implementar guardado
-                    console.log('Add actor:', newActor);
+                    await addActor(movie.youtubeId, newActor);
+                    movie.actors = [...(movie.actors || []), newActor];
                     newActorInput.value = '';
+                    const actorsContainer = document.getElementById('actorsList');
+                    if (actorsContainer) {
+                        actorsContainer.innerHTML = movie.actors.map(name => `
+                            <span class="term-chip">
+                                ${escapeHtml(name)}
+                                <span class="remove-actor" data-name="${escapeHtml(name)}">✖</span>
+                            </span>
+                        `).join('');
+                        attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                    }
+                    if (currentOnUpdate) await currentOnUpdate();
                 }
             };
             newActorInput.addEventListener('keypress', (e) => {
@@ -429,11 +462,22 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         }
 
         document.querySelectorAll('.remove-actor').forEach(el => {
-            el.onclick = (e) => {
+            el.onclick = async (e) => {
                 e.stopPropagation();
                 const name = el.dataset.name;
-                // TODO: implementar eliminación
-                console.log('Remove actor:', name);
+                await removeActor(movie.youtubeId, name);
+                movie.actors = (movie.actors || []).filter(a => a !== name);
+                const actorsContainer = document.getElementById('actorsList');
+                if (actorsContainer) {
+                    actorsContainer.innerHTML = movie.actors.map(name => `
+                        <span class="term-chip">
+                            ${escapeHtml(name)}
+                            <span class="remove-actor" data-name="${escapeHtml(name)}">✖</span>
+                        </span>
+                    `).join('');
+                    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                }
+                if (currentOnUpdate) await currentOnUpdate();
             };
         });
     }

@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con verificación de términos sin hijos después de toggleExact)
+// js/app.js - Plato App (con directores y actores)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -16,6 +16,8 @@ const filterFavoriteBtn = document.getElementById('filterFavoriteBtn');
 const filterTrashBtn = document.getElementById('filterTrashBtn');
 const filterRelatedBtn = document.getElementById('filterRelatedBtn');
 const termsBar = document.getElementById('termsBar');
+const directorsBar = document.getElementById('directorsBar');
+const actorsBar = document.getElementById('actorsBar');
 const toggleTermsBtn = document.getElementById('toggleTermsBtn');
 const settingsBtn = document.getElementById('settingsBtn');
 const settingsSidebar = document.getElementById('settingsSidebar');
@@ -31,7 +33,11 @@ let activeFavoriteFilter = false;
 let activeTrashFilter = false;
 let activeRelatedFilter = false;
 let activeTermFilter = null;
+let activeDirectorFilter = null;
+let activeActorFilter = null;
 let availableTerms = [];
+let availableDirectors = [];
+let availableActors = [];
 let currentSort = 'date';
 
 let searchOrder = 'relevance';
@@ -43,7 +49,6 @@ export function syncWindowTermFilter() {
     window.activeTermFilter = activeTermFilter;
 }
 
-// ---------------------- Helper: obtener activeTermFilter ----------------------
 export function getActiveTermFilter() {
     return activeTermFilter;
 }
@@ -227,10 +232,26 @@ export async function refreshAvailableTerms() {
         });
     }
     availableTerms = Array.from(termsSet).sort();
-    console.log('Términos actualizados:', availableTerms);
 }
 
-// Función para verificar si un término tiene al menos un hijo en el contexto actual
+export async function refreshAvailableDirectors() {
+    const allMovies = await getAllMovies();
+    const directorsSet = new Set();
+    for (const movie of allMovies) {
+        (movie.directors || []).forEach(d => directorsSet.add(d));
+    }
+    availableDirectors = Array.from(directorsSet).sort();
+}
+
+export async function refreshAvailableActors() {
+    const allMovies = await getAllMovies();
+    const actorsSet = new Set();
+    for (const movie of allMovies) {
+        (movie.actors || []).forEach(a => actorsSet.add(a));
+    }
+    availableActors = Array.from(actorsSet).sort();
+}
+
 export async function termHasChildren(term) {
     const allMovies = await getAllMovies();
     for (const movie of allMovies) {
@@ -401,6 +422,52 @@ function renderTermsBar(termsArray = null) {
     });
 }
 
+function renderDirectorsBar() {
+    if (!directorsBar) return;
+    if (availableDirectors.length === 0) {
+        directorsBar.innerHTML = '<div class="terms-placeholder">No directors yet</div>';
+        return;
+    }
+    const html = availableDirectors.map(name => `
+        <button class="btn btn-secondary btn-sm ${activeDirectorFilter === name ? 'active' : ''}" data-director="${escapeHtml(name)}">
+            ${escapeHtml(name)}
+        </button>
+    `).join('');
+    directorsBar.innerHTML = html;
+
+    document.querySelectorAll('#directorsBar .btn').forEach(btn => {
+        const name = btn.dataset.director;
+        btn.addEventListener('click', () => {
+            if (activeDirectorFilter === name) activeDirectorFilter = null;
+            else activeDirectorFilter = name;
+            loadAndDisplayAll();
+        });
+    });
+}
+
+function renderActorsBar() {
+    if (!actorsBar) return;
+    if (availableActors.length === 0) {
+        actorsBar.innerHTML = '<div class="terms-placeholder">No actors yet</div>';
+        return;
+    }
+    const html = availableActors.map(name => `
+        <button class="btn btn-secondary btn-sm ${activeActorFilter === name ? 'active' : ''}" data-actor="${escapeHtml(name)}">
+            ${escapeHtml(name)}
+        </button>
+    `).join('');
+    actorsBar.innerHTML = html;
+
+    document.querySelectorAll('#actorsBar .btn').forEach(btn => {
+        const name = btn.dataset.actor;
+        btn.addEventListener('click', () => {
+            if (activeActorFilter === name) activeActorFilter = null;
+            else activeActorFilter = name;
+            loadAndDisplayAll();
+        });
+    });
+}
+
 // ---------------------- Toggle Terms Bar visibility ----------------------
 if (toggleTermsBtn && termsBar) {
     toggleTermsBtn.addEventListener('click', () => {
@@ -427,6 +494,8 @@ function updateFilterButtonsUI() {
 
 function toggleWatchingFilter() {
     activeTermFilter = null;
+    activeDirectorFilter = null;
+    activeActorFilter = null;
     syncWindowTermFilter();
     activeRelatedFilter = false;
     if (activeTrashFilter) {
@@ -443,6 +512,8 @@ function toggleWatchingFilter() {
 
 function toggleFavoriteFilter() {
     activeTermFilter = null;
+    activeDirectorFilter = null;
+    activeActorFilter = null;
     syncWindowTermFilter();
     activeRelatedFilter = false;
     if (activeTrashFilter) {
@@ -459,6 +530,8 @@ function toggleFavoriteFilter() {
 
 function toggleTrashFilter() {
     activeTermFilter = null;
+    activeDirectorFilter = null;
+    activeActorFilter = null;
     syncWindowTermFilter();
     activeRelatedFilter = false;
     activeTrashFilter = !activeTrashFilter;
@@ -473,6 +546,8 @@ function toggleTrashFilter() {
 
 function toggleRelatedFilter() {
     activeTermFilter = null;
+    activeDirectorFilter = null;
+    activeActorFilter = null;
     syncWindowTermFilter();
     activeTrashFilter = false;
     activeRelatedFilter = !activeRelatedFilter;
@@ -541,6 +616,14 @@ export async function loadAndDisplayAll() {
                 return terms.some(t => t.exact === true);
             });
         }
+        
+        // Filtros por director y actor
+        if (activeDirectorFilter) {
+            allMovies = allMovies.filter(movie => (movie.directors || []).includes(activeDirectorFilter));
+        }
+        if (activeActorFilter) {
+            allMovies = allMovies.filter(movie => (movie.actors || []).includes(activeActorFilter));
+        }
     }
 
     let title;
@@ -554,6 +637,10 @@ export async function loadAndDisplayAll() {
         title = `Related results (${allMovies.length})`;
     } else if (activeTermFilter) {
         title = `Search term: "${activeTermFilter}" (${allMovies.length})`;
+    } else if (activeDirectorFilter) {
+        title = `Director: ${activeDirectorFilter} (${allMovies.length})`;
+    } else if (activeActorFilter) {
+        title = `Actor: ${activeActorFilter} (${allMovies.length})`;
     } else {
         title = `Exact match (${allMovies.length})`;
     }
@@ -601,8 +688,13 @@ export async function loadAndDisplayAll() {
 
         termsToShow = Array.from(allTerms).sort();
     }
-    console.log('termsToShow antes de render:', termsToShow);
     renderTermsBar(termsToShow);
+    
+    // Refrescar directores y actores disponibles
+    await refreshAvailableDirectors();
+    await refreshAvailableActors();
+    renderDirectorsBar();
+    renderActorsBar();
 }
 
 // ---------------------- Modal helpers ----------------------
@@ -673,6 +765,8 @@ searchBtn.onclick = async () => {
         updateFilterButtonsUI();
     }
     activeTermFilter = null;
+    activeDirectorFilter = null;
+    activeActorFilter = null;
     syncWindowTermFilter();
     
     let query = searchInput.value.trim();
