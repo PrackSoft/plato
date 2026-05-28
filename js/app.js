@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con Collections y ocultamiento de barras)
+// js/app.js - Plato App (Collections con renderMovies directo)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -47,7 +47,7 @@ let availableActors = [];
 let availableGenres = [];
 let availableYears = [];
 let currentSort = 'date';
-let collectionsSortBy = 'directors'; // 'directors', 'actors', 'genres', 'years'
+let collectionsSortBy = 'directors';
 
 let searchOrder = 'relevance';
 let searchDuration = 'long';
@@ -958,7 +958,6 @@ function renderYearsBar() {
 // ---------------------- Toggle Terms Bar visibility ----------------------
 if (toggleTermsBtn && termsBar) {
     toggleTermsBtn.addEventListener('click', () => {
-        // Si estamos en Collections, salir de Collections
         if (activeCollectionsFilter) {
             activeCollectionsFilter = false;
             updateFilterButtonsUI();
@@ -1079,11 +1078,9 @@ function toggleCollectionsFilter() {
     activeRelatedFilter = false;
     activeCollectionsFilter = !activeCollectionsFilter;
     
-    // Desmarcar el botón Search terms (toggleTermsBtn)
     if (toggleTermsBtn) {
         toggleTermsBtn.classList.remove('active');
     }
-    // Ocultar la barra de términos si está visible
     if (termsBar) {
         termsBar.classList.add('hidden');
     }
@@ -1238,7 +1235,9 @@ export async function loadAndDisplayAll() {
         }
     };
 
+    // CORRECCIÓN: Usar renderMovies directamente sobre resultsGrid
     if (activeCollectionsFilter) {
+        // Crear selector de Collections aparte
         const collectionsSortOptions = [
             { value: 'directors', label: 'Directors' },
             { value: 'actors', label: 'Actors' },
@@ -1246,7 +1245,7 @@ export async function loadAndDisplayAll() {
             { value: 'years', label: 'Years' }
         ];
         const collectionsSelectHtml = `
-            <div class="sort-control">
+            <div class="sort-control" id="collectionsSortControl">
                 <label>Group by:</label>
                 <select id="collectionsSortSelect">
                     ${collectionsSortOptions.map(opt => `<option value="${opt.value}" ${collectionsSortBy === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
@@ -1254,11 +1253,14 @@ export async function loadAndDisplayAll() {
             </div>
         `;
         
-        const tempContainer = document.createElement('div');
-        renderMovies(tempContainer, allMovies, title, 'main', 'date', null);
-        const tempHtml = tempContainer.innerHTML;
-        const finalHtml = tempHtml.replace(/<div class="sort-control">.*?<\/div>/, collectionsSelectHtml);
-        resultsGrid.innerHTML = finalHtml;
+        // Renderizar normalmente
+        renderMovies(resultsGrid, allMovies, title, 'main', currentSort, null);
+        
+        // Insertar selector de Collections después del history-header
+        const historyHeader = resultsGrid.querySelector('.history-header');
+        if (historyHeader && !document.getElementById('collectionsSortControl')) {
+            historyHeader.insertAdjacentHTML('beforeend', collectionsSelectHtml);
+        }
         
         const collectionsSortSelect = document.getElementById('collectionsSortSelect');
         if (collectionsSortSelect) {
@@ -1300,7 +1302,6 @@ export async function loadAndDisplayAll() {
         }
         renderTermsBar(termsToShow);
         
-        // Ocultar barras de Collections cuando no están activas
         if (directorsBar) directorsBar.classList.add('hidden');
         if (actorsBar) actorsBar.classList.add('hidden');
         if (genresBar) genresBar.classList.add('hidden');
@@ -1334,7 +1335,6 @@ export async function loadAndDisplayAll() {
         return;
     }
     
-    // Estos refrescos solo se ejecutan cuando NO estamos en Collections
     await refreshAvailableDirectors();
     await refreshAvailableActors();
     await refreshAvailableGenres();
