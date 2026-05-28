@@ -113,19 +113,23 @@ export function renderMovies(container, movies, title, source = 'main', currentS
     `;
 
     const sortSelect = document.getElementById('sortSelect');
-    if (sortSelect && onSortChange) {
-        sortSelect.addEventListener('change', (e) => {
-            onSortChange(e.target.value);
-        });
-    }
+        if (sortSelect && onSortChange) {
+            sortSelect.addEventListener('change', (e) => {
+                onSortChange(e.target.value);
+            });
+        }
 
-    document.querySelectorAll('.video-card').forEach(card => {
+        document.querySelectorAll('.video-card').forEach(card => {
         const movieId = card.dataset.id;
         const movie = movies.find(m => m.youtubeId === movieId);
+        console.log('Card click setup:', { movieId, hasMovie: !!movie, hasOpenMovieModal: !!window.openMovieModal });
         if (movie && window.openMovieModal) {
             card.onclick = () => {
+                console.log('Card clicked, opening modal for:', movie.title);
                 window.openMovieModal(movie, source);
             };
+        } else {
+            console.warn('Card not clickable:', { movieId, hasMovie: !!movie, hasOpenMovieModal: !!window.openMovieModal });
         }
     });
 }
