@@ -1,4 +1,4 @@
-// js/modal.js (con secciones Directors, Actors, Genres y Years)
+// js/modal.js (con cruces unificadas sin material-icons)
 import { getExtraInfo, toggleExact, addDirector, removeDirector, addActor, removeActor, addGenre, removeGenre, addYear, removeYear } from './db.js';
 import { refreshAvailableTerms, loadAndDisplayAll, syncWindowTermFilter, getActiveTermFilter } from './app.js';
 
@@ -106,7 +106,7 @@ function renderModalContent(movie, source) {
                 ${directors.map(name => `
                     <span class="term-chip">
                         ${escapeHtml(name)}
-                        ${!isInTrash ? `<span class="remove-director material-symbols-outlined" data-name="${escapeHtml(name)}">✖</span>` : ''}
+                        ${!isInTrash ? `<span class="remove-director" data-name="${escapeHtml(name)}">✖</span>` : ''}
                     </span>
                 `).join('')}
             </div>
@@ -127,7 +127,7 @@ function renderModalContent(movie, source) {
                 ${actors.map(name => `
                     <span class="term-chip">
                         ${escapeHtml(name)}
-                        ${!isInTrash ? `<span class="remove-actor material-symbols-outlined" data-name="${escapeHtml(name)}">✖</span>` : ''}
+                        ${!isInTrash ? `<span class="remove-actor" data-name="${escapeHtml(name)}">✖</span>` : ''}
                     </span>
                 `).join('')}
             </div>
@@ -148,7 +148,7 @@ function renderModalContent(movie, source) {
                 ${genres.map(name => `
                     <span class="term-chip">
                         ${escapeHtml(name)}
-                        ${!isInTrash ? `<span class="remove-genre material-symbols-outlined" data-name="${escapeHtml(name)}">✖</span>` : ''}
+                        ${!isInTrash ? `<span class="remove-genre" data-name="${escapeHtml(name)}">✖</span>` : ''}
                     </span>
                 `).join('')}
             </div>
@@ -169,7 +169,7 @@ function renderModalContent(movie, source) {
                 ${years.map(year => `
                     <span class="term-chip">
                         ${escapeHtml(year)}
-                        ${!isInTrash ? `<span class="remove-year material-symbols-outlined" data-name="${escapeHtml(year)}">✖</span>` : ''}
+                        ${!isInTrash ? `<span class="remove-year" data-name="${escapeHtml(year)}">✖</span>` : ''}
                     </span>
                 `).join('')}
             </div>
