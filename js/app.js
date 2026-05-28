@@ -1,4 +1,4 @@
-// js/app.js - Plato App (Collections con renderMovies directo)
+// js/app.js - Plato App (Collections con orden alfabético)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -1113,6 +1113,7 @@ export async function loadAndDisplayAll() {
             return hasDirectors || hasActors || hasGenres || hasYears;
         });
         
+        // Aplicar filtro por el chip seleccionado
         if (collectionsSortBy === 'directors' && activeDirectorFilter) {
             allMovies = allMovies.filter(movie => (movie.directors || []).includes(activeDirectorFilter));
         } else if (collectionsSortBy === 'actors' && activeActorFilter) {
@@ -1121,6 +1122,33 @@ export async function loadAndDisplayAll() {
             allMovies = allMovies.filter(movie => (movie.genres || []).includes(activeGenreFilter));
         } else if (collectionsSortBy === 'years' && activeYearFilter) {
             allMovies = allMovies.filter(movie => (movie.years || []).includes(activeYearFilter));
+        }
+        
+        // Ordenar alfabéticamente según el campo del grupo
+        if (collectionsSortBy === 'directors') {
+            allMovies.sort((a, b) => {
+                const aVal = a.directors && a.directors[0] ? a.directors[0] : '';
+                const bVal = b.directors && b.directors[0] ? b.directors[0] : '';
+                return aVal.localeCompare(bVal);
+            });
+        } else if (collectionsSortBy === 'actors') {
+            allMovies.sort((a, b) => {
+                const aVal = a.actors && a.actors[0] ? a.actors[0] : '';
+                const bVal = b.actors && b.actors[0] ? b.actors[0] : '';
+                return aVal.localeCompare(bVal);
+            });
+        } else if (collectionsSortBy === 'genres') {
+            allMovies.sort((a, b) => {
+                const aVal = a.genres && a.genres[0] ? a.genres[0] : '';
+                const bVal = b.genres && b.genres[0] ? b.genres[0] : '';
+                return aVal.localeCompare(bVal);
+            });
+        } else if (collectionsSortBy === 'years') {
+            allMovies.sort((a, b) => {
+                const aVal = a.years && a.years[0] ? a.years[0] : '';
+                const bVal = b.years && b.years[0] ? b.years[0] : '';
+                return aVal.localeCompare(bVal);
+            });
         }
     } else if (activeTrashFilter) {
         allMovies = await getTrashMovies();
@@ -1235,9 +1263,8 @@ export async function loadAndDisplayAll() {
         }
     };
 
-    // CORRECCIÓN: Usar renderMovies directamente sobre resultsGrid
     if (activeCollectionsFilter) {
-        // Crear selector de Collections aparte
+        // Crear selector de Collections aparte y ocultar el de sort normal
         const collectionsSortOptions = [
             { value: 'directors', label: 'Directors' },
             { value: 'actors', label: 'Actors' },
@@ -1253,12 +1280,15 @@ export async function loadAndDisplayAll() {
             </div>
         `;
         
-        // Renderizar normalmente
-        renderMovies(resultsGrid, allMovies, title, 'main', currentSort, null);
+        // Renderizar sin el selector de sort normal
+        renderMovies(resultsGrid, allMovies, title, 'main', 'date', null);
         
-        // Insertar selector de Collections después del history-header
+        // Insertar selector de Collections y eliminar el selector de sort normal
         const historyHeader = resultsGrid.querySelector('.history-header');
-        if (historyHeader && !document.getElementById('collectionsSortControl')) {
+        if (historyHeader) {
+            // Eliminar selector de sort existente si lo hay
+            const existingSortControl = historyHeader.querySelector('.sort-control');
+            if (existingSortControl) existingSortControl.remove();
             historyHeader.insertAdjacentHTML('beforeend', collectionsSelectHtml);
         }
         
