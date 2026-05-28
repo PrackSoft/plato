@@ -1,5 +1,5 @@
 const DB_NAME = 'PlatoDB';
-const DB_VERSION = 5; // Incrementado para nueva estructura
+const DB_VERSION = 6; // Incrementado para agregar genres y years
 const STORE_MOVIES = 'movies';
 const STORE_TRASH = 'trash';
 const STORE_EXTRA = 'movie_extra';
@@ -99,6 +99,8 @@ export async function saveMovie(movieData, searchTerm, isExact = true) {
                     searchTerms: terms,
                     directors: existing.directors || [],
                     actors: existing.actors || [],
+                    genres: existing.genres || [],
+                    years: existing.years || [],
                     viewCount: movieData.viewCount ?? existing.viewCount,
                     likeCount: movieData.likeCount ?? existing.likeCount,
                     commentCount: movieData.commentCount ?? existing.commentCount,
@@ -114,6 +116,8 @@ export async function saveMovie(movieData, searchTerm, isExact = true) {
                     searchTerms: searchTerm ? [{ term: searchTerm, exact: isExact }] : [],
                     directors: [],
                     actors: [],
+                    genres: [],
+                    years: [],
                     watching: false,
                     favorite: false,
                     dateSaved: new Date().toISOString(),
@@ -290,8 +294,7 @@ export async function toggleExact(youtubeId, term) {
     });
 }
 
-// ========== NUEVAS FUNCIONES PARA DIRECTORES Y ACTORES ==========
-
+// ========== FUNCIONES PARA DIRECTORES ==========
 export async function addDirector(youtubeId, directorName) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
@@ -345,28 +348,7 @@ export async function removeDirector(youtubeId, directorName) {
     });
 }
 
-export async function updateDirectors(youtubeId, directorsList) {
-    const db = await openDB();
-    const transaction = db.transaction([STORE_MOVIES], 'readwrite');
-    const store = transaction.objectStore(STORE_MOVIES);
-    return new Promise((resolve, reject) => {
-        const getRequest = store.get(youtubeId);
-        getRequest.onsuccess = () => {
-            const movie = getRequest.result;
-            if (movie) {
-                movie.directors = directorsList || [];
-                movie.lastUpdated = new Date().toISOString();
-                const putRequest = store.put(movie);
-                putRequest.onsuccess = () => resolve(movie.directors);
-                putRequest.onerror = () => reject(putRequest.error);
-            } else {
-                reject(new Error('Movie not found'));
-            }
-        };
-        getRequest.onerror = () => reject(getRequest.error);
-    });
-}
-
+// ========== FUNCIONES PARA ACTORES ==========
 export async function addActor(youtubeId, actorName) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
@@ -420,7 +402,8 @@ export async function removeActor(youtubeId, actorName) {
     });
 }
 
-export async function updateActors(youtubeId, actorsList) {
+// ========== FUNCIONES PARA GÉNEROS ==========
+export async function addGenre(youtubeId, genreName) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
     const store = transaction.objectStore(STORE_MOVIES);
@@ -429,11 +412,96 @@ export async function updateActors(youtubeId, actorsList) {
         getRequest.onsuccess = () => {
             const movie = getRequest.result;
             if (movie) {
-                movie.actors = actorsList || [];
-                movie.lastUpdated = new Date().toISOString();
-                const putRequest = store.put(movie);
-                putRequest.onsuccess = () => resolve(movie.actors);
-                putRequest.onerror = () => reject(putRequest.error);
+                if (!movie.genres) movie.genres = [];
+                if (!movie.genres.includes(genreName)) {
+                    movie.genres.push(genreName);
+                    movie.lastUpdated = new Date().toISOString();
+                    const putRequest = store.put(movie);
+                    putRequest.onsuccess = () => resolve(movie.genres);
+                    putRequest.onerror = () => reject(putRequest.error);
+                } else {
+                    resolve(movie.genres);
+                }
+            } else {
+                reject(new Error('Movie not found'));
+            }
+        };
+        getRequest.onerror = () => reject(getRequest.error);
+    });
+}
+
+export async function removeGenre(youtubeId, genreName) {
+    const db = await openDB();
+    const transaction = db.transaction([STORE_MOVIES], 'readwrite');
+    const store = transaction.objectStore(STORE_MOVIES);
+    return new Promise((resolve, reject) => {
+        const getRequest = store.get(youtubeId);
+        getRequest.onsuccess = () => {
+            const movie = getRequest.result;
+            if (movie) {
+                if (movie.genres) {
+                    movie.genres = movie.genres.filter(g => g !== genreName);
+                    movie.lastUpdated = new Date().toISOString();
+                    const putRequest = store.put(movie);
+                    putRequest.onsuccess = () => resolve(movie.genres);
+                    putRequest.onerror = () => reject(putRequest.error);
+                } else {
+                    resolve([]);
+                }
+            } else {
+                reject(new Error('Movie not found'));
+            }
+        };
+        getRequest.onerror = () => reject(getRequest.error);
+    });
+}
+
+// ========== FUNCIONES PARA AÑOS ==========
+export async function addYear(youtubeId, yearValue) {
+    const db = await openDB();
+    const transaction = db.transaction([STORE_MOVIES], 'readwrite');
+    const store = transaction.objectStore(STORE_MOVIES);
+    return new Promise((resolve, reject) => {
+        const getRequest = store.get(youtubeId);
+        getRequest.onsuccess = () => {
+            const movie = getRequest.result;
+            if (movie) {
+                if (!movie.years) movie.years = [];
+                if (!movie.years.includes(yearValue)) {
+                    movie.years.push(yearValue);
+                    movie.lastUpdated = new Date().toISOString();
+                    const putRequest = store.put(movie);
+                    putRequest.onsuccess = () => resolve(movie.years);
+                    putRequest.onerror = () => reject(putRequest.error);
+                } else {
+                    resolve(movie.years);
+                }
+            } else {
+                reject(new Error('Movie not found'));
+            }
+        };
+        getRequest.onerror = () => reject(getRequest.error);
+    });
+}
+
+export async function removeYear(youtubeId, yearValue) {
+    const db = await openDB();
+    const transaction = db.transaction([STORE_MOVIES], 'readwrite');
+    const store = transaction.objectStore(STORE_MOVIES);
+    return new Promise((resolve, reject) => {
+        const getRequest = store.get(youtubeId);
+        getRequest.onsuccess = () => {
+            const movie = getRequest.result;
+            if (movie) {
+                if (movie.years) {
+                    movie.years = movie.years.filter(y => y !== yearValue);
+                    movie.lastUpdated = new Date().toISOString();
+                    const putRequest = store.put(movie);
+                    putRequest.onsuccess = () => resolve(movie.years);
+                    putRequest.onerror = () => reject(putRequest.error);
+                } else {
+                    resolve([]);
+                }
             } else {
                 reject(new Error('Movie not found'));
             }

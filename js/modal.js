@@ -1,5 +1,5 @@
-// js/modal.js (con secciones Directors y Actors - solo interfaz)
-import { getExtraInfo, toggleExact, addDirector, removeDirector, addActor, removeActor } from './db.js';
+// js/modal.js (con secciones Directors, Actors, Genres y Years)
+import { getExtraInfo, toggleExact, addDirector, removeDirector, addActor, removeActor, addGenre, removeGenre, addYear, removeYear } from './db.js';
 import { refreshAvailableTerms, loadAndDisplayAll, syncWindowTermFilter, getActiveTermFilter } from './app.js';
 
 
@@ -60,9 +60,10 @@ function renderModalContent(movie, source) {
         ? `<p><strong>Tags:</strong> ${escapeHtml(movie.tags.join(', '))}</p>`
         : '';
 
-    // Directores y Actores (por ahora solo interfaz, sin datos reales)
     const directors = movie.directors || [];
     const actors = movie.actors || [];
+    const genres = movie.genres || [];
+    const years = movie.years || [];
 
     return `
         <div class="modal-header">
@@ -79,7 +80,7 @@ function renderModalContent(movie, source) {
         ${isInTrash ? `<p><strong>Deleted on:</strong> ${movie.deletedAt ? new Date(movie.deletedAt).toLocaleString() : 'Unknown'}</p>` : ''}
         
         <div class="modal-section">
-            <strong>Search Terms:</strong>
+            <strong>Search terms:</strong>
             <div id="termsList" class="terms-list">
                 ${(movie.searchTerms || []).map(t => `
                     <span class="term-chip">
@@ -105,7 +106,7 @@ function renderModalContent(movie, source) {
                 ${directors.map(name => `
                     <span class="term-chip">
                         ${escapeHtml(name)}
-                        ${!isInTrash ? `<span class="remove-director" data-name="${escapeHtml(name)}">✖</span>` : ''}
+                        ${!isInTrash ? `<span class="remove-director material-symbols-outlined" data-name="${escapeHtml(name)}">✖</span>` : ''}
                     </span>
                 `).join('')}
             </div>
@@ -126,7 +127,7 @@ function renderModalContent(movie, source) {
                 ${actors.map(name => `
                     <span class="term-chip">
                         ${escapeHtml(name)}
-                        ${!isInTrash ? `<span class="remove-actor" data-name="${escapeHtml(name)}">✖</span>` : ''}
+                        ${!isInTrash ? `<span class="remove-actor material-symbols-outlined" data-name="${escapeHtml(name)}">✖</span>` : ''}
                     </span>
                 `).join('')}
             </div>
@@ -134,6 +135,48 @@ function renderModalContent(movie, source) {
             <div class="add-term-row">
                 <input type="text" id="newActorInput" class="modal-input" placeholder="Add actor">
                 <span id="addActorBtn" class="modal-add-icon" title="Add actor">
+                    <span class="material-symbols-outlined">add</span>
+                </span>
+            </div>
+            ` : ''}
+        </div>
+
+        <!-- Sección Géneros -->
+        <div class="modal-section">
+            <strong>Genres:</strong>
+            <div id="genresList" class="terms-list">
+                ${genres.map(name => `
+                    <span class="term-chip">
+                        ${escapeHtml(name)}
+                        ${!isInTrash ? `<span class="remove-genre material-symbols-outlined" data-name="${escapeHtml(name)}">✖</span>` : ''}
+                    </span>
+                `).join('')}
+            </div>
+            ${!isInTrash ? `
+            <div class="add-term-row">
+                <input type="text" id="newGenreInput" class="modal-input" placeholder="Add genre">
+                <span id="addGenreBtn" class="modal-add-icon" title="Add genre">
+                    <span class="material-symbols-outlined">add</span>
+                </span>
+            </div>
+            ` : ''}
+        </div>
+
+        <!-- Sección Años -->
+        <div class="modal-section">
+            <strong>Years:</strong>
+            <div id="yearsList" class="terms-list">
+                ${years.map(year => `
+                    <span class="term-chip">
+                        ${escapeHtml(year)}
+                        ${!isInTrash ? `<span class="remove-year material-symbols-outlined" data-name="${escapeHtml(year)}">✖</span>` : ''}
+                    </span>
+                `).join('')}
+            </div>
+            ${!isInTrash ? `
+            <div class="add-term-row">
+                <input type="text" id="newYearInput" class="modal-input" placeholder="Add year">
+                <span id="addYearBtn" class="modal-add-icon" title="Add year">
                     <span class="material-symbols-outlined">add</span>
                 </span>
             </div>
@@ -474,6 +517,106 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                         <span class="term-chip">
                             ${escapeHtml(name)}
                             <span class="remove-actor" data-name="${escapeHtml(name)}">✖</span>
+                        </span>
+                    `).join('');
+                    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                }
+                if (currentOnUpdate) await currentOnUpdate();
+            };
+        });
+    }
+
+    // ========== GÉNEROS ==========
+    if (!isInTrash) {
+        const addGenreBtn = document.getElementById('addGenreBtn');
+        const newGenreInput = document.getElementById('newGenreInput');
+        if (addGenreBtn && newGenreInput) {
+            addGenreBtn.onclick = async () => {
+                const newGenre = newGenreInput.value.trim();
+                if (newGenre) {
+                    await addGenre(movie.youtubeId, newGenre);
+                    movie.genres = [...(movie.genres || []), newGenre];
+                    newGenreInput.value = '';
+                    const genresContainer = document.getElementById('genresList');
+                    if (genresContainer) {
+                        genresContainer.innerHTML = movie.genres.map(name => `
+                            <span class="term-chip">
+                                ${escapeHtml(name)}
+                                <span class="remove-genre" data-name="${escapeHtml(name)}">✖</span>
+                            </span>
+                        `).join('');
+                        attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                    }
+                    if (currentOnUpdate) await currentOnUpdate();
+                }
+            };
+            newGenreInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addGenreBtn.click();
+            });
+        }
+
+        document.querySelectorAll('.remove-genre').forEach(el => {
+            el.onclick = async (e) => {
+                e.stopPropagation();
+                const name = el.dataset.name;
+                await removeGenre(movie.youtubeId, name);
+                movie.genres = (movie.genres || []).filter(g => g !== name);
+                const genresContainer = document.getElementById('genresList');
+                if (genresContainer) {
+                    genresContainer.innerHTML = movie.genres.map(name => `
+                        <span class="term-chip">
+                            ${escapeHtml(name)}
+                            <span class="remove-genre" data-name="${escapeHtml(name)}">✖</span>
+                        </span>
+                    `).join('');
+                    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                }
+                if (currentOnUpdate) await currentOnUpdate();
+            };
+        });
+    }
+
+    // ========== AÑOS ==========
+    if (!isInTrash) {
+        const addYearBtn = document.getElementById('addYearBtn');
+        const newYearInput = document.getElementById('newYearInput');
+        if (addYearBtn && newYearInput) {
+            addYearBtn.onclick = async () => {
+                const newYear = newYearInput.value.trim();
+                if (newYear) {
+                    await addYear(movie.youtubeId, newYear);
+                    movie.years = [...(movie.years || []), newYear];
+                    newYearInput.value = '';
+                    const yearsContainer = document.getElementById('yearsList');
+                    if (yearsContainer) {
+                        yearsContainer.innerHTML = movie.years.map(year => `
+                            <span class="term-chip">
+                                ${escapeHtml(year)}
+                                <span class="remove-year" data-name="${escapeHtml(year)}">✖</span>
+                            </span>
+                        `).join('');
+                        attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                    }
+                    if (currentOnUpdate) await currentOnUpdate();
+                }
+            };
+            newYearInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addYearBtn.click();
+            });
+        }
+
+        document.querySelectorAll('.remove-year').forEach(el => {
+            el.onclick = async (e) => {
+                e.stopPropagation();
+                const year = el.dataset.name;
+                await removeYear(movie.youtubeId, year);
+                movie.years = (movie.years || []).filter(y => y !== year);
+                const yearsContainer = document.getElementById('yearsList');
+                if (yearsContainer) {
+                    yearsContainer.innerHTML = movie.years.map(year => `
+                        <span class="term-chip">
+                            ${escapeHtml(year)}
+                            <span class="remove-year" data-name="${escapeHtml(year)}">✖</span>
                         </span>
                     `).join('');
                     attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);

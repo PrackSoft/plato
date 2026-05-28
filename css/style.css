@@ -489,9 +489,11 @@ body {
     align-items: center;
     gap: 6px;
 }
-.term-chip .remove-term {
+.term-chip .remove-term, .remove-director, .remove-actor {
     color: var(--accent-light);
     cursor: pointer;
+    font-size: 14px;
+    margin-left: 4px;
 }
 
 .terms-bar {

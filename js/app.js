@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con directores y actores)
+// js/app.js - Plato App (con directores, actores, géneros y años)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -18,6 +18,8 @@ const filterRelatedBtn = document.getElementById('filterRelatedBtn');
 const termsBar = document.getElementById('termsBar');
 const directorsBar = document.getElementById('directorsBar');
 const actorsBar = document.getElementById('actorsBar');
+const genresBar = document.getElementById('genresBar');
+const yearsBar = document.getElementById('yearsBar');
 const toggleTermsBtn = document.getElementById('toggleTermsBtn');
 const settingsBtn = document.getElementById('settingsBtn');
 const settingsSidebar = document.getElementById('settingsSidebar');
@@ -35,9 +37,13 @@ let activeRelatedFilter = false;
 let activeTermFilter = null;
 let activeDirectorFilter = null;
 let activeActorFilter = null;
+let activeGenreFilter = null;
+let activeYearFilter = null;
 let availableTerms = [];
 let availableDirectors = [];
 let availableActors = [];
+let availableGenres = [];
+let availableYears = [];
 let currentSort = 'date';
 
 let searchOrder = 'relevance';
@@ -250,6 +256,24 @@ export async function refreshAvailableActors() {
         (movie.actors || []).forEach(a => actorsSet.add(a));
     }
     availableActors = Array.from(actorsSet).sort();
+}
+
+export async function refreshAvailableGenres() {
+    const allMovies = await getAllMovies();
+    const genresSet = new Set();
+    for (const movie of allMovies) {
+        (movie.genres || []).forEach(g => genresSet.add(g));
+    }
+    availableGenres = Array.from(genresSet).sort();
+}
+
+export async function refreshAvailableYears() {
+    const allMovies = await getAllMovies();
+    const yearsSet = new Set();
+    for (const movie of allMovies) {
+        (movie.years || []).forEach(y => yearsSet.add(y));
+    }
+    availableYears = Array.from(yearsSet).sort();
 }
 
 export async function termHasChildren(term) {
@@ -468,6 +492,52 @@ function renderActorsBar() {
     });
 }
 
+function renderGenresBar() {
+    if (!genresBar) return;
+    if (availableGenres.length === 0) {
+        genresBar.innerHTML = '<div class="terms-placeholder">No genres yet</div>';
+        return;
+    }
+    const html = availableGenres.map(name => `
+        <button class="btn btn-secondary btn-sm ${activeGenreFilter === name ? 'active' : ''}" data-genre="${escapeHtml(name)}">
+            ${escapeHtml(name)}
+        </button>
+    `).join('');
+    genresBar.innerHTML = html;
+
+    document.querySelectorAll('#genresBar .btn').forEach(btn => {
+        const name = btn.dataset.genre;
+        btn.addEventListener('click', () => {
+            if (activeGenreFilter === name) activeGenreFilter = null;
+            else activeGenreFilter = name;
+            loadAndDisplayAll();
+        });
+    });
+}
+
+function renderYearsBar() {
+    if (!yearsBar) return;
+    if (availableYears.length === 0) {
+        yearsBar.innerHTML = '<div class="terms-placeholder">No years yet</div>';
+        return;
+    }
+    const html = availableYears.map(year => `
+        <button class="btn btn-secondary btn-sm ${activeYearFilter === year ? 'active' : ''}" data-year="${escapeHtml(year)}">
+            ${escapeHtml(year)}
+        </button>
+    `).join('');
+    yearsBar.innerHTML = html;
+
+    document.querySelectorAll('#yearsBar .btn').forEach(btn => {
+        const year = btn.dataset.year;
+        btn.addEventListener('click', () => {
+            if (activeYearFilter === year) activeYearFilter = null;
+            else activeYearFilter = year;
+            loadAndDisplayAll();
+        });
+    });
+}
+
 // ---------------------- Toggle Terms Bar visibility ----------------------
 if (toggleTermsBtn && termsBar) {
     toggleTermsBtn.addEventListener('click', () => {
@@ -496,6 +566,8 @@ function toggleWatchingFilter() {
     activeTermFilter = null;
     activeDirectorFilter = null;
     activeActorFilter = null;
+    activeGenreFilter = null;
+    activeYearFilter = null;
     syncWindowTermFilter();
     activeRelatedFilter = false;
     if (activeTrashFilter) {
@@ -514,6 +586,8 @@ function toggleFavoriteFilter() {
     activeTermFilter = null;
     activeDirectorFilter = null;
     activeActorFilter = null;
+    activeGenreFilter = null;
+    activeYearFilter = null;
     syncWindowTermFilter();
     activeRelatedFilter = false;
     if (activeTrashFilter) {
@@ -532,6 +606,8 @@ function toggleTrashFilter() {
     activeTermFilter = null;
     activeDirectorFilter = null;
     activeActorFilter = null;
+    activeGenreFilter = null;
+    activeYearFilter = null;
     syncWindowTermFilter();
     activeRelatedFilter = false;
     activeTrashFilter = !activeTrashFilter;
@@ -548,6 +624,8 @@ function toggleRelatedFilter() {
     activeTermFilter = null;
     activeDirectorFilter = null;
     activeActorFilter = null;
+    activeGenreFilter = null;
+    activeYearFilter = null;
     syncWindowTermFilter();
     activeTrashFilter = false;
     activeRelatedFilter = !activeRelatedFilter;
@@ -617,12 +695,18 @@ export async function loadAndDisplayAll() {
             });
         }
         
-        // Filtros por director y actor
+        // Filtros por director, actor, género y año
         if (activeDirectorFilter) {
             allMovies = allMovies.filter(movie => (movie.directors || []).includes(activeDirectorFilter));
         }
         if (activeActorFilter) {
             allMovies = allMovies.filter(movie => (movie.actors || []).includes(activeActorFilter));
+        }
+        if (activeGenreFilter) {
+            allMovies = allMovies.filter(movie => (movie.genres || []).includes(activeGenreFilter));
+        }
+        if (activeYearFilter) {
+            allMovies = allMovies.filter(movie => (movie.years || []).includes(activeYearFilter));
         }
     }
 
@@ -641,6 +725,10 @@ export async function loadAndDisplayAll() {
         title = `Director: ${activeDirectorFilter} (${allMovies.length})`;
     } else if (activeActorFilter) {
         title = `Actor: ${activeActorFilter} (${allMovies.length})`;
+    } else if (activeGenreFilter) {
+        title = `Genre: ${activeGenreFilter} (${allMovies.length})`;
+    } else if (activeYearFilter) {
+        title = `Year: ${activeYearFilter} (${allMovies.length})`;
     } else {
         title = `Exact match (${allMovies.length})`;
     }
@@ -690,11 +778,15 @@ export async function loadAndDisplayAll() {
     }
     renderTermsBar(termsToShow);
     
-    // Refrescar directores y actores disponibles
+    // Refrescar todas las barras
     await refreshAvailableDirectors();
     await refreshAvailableActors();
+    await refreshAvailableGenres();
+    await refreshAvailableYears();
     renderDirectorsBar();
     renderActorsBar();
+    renderGenresBar();
+    renderYearsBar();
 }
 
 // ---------------------- Modal helpers ----------------------
@@ -767,6 +859,8 @@ searchBtn.onclick = async () => {
     activeTermFilter = null;
     activeDirectorFilter = null;
     activeActorFilter = null;
+    activeGenreFilter = null;
+    activeYearFilter = null;
     syncWindowTermFilter();
     
     let query = searchInput.value.trim();
