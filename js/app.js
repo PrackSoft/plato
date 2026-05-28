@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con Collections)
+// js/app.js - Plato App (con Collections y ocultamiento de barras)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -771,8 +771,10 @@ function renderDirectorsBar() {
     if (!directorsBar) return;
     if (availableDirectors.length === 0) {
         directorsBar.innerHTML = '<div class="terms-placeholder">No directors yet</div>';
+        directorsBar.classList.remove('hidden');
         return;
     }
+    directorsBar.classList.remove('hidden');
     const html = availableDirectors.map(name => `
         <button class="btn btn-secondary btn-sm ${activeDirectorFilter === name ? 'active' : ''}" data-director="${escapeHtml(name)}">
             ${escapeHtml(name)}
@@ -816,8 +818,10 @@ function renderActorsBar() {
     if (!actorsBar) return;
     if (availableActors.length === 0) {
         actorsBar.innerHTML = '<div class="terms-placeholder">No actors yet</div>';
+        actorsBar.classList.remove('hidden');
         return;
     }
+    actorsBar.classList.remove('hidden');
     const html = availableActors.map(name => `
         <button class="btn btn-secondary btn-sm ${activeActorFilter === name ? 'active' : ''}" data-actor="${escapeHtml(name)}">
             ${escapeHtml(name)}
@@ -861,8 +865,10 @@ function renderGenresBar() {
     if (!genresBar) return;
     if (availableGenres.length === 0) {
         genresBar.innerHTML = '<div class="terms-placeholder">No genres yet</div>';
+        genresBar.classList.remove('hidden');
         return;
     }
+    genresBar.classList.remove('hidden');
     const html = availableGenres.map(name => `
         <button class="btn btn-secondary btn-sm ${activeGenreFilter === name ? 'active' : ''}" data-genre="${escapeHtml(name)}">
             ${escapeHtml(name)}
@@ -906,8 +912,10 @@ function renderYearsBar() {
     if (!yearsBar) return;
     if (availableYears.length === 0) {
         yearsBar.innerHTML = '<div class="terms-placeholder">No years yet</div>';
+        yearsBar.classList.remove('hidden');
         return;
     }
+    yearsBar.classList.remove('hidden');
     const html = availableYears.map(year => `
         <button class="btn btn-secondary btn-sm ${activeYearFilter === year ? 'active' : ''}" data-year="${escapeHtml(year)}">
             ${escapeHtml(year)}
@@ -1275,52 +1283,46 @@ export async function loadAndDisplayAll() {
             termsToShow = Array.from(allTerms).sort();
         }
         renderTermsBar(termsToShow);
+        
+        // Ocultar barras de Collections cuando no están activas
+        if (directorsBar) directorsBar.classList.add('hidden');
+        if (actorsBar) actorsBar.classList.add('hidden');
+        if (genresBar) genresBar.classList.add('hidden');
+        if (yearsBar) yearsBar.classList.add('hidden');
     } else {
         if (collectionsSortBy === 'directors') {
             await refreshAvailableDirectors();
             renderDirectorsBar();
-            if (actorsBar) actorsBar.innerHTML = '';
-            if (genresBar) genresBar.innerHTML = '';
-            if (yearsBar) yearsBar.innerHTML = '';
+            if (actorsBar) actorsBar.classList.add('hidden');
+            if (genresBar) genresBar.classList.add('hidden');
+            if (yearsBar) yearsBar.classList.add('hidden');
         } else if (collectionsSortBy === 'actors') {
             await refreshAvailableActors();
             renderActorsBar();
-            if (directorsBar) directorsBar.innerHTML = '';
-            if (genresBar) genresBar.innerHTML = '';
-            if (yearsBar) yearsBar.innerHTML = '';
+            if (directorsBar) directorsBar.classList.add('hidden');
+            if (genresBar) genresBar.classList.add('hidden');
+            if (yearsBar) yearsBar.classList.add('hidden');
         } else if (collectionsSortBy === 'genres') {
             await refreshAvailableGenres();
             renderGenresBar();
-            if (directorsBar) directorsBar.innerHTML = '';
-            if (actorsBar) actorsBar.innerHTML = '';
-            if (yearsBar) yearsBar.innerHTML = '';
+            if (directorsBar) directorsBar.classList.add('hidden');
+            if (actorsBar) actorsBar.classList.add('hidden');
+            if (yearsBar) yearsBar.classList.add('hidden');
         } else if (collectionsSortBy === 'years') {
             await refreshAvailableYears();
             renderYearsBar();
-            if (directorsBar) directorsBar.innerHTML = '';
-            if (actorsBar) actorsBar.innerHTML = '';
-            if (genresBar) genresBar.innerHTML = '';
+            if (directorsBar) directorsBar.classList.add('hidden');
+            if (actorsBar) actorsBar.classList.add('hidden');
+            if (genresBar) genresBar.classList.add('hidden');
         }
         return;
     }
     
-    // Solo mostrar las barras de directores, actores, géneros y años si estamos en Collections
-    if (activeCollectionsFilter) {
-        await refreshAvailableDirectors();
-        await refreshAvailableActors();
-        await refreshAvailableGenres();
-        await refreshAvailableYears();
-        renderDirectorsBar();
-        renderActorsBar();
-        renderGenresBar();
-        renderYearsBar();
-    } else {
-        // Ocultar las barras (vaciar su contenido)
-        if (directorsBar) directorsBar.innerHTML = '';
-        if (actorsBar) actorsBar.innerHTML = '';
-        if (genresBar) genresBar.innerHTML = '';
-        if (yearsBar) yearsBar.innerHTML = '';
-    }
+    // Estos refrescos solo se ejecutan cuando NO estamos en Collections
+    await refreshAvailableDirectors();
+    await refreshAvailableActors();
+    await refreshAvailableGenres();
+    await refreshAvailableYears();
 }
 
 // ---------------------- Modal helpers ----------------------
