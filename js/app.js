@@ -1072,6 +1072,16 @@ function toggleCollectionsFilter() {
     activeTrashFilter = false;
     activeRelatedFilter = false;
     activeCollectionsFilter = !activeCollectionsFilter;
+    
+    // Desmarcar el botón Search terms (toggleTermsBtn)
+    if (toggleTermsBtn) {
+        toggleTermsBtn.classList.remove('active');
+    }
+    // Ocultar la barra de términos si está visible
+    if (termsBar) {
+        termsBar.classList.add('hidden');
+    }
+    
     if (activeCollectionsFilter) {
         collectionsSortBy = 'directors';
     }
