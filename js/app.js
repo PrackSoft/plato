@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con directores, actores, géneros y años)
+// js/app.js - Plato App (con edición global para directores, actores, géneros y años)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -222,6 +222,155 @@ function buildSettingsSidebarContent() {
     });
 }
 
+// ---------------------- Funciones globales para directores, actores, géneros, años ----------------------
+export async function renameDirectorInAllMovies(oldName, newName) {
+    if (oldName === newName) return;
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.directors && movie.directors.includes(oldName)) {
+            movie.directors = movie.directors.map(d => d === oldName ? newName : d);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function renameActorInAllMovies(oldName, newName) {
+    if (oldName === newName) return;
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.actors && movie.actors.includes(oldName)) {
+            movie.actors = movie.actors.map(a => a === oldName ? newName : a);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function renameGenreInAllMovies(oldName, newName) {
+    if (oldName === newName) return;
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.genres && movie.genres.includes(oldName)) {
+            movie.genres = movie.genres.map(g => g === oldName ? newName : g);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function renameYearInAllMovies(oldYear, newYear) {
+    if (oldYear === newYear) return;
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.years && movie.years.includes(oldYear)) {
+            movie.years = movie.years.map(y => y === oldYear ? newYear : y);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function deleteDirectorFromAllMovies(directorName) {
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.directors && movie.directors.includes(directorName)) {
+            movie.directors = movie.directors.filter(d => d !== directorName);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function deleteActorFromAllMovies(actorName) {
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.actors && movie.actors.includes(actorName)) {
+            movie.actors = movie.actors.filter(a => a !== actorName);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function deleteGenreFromAllMovies(genreName) {
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.genres && movie.genres.includes(genreName)) {
+            movie.genres = movie.genres.filter(g => g !== genreName);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function deleteYearFromAllMovies(yearValue) {
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.years && movie.years.includes(yearValue)) {
+            movie.years = movie.years.filter(y => y !== yearValue);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
 // ---------------------- Terms Bar ----------------------
 export async function refreshAvailableTerms() {
     const allMovies = await getAllMovies();
@@ -290,6 +439,38 @@ export async function termHasChildren(term) {
             return false;
         });
         if (found) return true;
+    }
+    return false;
+}
+
+export async function directorHasChildren(directorName) {
+    const allMovies = await getAllMovies();
+    for (const movie of allMovies) {
+        if ((movie.directors || []).includes(directorName)) return true;
+    }
+    return false;
+}
+
+export async function actorHasChildren(actorName) {
+    const allMovies = await getAllMovies();
+    for (const movie of allMovies) {
+        if ((movie.actors || []).includes(actorName)) return true;
+    }
+    return false;
+}
+
+export async function genreHasChildren(genreName) {
+    const allMovies = await getAllMovies();
+    for (const movie of allMovies) {
+        if ((movie.genres || []).includes(genreName)) return true;
+    }
+    return false;
+}
+
+export async function yearHasChildren(yearValue) {
+    const allMovies = await getAllMovies();
+    for (const movie of allMovies) {
+        if ((movie.years || []).includes(yearValue)) return true;
     }
     return false;
 }
@@ -397,6 +578,143 @@ async function deleteMoviesWithTermFromCurrentView(term) {
     await loadAndDisplayAll();
 }
 
+// Funciones de edición/eliminación para directores, actores, géneros, años
+async function editDirectorGlobally(oldName, newName) {
+    if (oldName === newName || !newName.trim()) return;
+    await renameDirectorInAllMovies(oldName, newName.trim());
+    if (activeDirectorFilter === oldName) activeDirectorFilter = newName.trim();
+    await refreshAvailableDirectors();
+    await loadAndDisplayAll();
+}
+
+async function deleteDirectorFromCurrentView(directorName) {
+    const hasChildren = await directorHasChildren(directorName);
+    if (!hasChildren) return;
+    
+    const confirmMsg = activeTrashFilter
+        ? `Permanently delete all movies with director "${directorName}" from trash?`
+        : `Move ${directorName} movies to trash?`;
+    
+    if (!confirm(confirmMsg)) return;
+    
+    const allMovies = await getAllMovies();
+    const moviesWithDirector = allMovies.filter(movie => (movie.directors || []).includes(directorName));
+    
+    for (const movie of moviesWithDirector) {
+        if (activeTrashFilter) {
+            await permanentlyDeleteMovie(movie.youtubeId);
+        } else {
+            await moveMovieToTrash(movie.youtubeId);
+        }
+    }
+    
+    if (activeDirectorFilter === directorName) activeDirectorFilter = null;
+    await refreshAvailableDirectors();
+    await loadAndDisplayAll();
+}
+
+async function editActorGlobally(oldName, newName) {
+    if (oldName === newName || !newName.trim()) return;
+    await renameActorInAllMovies(oldName, newName.trim());
+    if (activeActorFilter === oldName) activeActorFilter = newName.trim();
+    await refreshAvailableActors();
+    await loadAndDisplayAll();
+}
+
+async function deleteActorFromCurrentView(actorName) {
+    const hasChildren = await actorHasChildren(actorName);
+    if (!hasChildren) return;
+    
+    const confirmMsg = activeTrashFilter
+        ? `Permanently delete all movies with actor "${actorName}" from trash?`
+        : `Move ${actorName} movies to trash?`;
+    
+    if (!confirm(confirmMsg)) return;
+    
+    const allMovies = await getAllMovies();
+    const moviesWithActor = allMovies.filter(movie => (movie.actors || []).includes(actorName));
+    
+    for (const movie of moviesWithActor) {
+        if (activeTrashFilter) {
+            await permanentlyDeleteMovie(movie.youtubeId);
+        } else {
+            await moveMovieToTrash(movie.youtubeId);
+        }
+    }
+    
+    if (activeActorFilter === actorName) activeActorFilter = null;
+    await refreshAvailableActors();
+    await loadAndDisplayAll();
+}
+
+async function editGenreGlobally(oldName, newName) {
+    if (oldName === newName || !newName.trim()) return;
+    await renameGenreInAllMovies(oldName, newName.trim());
+    if (activeGenreFilter === oldName) activeGenreFilter = newName.trim();
+    await refreshAvailableGenres();
+    await loadAndDisplayAll();
+}
+
+async function deleteGenreFromCurrentView(genreName) {
+    const hasChildren = await genreHasChildren(genreName);
+    if (!hasChildren) return;
+    
+    const confirmMsg = activeTrashFilter
+        ? `Permanently delete all movies with genre "${genreName}" from trash?`
+        : `Move ${genreName} movies to trash?`;
+    
+    if (!confirm(confirmMsg)) return;
+    
+    const allMovies = await getAllMovies();
+    const moviesWithGenre = allMovies.filter(movie => (movie.genres || []).includes(genreName));
+    
+    for (const movie of moviesWithGenre) {
+        if (activeTrashFilter) {
+            await permanentlyDeleteMovie(movie.youtubeId);
+        } else {
+            await moveMovieToTrash(movie.youtubeId);
+        }
+    }
+    
+    if (activeGenreFilter === genreName) activeGenreFilter = null;
+    await refreshAvailableGenres();
+    await loadAndDisplayAll();
+}
+
+async function editYearGlobally(oldYear, newYear) {
+    if (oldYear === newYear || !newYear.trim()) return;
+    await renameYearInAllMovies(oldYear, newYear.trim());
+    if (activeYearFilter === oldYear) activeYearFilter = newYear.trim();
+    await refreshAvailableYears();
+    await loadAndDisplayAll();
+}
+
+async function deleteYearFromCurrentView(yearValue) {
+    const hasChildren = await yearHasChildren(yearValue);
+    if (!hasChildren) return;
+    
+    const confirmMsg = activeTrashFilter
+        ? `Permanently delete all movies with year "${yearValue}" from trash?`
+        : `Move ${yearValue} movies to trash?`;
+    
+    if (!confirm(confirmMsg)) return;
+    
+    const allMovies = await getAllMovies();
+    const moviesWithYear = allMovies.filter(movie => (movie.years || []).includes(yearValue));
+    
+    for (const movie of moviesWithYear) {
+        if (activeTrashFilter) {
+            await permanentlyDeleteMovie(movie.youtubeId);
+        } else {
+            await moveMovieToTrash(movie.youtubeId);
+        }
+    }
+    
+    if (activeYearFilter === yearValue) activeYearFilter = null;
+    await refreshAvailableYears();
+    await loadAndDisplayAll();
+}
+
 function renderTermsBar(termsArray = null) {
     const terms = termsArray !== null ? termsArray : availableTerms;
     if (!terms || terms.length === 0) {
@@ -455,16 +773,38 @@ function renderDirectorsBar() {
     const html = availableDirectors.map(name => `
         <button class="btn btn-secondary btn-sm ${activeDirectorFilter === name ? 'active' : ''}" data-director="${escapeHtml(name)}">
             ${escapeHtml(name)}
+            <span class="director-edit material-symbols-outlined" data-director="${escapeHtml(name)}" title="Edit director globally">edit</span>
+            <span class="director-delete" data-director="${escapeHtml(name)}" title="Delete director from all movies">✖</span>
         </button>
     `).join('');
     directorsBar.innerHTML = html;
 
     document.querySelectorAll('#directorsBar .btn').forEach(btn => {
         const name = btn.dataset.director;
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+            if (e.target.classList.contains('director-edit') || e.target.classList.contains('director-delete')) return;
             if (activeDirectorFilter === name) activeDirectorFilter = null;
             else activeDirectorFilter = name;
             loadAndDisplayAll();
+        });
+    });
+
+    document.querySelectorAll('.director-edit').forEach(editSpan => {
+        editSpan.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const oldName = editSpan.dataset.director;
+            const newName = prompt(`Edit director "${oldName}":`, oldName);
+            if (newName && newName !== oldName) {
+                await editDirectorGlobally(oldName, newName);
+            }
+        });
+    });
+
+    document.querySelectorAll('.director-delete').forEach(deleteSpan => {
+        deleteSpan.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const name = deleteSpan.dataset.director;
+            await deleteDirectorFromCurrentView(name);
         });
     });
 }
@@ -478,16 +818,38 @@ function renderActorsBar() {
     const html = availableActors.map(name => `
         <button class="btn btn-secondary btn-sm ${activeActorFilter === name ? 'active' : ''}" data-actor="${escapeHtml(name)}">
             ${escapeHtml(name)}
+            <span class="actor-edit material-symbols-outlined" data-actor="${escapeHtml(name)}" title="Edit actor globally">edit</span>
+            <span class="actor-delete" data-actor="${escapeHtml(name)}" title="Delete actor from all movies">✖</span>
         </button>
     `).join('');
     actorsBar.innerHTML = html;
 
     document.querySelectorAll('#actorsBar .btn').forEach(btn => {
         const name = btn.dataset.actor;
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+            if (e.target.classList.contains('actor-edit') || e.target.classList.contains('actor-delete')) return;
             if (activeActorFilter === name) activeActorFilter = null;
             else activeActorFilter = name;
             loadAndDisplayAll();
+        });
+    });
+
+    document.querySelectorAll('.actor-edit').forEach(editSpan => {
+        editSpan.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const oldName = editSpan.dataset.actor;
+            const newName = prompt(`Edit actor "${oldName}":`, oldName);
+            if (newName && newName !== oldName) {
+                await editActorGlobally(oldName, newName);
+            }
+        });
+    });
+
+    document.querySelectorAll('.actor-delete').forEach(deleteSpan => {
+        deleteSpan.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const name = deleteSpan.dataset.actor;
+            await deleteActorFromCurrentView(name);
         });
     });
 }
@@ -501,16 +863,38 @@ function renderGenresBar() {
     const html = availableGenres.map(name => `
         <button class="btn btn-secondary btn-sm ${activeGenreFilter === name ? 'active' : ''}" data-genre="${escapeHtml(name)}">
             ${escapeHtml(name)}
+            <span class="genre-edit material-symbols-outlined" data-genre="${escapeHtml(name)}" title="Edit genre globally">edit</span>
+            <span class="genre-delete" data-genre="${escapeHtml(name)}" title="Delete genre from all movies">✖</span>
         </button>
     `).join('');
     genresBar.innerHTML = html;
 
     document.querySelectorAll('#genresBar .btn').forEach(btn => {
         const name = btn.dataset.genre;
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+            if (e.target.classList.contains('genre-edit') || e.target.classList.contains('genre-delete')) return;
             if (activeGenreFilter === name) activeGenreFilter = null;
             else activeGenreFilter = name;
             loadAndDisplayAll();
+        });
+    });
+
+    document.querySelectorAll('.genre-edit').forEach(editSpan => {
+        editSpan.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const oldName = editSpan.dataset.genre;
+            const newName = prompt(`Edit genre "${oldName}":`, oldName);
+            if (newName && newName !== oldName) {
+                await editGenreGlobally(oldName, newName);
+            }
+        });
+    });
+
+    document.querySelectorAll('.genre-delete').forEach(deleteSpan => {
+        deleteSpan.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const name = deleteSpan.dataset.genre;
+            await deleteGenreFromCurrentView(name);
         });
     });
 }
@@ -524,16 +908,38 @@ function renderYearsBar() {
     const html = availableYears.map(year => `
         <button class="btn btn-secondary btn-sm ${activeYearFilter === year ? 'active' : ''}" data-year="${escapeHtml(year)}">
             ${escapeHtml(year)}
+            <span class="year-edit material-symbols-outlined" data-year="${escapeHtml(year)}" title="Edit year globally">edit</span>
+            <span class="year-delete" data-year="${escapeHtml(year)}" title="Delete year from all movies">✖</span>
         </button>
     `).join('');
     yearsBar.innerHTML = html;
 
     document.querySelectorAll('#yearsBar .btn').forEach(btn => {
         const year = btn.dataset.year;
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+            if (e.target.classList.contains('year-edit') || e.target.classList.contains('year-delete')) return;
             if (activeYearFilter === year) activeYearFilter = null;
             else activeYearFilter = year;
             loadAndDisplayAll();
+        });
+    });
+
+    document.querySelectorAll('.year-edit').forEach(editSpan => {
+        editSpan.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const oldYear = editSpan.dataset.year;
+            const newYear = prompt(`Edit year "${oldYear}":`, oldYear);
+            if (newYear && newYear !== oldYear) {
+                await editYearGlobally(oldYear, newYear);
+            }
+        });
+    });
+
+    document.querySelectorAll('.year-delete').forEach(deleteSpan => {
+        deleteSpan.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const year = deleteSpan.dataset.year;
+            await deleteYearFromCurrentView(year);
         });
     });
 }
