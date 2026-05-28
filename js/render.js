@@ -1,4 +1,4 @@
-// js/render.js
+// js/render.js (con soporte para orden de Collections)
 import { toggleWatching } from './db.js';
 
 function formatNumber(num) {
@@ -28,6 +28,7 @@ export function renderMovies(container, movies, title, source = 'main', currentS
 
     const sorted = sortMovies(movies, currentSort);
     const isDateSort = (currentSort === 'date');
+    const isCollectionsSort = (currentSort === 'collections');
 
     const sortOptions = [
         { value: 'date', label: 'Date' },
@@ -49,7 +50,7 @@ export function renderMovies(container, movies, title, source = 'main', currentS
 
     function generateCard(movie) {
         return `
-            <div class="video-card" data-id="${movie.youtubeId}">
+            <div class="video-card" data-id="${String(movie.youtubeId)}">
                 <img src="${movie.imageUrl}" alt="${movie.title}">
                 <div class="info">
                     <h3>${escapeHtml(movie.title)}</h3>
@@ -70,7 +71,7 @@ export function renderMovies(container, movies, title, source = 'main', currentS
     }
 
     let bodyHtml = '';
-    if (isDateSort) {
+    if (isDateSort && !isCollectionsSort) {
         const todayKey = getLocalDateKey(new Date().toISOString());
         const yesterdayDate = new Date();
         yesterdayDate.setDate(yesterdayDate.getDate() - 1);
@@ -107,29 +108,25 @@ export function renderMovies(container, movies, title, source = 'main', currentS
     container.innerHTML = `
         <div class="history-header">
             <h2>${escapeHtml(title)}</h2>
-            ${sortSelectHtml}
+            ${!isCollectionsSort ? sortSelectHtml : ''}
         </div>
         ${bodyHtml}
     `;
 
     const sortSelect = document.getElementById('sortSelect');
-        if (sortSelect && onSortChange) {
-            sortSelect.addEventListener('change', (e) => {
-                onSortChange(e.target.value);
-            });
-        }
+    if (sortSelect && onSortChange && !isCollectionsSort) {
+        sortSelect.addEventListener('change', (e) => {
+            onSortChange(e.target.value);
+        });
+    }
 
-        document.querySelectorAll('.video-card').forEach(card => {
+    document.querySelectorAll('.video-card').forEach(card => {
         const movieId = card.dataset.id;
-        const movie = movies.find(m => m.youtubeId === movieId);
-        console.log('Card click setup:', { movieId, hasMovie: !!movie, hasOpenMovieModal: !!window.openMovieModal });
+        const movie = movies.find(m => String(m.youtubeId) === String(movieId));
         if (movie && window.openMovieModal) {
             card.onclick = () => {
-                console.log('Card clicked, opening modal for:', movie.title);
                 window.openMovieModal(movie, source);
             };
-        } else {
-            console.warn('Card not clickable:', { movieId, hasMovie: !!movie, hasOpenMovieModal: !!window.openMovieModal });
         }
     });
 }
@@ -154,6 +151,9 @@ function sortMovies(movies, sortBy) {
             break;
         case 'favorite':
             sorted.sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0));
+            break;
+        case 'collections':
+            // No reordenar, respetar el orden actual (alfabético)
             break;
         default:
             sorted.sort((a, b) => new Date(b.dateSaved) - new Date(a.dateSaved));
