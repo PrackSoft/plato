@@ -1304,14 +1304,23 @@ export async function loadAndDisplayAll() {
         return;
     }
     
-    await refreshAvailableDirectors();
-    await refreshAvailableActors();
-    await refreshAvailableGenres();
-    await refreshAvailableYears();
-    renderDirectorsBar();
-    renderActorsBar();
-    renderGenresBar();
-    renderYearsBar();
+    // Solo mostrar las barras de directores, actores, géneros y años si estamos en Collections
+    if (activeCollectionsFilter) {
+        await refreshAvailableDirectors();
+        await refreshAvailableActors();
+        await refreshAvailableGenres();
+        await refreshAvailableYears();
+        renderDirectorsBar();
+        renderActorsBar();
+        renderGenresBar();
+        renderYearsBar();
+    } else {
+        // Ocultar las barras (vaciar su contenido)
+        if (directorsBar) directorsBar.innerHTML = '';
+        if (actorsBar) actorsBar.innerHTML = '';
+        if (genresBar) genresBar.innerHTML = '';
+        if (yearsBar) yearsBar.innerHTML = '';
+    }
 }
 
 // ---------------------- Modal helpers ----------------------
