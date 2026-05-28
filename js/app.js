@@ -958,12 +958,18 @@ function renderYearsBar() {
 // ---------------------- Toggle Terms Bar visibility ----------------------
 if (toggleTermsBtn && termsBar) {
     toggleTermsBtn.addEventListener('click', () => {
+        // Si estamos en Collections, salir de Collections
+        if (activeCollectionsFilter) {
+            activeCollectionsFilter = false;
+            updateFilterButtonsUI();
+        }
         const isHidden = termsBar.classList.toggle('hidden');
         if (isHidden) {
             toggleTermsBtn.classList.remove('active');
         } else {
             toggleTermsBtn.classList.add('active');
         }
+        loadAndDisplayAll();
     });
 }
 
