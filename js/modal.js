@@ -1,5 +1,5 @@
-// js/modal.js (con cruces unificadas sin material-icons)
-import { getExtraInfo, toggleExact, addDirector, removeDirector, addActor, removeActor, addGenre, removeGenre, addYear, removeYear } from './db.js';
+// js/modal.js (con Countries y Languages)
+import { getExtraInfo, toggleExact, addDirector, removeDirector, addActor, removeActor, addGenre, removeGenre, addYear, removeYear, addCountry, removeCountry, addLanguage, removeLanguage } from './db.js';
 import { refreshAvailableTerms, loadAndDisplayAll, syncWindowTermFilter, getActiveTermFilter } from './app.js';
 
 
@@ -64,6 +64,8 @@ function renderModalContent(movie, source) {
     const actors = movie.actors || [];
     const genres = movie.genres || [];
     const years = movie.years || [];
+    const countries = movie.countries || [];
+    const languages = movie.languages || [];
 
     return `
         <div class="modal-header">
@@ -177,6 +179,48 @@ function renderModalContent(movie, source) {
             <div class="add-term-row">
                 <input type="text" id="newYearInput" class="modal-input" placeholder="Add year">
                 <span id="addYearBtn" class="modal-add-icon" title="Add year">
+                    <span class="material-symbols-outlined">add</span>
+                </span>
+            </div>
+            ` : ''}
+        </div>
+
+        <!-- Sección Países -->
+        <div class="modal-section">
+            <strong>Countries:</strong>
+            <div id="countriesList" class="terms-list">
+                ${countries.map(name => `
+                    <span class="term-chip">
+                        ${escapeHtml(name)}
+                        ${!isInTrash ? `<span class="remove-country" data-name="${escapeHtml(name)}">✖</span>` : ''}
+                    </span>
+                `).join('')}
+            </div>
+            ${!isInTrash ? `
+            <div class="add-term-row">
+                <input type="text" id="newCountryInput" class="modal-input" placeholder="Add country">
+                <span id="addCountryBtn" class="modal-add-icon" title="Add country">
+                    <span class="material-symbols-outlined">add</span>
+                </span>
+            </div>
+            ` : ''}
+        </div>
+
+        <!-- Sección Idiomas -->
+        <div class="modal-section">
+            <strong>Languages:</strong>
+            <div id="languagesList" class="terms-list">
+                ${languages.map(name => `
+                    <span class="term-chip">
+                        ${escapeHtml(name)}
+                        ${!isInTrash ? `<span class="remove-language" data-name="${escapeHtml(name)}">✖</span>` : ''}
+                    </span>
+                `).join('')}
+            </div>
+            ${!isInTrash ? `
+            <div class="add-term-row">
+                <input type="text" id="newLanguageInput" class="modal-input" placeholder="Add language">
+                <span id="addLanguageBtn" class="modal-add-icon" title="Add language">
                     <span class="material-symbols-outlined">add</span>
                 </span>
             </div>
@@ -617,6 +661,106 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                         <span class="term-chip">
                             ${escapeHtml(year)}
                             <span class="remove-year" data-name="${escapeHtml(year)}">✖</span>
+                        </span>
+                    `).join('');
+                    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                }
+                if (currentOnUpdate) await currentOnUpdate();
+            };
+        });
+    }
+
+    // ========== PAÍSES ==========
+    if (!isInTrash) {
+        const addCountryBtn = document.getElementById('addCountryBtn');
+        const newCountryInput = document.getElementById('newCountryInput');
+        if (addCountryBtn && newCountryInput) {
+            addCountryBtn.onclick = async () => {
+                const newCountry = newCountryInput.value.trim();
+                if (newCountry) {
+                    await addCountry(movie.youtubeId, newCountry);
+                    movie.countries = [...(movie.countries || []), newCountry];
+                    newCountryInput.value = '';
+                    const countriesContainer = document.getElementById('countriesList');
+                    if (countriesContainer) {
+                        countriesContainer.innerHTML = movie.countries.map(name => `
+                            <span class="term-chip">
+                                ${escapeHtml(name)}
+                                <span class="remove-country" data-name="${escapeHtml(name)}">✖</span>
+                            </span>
+                        `).join('');
+                        attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                    }
+                    if (currentOnUpdate) await currentOnUpdate();
+                }
+            };
+            newCountryInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addCountryBtn.click();
+            });
+        }
+
+        document.querySelectorAll('.remove-country').forEach(el => {
+            el.onclick = async (e) => {
+                e.stopPropagation();
+                const name = el.dataset.name;
+                await removeCountry(movie.youtubeId, name);
+                movie.countries = (movie.countries || []).filter(c => c !== name);
+                const countriesContainer = document.getElementById('countriesList');
+                if (countriesContainer) {
+                    countriesContainer.innerHTML = movie.countries.map(name => `
+                        <span class="term-chip">
+                            ${escapeHtml(name)}
+                            <span class="remove-country" data-name="${escapeHtml(name)}">✖</span>
+                        </span>
+                    `).join('');
+                    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                }
+                if (currentOnUpdate) await currentOnUpdate();
+            };
+        });
+    }
+
+    // ========== IDIOMAS ==========
+    if (!isInTrash) {
+        const addLanguageBtn = document.getElementById('addLanguageBtn');
+        const newLanguageInput = document.getElementById('newLanguageInput');
+        if (addLanguageBtn && newLanguageInput) {
+            addLanguageBtn.onclick = async () => {
+                const newLanguage = newLanguageInput.value.trim();
+                if (newLanguage) {
+                    await addLanguage(movie.youtubeId, newLanguage);
+                    movie.languages = [...(movie.languages || []), newLanguage];
+                    newLanguageInput.value = '';
+                    const languagesContainer = document.getElementById('languagesList');
+                    if (languagesContainer) {
+                        languagesContainer.innerHTML = movie.languages.map(name => `
+                            <span class="term-chip">
+                                ${escapeHtml(name)}
+                                <span class="remove-language" data-name="${escapeHtml(name)}">✖</span>
+                            </span>
+                        `).join('');
+                        attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                    }
+                    if (currentOnUpdate) await currentOnUpdate();
+                }
+            };
+            newLanguageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addLanguageBtn.click();
+            });
+        }
+
+        document.querySelectorAll('.remove-language').forEach(el => {
+            el.onclick = async (e) => {
+                e.stopPropagation();
+                const name = el.dataset.name;
+                await removeLanguage(movie.youtubeId, name);
+                movie.languages = (movie.languages || []).filter(l => l !== name);
+                const languagesContainer = document.getElementById('languagesList');
+                if (languagesContainer) {
+                    languagesContainer.innerHTML = movie.languages.map(name => `
+                        <span class="term-chip">
+                            ${escapeHtml(name)}
+                            <span class="remove-language" data-name="${escapeHtml(name)}">✖</span>
                         </span>
                     `).join('');
                     attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);

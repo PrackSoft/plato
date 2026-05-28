@@ -1,4 +1,4 @@
-// js/app.js - Plato App (Collections con orden alfabético)
+// js/app.js - Plato App (con Countries y Languages)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -21,6 +21,8 @@ const directorsBar = document.getElementById('directorsBar');
 const actorsBar = document.getElementById('actorsBar');
 const genresBar = document.getElementById('genresBar');
 const yearsBar = document.getElementById('yearsBar');
+const countriesBar = document.getElementById('countriesBar');
+const languagesBar = document.getElementById('languagesBar');
 const toggleTermsBtn = document.getElementById('toggleTermsBtn');
 const settingsBtn = document.getElementById('settingsBtn');
 const settingsSidebar = document.getElementById('settingsSidebar');
@@ -41,11 +43,15 @@ let activeDirectorFilter = null;
 let activeActorFilter = null;
 let activeGenreFilter = null;
 let activeYearFilter = null;
+let activeCountryFilter = null;
+let activeLanguageFilter = null;
 let availableTerms = [];
 let availableDirectors = [];
 let availableActors = [];
 let availableGenres = [];
 let availableYears = [];
+let availableCountries = [];
+let availableLanguages = [];
 let currentSort = 'date';
 let collectionsSortBy = 'directors';
 
@@ -225,7 +231,7 @@ function buildSettingsSidebarContent() {
     });
 }
 
-// ---------------------- Funciones globales para directores, actores, géneros, años ----------------------
+// ---------------------- Funciones globales para directores, actores, géneros, años, países, idiomas ----------------------
 export async function renameDirectorInAllMovies(oldName, newName) {
     if (oldName === newName) return;
     const db = await openDB();
@@ -292,6 +298,44 @@ export async function renameYearInAllMovies(oldYear, newYear) {
     for (const movie of allMovies) {
         if (movie.years && movie.years.includes(oldYear)) {
             movie.years = movie.years.map(y => y === oldYear ? newYear : y);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function renameCountryInAllMovies(oldName, newName) {
+    if (oldName === newName) return;
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.countries && movie.countries.includes(oldName)) {
+            movie.countries = movie.countries.map(c => c === oldName ? newName : c);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function renameLanguageInAllMovies(oldName, newName) {
+    if (oldName === newName) return;
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.languages && movie.languages.includes(oldName)) {
+            movie.languages = movie.languages.map(l => l === oldName ? newName : l);
             movie.lastUpdated = new Date().toISOString();
             await new Promise((resolve, reject) => {
                 const req = store.put(movie);
@@ -374,6 +418,42 @@ export async function deleteYearFromAllMovies(yearValue) {
     }
 }
 
+export async function deleteCountryFromAllMovies(countryName) {
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.countries && movie.countries.includes(countryName)) {
+            movie.countries = movie.countries.filter(c => c !== countryName);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function deleteLanguageFromAllMovies(languageName) {
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.languages && movie.languages.includes(languageName)) {
+            movie.languages = movie.languages.filter(l => l !== languageName);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
 // ---------------------- Terms Bar ----------------------
 export async function refreshAvailableTerms() {
     const allMovies = await getAllMovies();
@@ -428,6 +508,24 @@ export async function refreshAvailableYears() {
     availableYears = Array.from(yearsSet).sort();
 }
 
+export async function refreshAvailableCountries() {
+    const allMovies = await getAllMovies();
+    const countriesSet = new Set();
+    for (const movie of allMovies) {
+        (movie.countries || []).forEach(c => countriesSet.add(c));
+    }
+    availableCountries = Array.from(countriesSet).sort();
+}
+
+export async function refreshAvailableLanguages() {
+    const allMovies = await getAllMovies();
+    const languagesSet = new Set();
+    for (const movie of allMovies) {
+        (movie.languages || []).forEach(l => languagesSet.add(l));
+    }
+    availableLanguages = Array.from(languagesSet).sort();
+}
+
 export async function termHasChildren(term) {
     const allMovies = await getAllMovies();
     for (const movie of allMovies) {
@@ -474,6 +572,22 @@ export async function yearHasChildren(yearValue) {
     const allMovies = await getAllMovies();
     for (const movie of allMovies) {
         if ((movie.years || []).includes(yearValue)) return true;
+    }
+    return false;
+}
+
+export async function countryHasChildren(countryName) {
+    const allMovies = await getAllMovies();
+    for (const movie of allMovies) {
+        if ((movie.countries || []).includes(countryName)) return true;
+    }
+    return false;
+}
+
+export async function languageHasChildren(languageName) {
+    const allMovies = await getAllMovies();
+    for (const movie of allMovies) {
+        if ((movie.languages || []).includes(languageName)) return true;
     }
     return false;
 }
@@ -581,7 +695,7 @@ async function deleteMoviesWithTermFromCurrentView(term) {
     await loadAndDisplayAll();
 }
 
-// Funciones de edición/eliminación para directores, actores, géneros, años
+// Funciones de edición/eliminación para directores, actores, géneros, años, países, idiomas
 async function editDirectorGlobally(oldName, newName) {
     if (oldName === newName || !newName.trim()) return;
     await renameDirectorInAllMovies(oldName, newName.trim());
@@ -715,6 +829,74 @@ async function deleteYearFromCurrentView(yearValue) {
     
     if (activeYearFilter === yearValue) activeYearFilter = null;
     await refreshAvailableYears();
+    await loadAndDisplayAll();
+}
+
+async function editCountryGlobally(oldName, newName) {
+    if (oldName === newName || !newName.trim()) return;
+    await renameCountryInAllMovies(oldName, newName.trim());
+    if (activeCountryFilter === oldName) activeCountryFilter = newName.trim();
+    await refreshAvailableCountries();
+    await loadAndDisplayAll();
+}
+
+async function deleteCountryFromCurrentView(countryName) {
+    const hasChildren = await countryHasChildren(countryName);
+    if (!hasChildren) return;
+    
+    const confirmMsg = activeTrashFilter
+        ? `Permanently delete all movies with country "${countryName}" from trash?`
+        : `Move ${countryName} movies to trash?`;
+    
+    if (!confirm(confirmMsg)) return;
+    
+    const allMovies = await getAllMovies();
+    const moviesWithCountry = allMovies.filter(movie => (movie.countries || []).includes(countryName));
+    
+    for (const movie of moviesWithCountry) {
+        if (activeTrashFilter) {
+            await permanentlyDeleteMovie(movie.youtubeId);
+        } else {
+            await moveMovieToTrash(movie.youtubeId);
+        }
+    }
+    
+    if (activeCountryFilter === countryName) activeCountryFilter = null;
+    await refreshAvailableCountries();
+    await loadAndDisplayAll();
+}
+
+async function editLanguageGlobally(oldName, newName) {
+    if (oldName === newName || !newName.trim()) return;
+    await renameLanguageInAllMovies(oldName, newName.trim());
+    if (activeLanguageFilter === oldName) activeLanguageFilter = newName.trim();
+    await refreshAvailableLanguages();
+    await loadAndDisplayAll();
+}
+
+async function deleteLanguageFromCurrentView(languageName) {
+    const hasChildren = await languageHasChildren(languageName);
+    if (!hasChildren) return;
+    
+    const confirmMsg = activeTrashFilter
+        ? `Permanently delete all movies with language "${languageName}" from trash?`
+        : `Move ${languageName} movies to trash?`;
+    
+    if (!confirm(confirmMsg)) return;
+    
+    const allMovies = await getAllMovies();
+    const moviesWithLanguage = allMovies.filter(movie => (movie.languages || []).includes(languageName));
+    
+    for (const movie of moviesWithLanguage) {
+        if (activeTrashFilter) {
+            await permanentlyDeleteMovie(movie.youtubeId);
+        } else {
+            await moveMovieToTrash(movie.youtubeId);
+        }
+    }
+    
+    if (activeLanguageFilter === languageName) activeLanguageFilter = null;
+    await refreshAvailableLanguages();
     await loadAndDisplayAll();
 }
 
@@ -955,6 +1137,100 @@ function renderYearsBar() {
     });
 }
 
+function renderCountriesBar() {
+    if (!countriesBar) return;
+    if (availableCountries.length === 0) {
+        countriesBar.innerHTML = '<div class="terms-placeholder">No countries yet</div>';
+        countriesBar.classList.remove('hidden');
+        return;
+    }
+    countriesBar.classList.remove('hidden');
+    const html = availableCountries.map(name => `
+        <button class="btn btn-secondary btn-sm ${activeCountryFilter === name ? 'active' : ''}" data-country="${escapeHtml(name)}">
+            ${escapeHtml(name)}
+            <span class="country-edit material-symbols-outlined" data-country="${escapeHtml(name)}" title="Edit country globally">edit</span>
+            <span class="country-delete" data-country="${escapeHtml(name)}" title="Delete country from all movies">✖</span>
+        </button>
+    `).join('');
+    countriesBar.innerHTML = html;
+
+    document.querySelectorAll('#countriesBar .btn').forEach(btn => {
+        const name = btn.dataset.country;
+        btn.addEventListener('click', (e) => {
+            if (e.target.classList.contains('country-edit') || e.target.classList.contains('country-delete')) return;
+            if (activeCountryFilter === name) activeCountryFilter = null;
+            else activeCountryFilter = name;
+            loadAndDisplayAll();
+        });
+    });
+
+    document.querySelectorAll('.country-edit').forEach(editSpan => {
+        editSpan.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const oldName = editSpan.dataset.country;
+            const newName = prompt(`Edit country "${oldName}":`, oldName);
+            if (newName && newName !== oldName) {
+                await editCountryGlobally(oldName, newName);
+            }
+        });
+    });
+
+    document.querySelectorAll('.country-delete').forEach(deleteSpan => {
+        deleteSpan.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const name = deleteSpan.dataset.country;
+            await deleteCountryFromCurrentView(name);
+        });
+    });
+}
+
+function renderLanguagesBar() {
+    if (!languagesBar) return;
+    if (availableLanguages.length === 0) {
+        languagesBar.innerHTML = '<div class="terms-placeholder">No languages yet</div>';
+        languagesBar.classList.remove('hidden');
+        return;
+    }
+    languagesBar.classList.remove('hidden');
+    const html = availableLanguages.map(name => `
+        <button class="btn btn-secondary btn-sm ${activeLanguageFilter === name ? 'active' : ''}" data-language="${escapeHtml(name)}">
+            ${escapeHtml(name)}
+            <span class="language-edit material-symbols-outlined" data-language="${escapeHtml(name)}" title="Edit language globally">edit</span>
+            <span class="language-delete" data-language="${escapeHtml(name)}" title="Delete language from all movies">✖</span>
+        </button>
+    `).join('');
+    languagesBar.innerHTML = html;
+
+    document.querySelectorAll('#languagesBar .btn').forEach(btn => {
+        const name = btn.dataset.language;
+        btn.addEventListener('click', (e) => {
+            if (e.target.classList.contains('language-edit') || e.target.classList.contains('language-delete')) return;
+            if (activeLanguageFilter === name) activeLanguageFilter = null;
+            else activeLanguageFilter = name;
+            loadAndDisplayAll();
+        });
+    });
+
+    document.querySelectorAll('.language-edit').forEach(editSpan => {
+        editSpan.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const oldName = editSpan.dataset.language;
+            const newName = prompt(`Edit language "${oldName}":`, oldName);
+            if (newName && newName !== oldName) {
+                await editLanguageGlobally(oldName, newName);
+            }
+        });
+    });
+
+    document.querySelectorAll('.language-delete').forEach(deleteSpan => {
+        deleteSpan.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const name = deleteSpan.dataset.language;
+            await deleteLanguageFromCurrentView(name);
+        });
+    });
+}
+
 // ---------------------- Toggle Terms Bar visibility ----------------------
 if (toggleTermsBtn && termsBar) {
     toggleTermsBtn.addEventListener('click', () => {
@@ -993,6 +1269,8 @@ function toggleWatchingFilter() {
     activeActorFilter = null;
     activeGenreFilter = null;
     activeYearFilter = null;
+    activeCountryFilter = null;
+    activeLanguageFilter = null;
     activeCollectionsFilter = false;
     syncWindowTermFilter();
     activeRelatedFilter = false;
@@ -1014,6 +1292,8 @@ function toggleFavoriteFilter() {
     activeActorFilter = null;
     activeGenreFilter = null;
     activeYearFilter = null;
+    activeCountryFilter = null;
+    activeLanguageFilter = null;
     activeCollectionsFilter = false;
     syncWindowTermFilter();
     activeRelatedFilter = false;
@@ -1035,6 +1315,8 @@ function toggleTrashFilter() {
     activeActorFilter = null;
     activeGenreFilter = null;
     activeYearFilter = null;
+    activeCountryFilter = null;
+    activeLanguageFilter = null;
     activeCollectionsFilter = false;
     syncWindowTermFilter();
     activeRelatedFilter = false;
@@ -1054,6 +1336,8 @@ function toggleRelatedFilter() {
     activeActorFilter = null;
     activeGenreFilter = null;
     activeYearFilter = null;
+    activeCountryFilter = null;
+    activeLanguageFilter = null;
     activeCollectionsFilter = false;
     syncWindowTermFilter();
     activeTrashFilter = false;
@@ -1072,6 +1356,8 @@ function toggleCollectionsFilter() {
     activeActorFilter = null;
     activeGenreFilter = null;
     activeYearFilter = null;
+    activeCountryFilter = null;
+    activeLanguageFilter = null;
     activeWatchingFilter = false;
     activeFavoriteFilter = false;
     activeTrashFilter = false;
@@ -1110,7 +1396,9 @@ export async function loadAndDisplayAll() {
             const hasActors = (movie.actors || []).length > 0;
             const hasGenres = (movie.genres || []).length > 0;
             const hasYears = (movie.years || []).length > 0;
-            return hasDirectors || hasActors || hasGenres || hasYears;
+            const hasCountries = (movie.countries || []).length > 0;
+            const hasLanguages = (movie.languages || []).length > 0;
+            return hasDirectors || hasActors || hasGenres || hasYears || hasCountries || hasLanguages;
         });
         
         // Aplicar filtro por el chip seleccionado
@@ -1122,6 +1410,10 @@ export async function loadAndDisplayAll() {
             allMovies = allMovies.filter(movie => (movie.genres || []).includes(activeGenreFilter));
         } else if (collectionsSortBy === 'years' && activeYearFilter) {
             allMovies = allMovies.filter(movie => (movie.years || []).includes(activeYearFilter));
+        } else if (collectionsSortBy === 'countries' && activeCountryFilter) {
+            allMovies = allMovies.filter(movie => (movie.countries || []).includes(activeCountryFilter));
+        } else if (collectionsSortBy === 'languages' && activeLanguageFilter) {
+            allMovies = allMovies.filter(movie => (movie.languages || []).includes(activeLanguageFilter));
         }
         
         // Ordenar alfabéticamente según el campo del grupo
@@ -1131,28 +1423,36 @@ export async function loadAndDisplayAll() {
                 const bVal = b.directors && b.directors[0] ? b.directors[0] : '';
                 return aVal.localeCompare(bVal);
             });
-            console.log('Sorted by directors:', allMovies.map(m => m.directors?.[0] || ''));
         } else if (collectionsSortBy === 'actors') {
             allMovies.sort((a, b) => {
                 const aVal = a.actors && a.actors[0] ? a.actors[0] : '';
                 const bVal = b.actors && b.actors[0] ? b.actors[0] : '';
                 return aVal.localeCompare(bVal);
             });
-            console.log('Sorted by actors:', allMovies.map(m => m.actors?.[0] || ''));
         } else if (collectionsSortBy === 'genres') {
             allMovies.sort((a, b) => {
                 const aVal = a.genres && a.genres[0] ? a.genres[0] : '';
                 const bVal = b.genres && b.genres[0] ? b.genres[0] : '';
                 return aVal.localeCompare(bVal);
             });
-            console.log('Sorted by genres:', allMovies.map(m => m.genres?.[0] || ''));
         } else if (collectionsSortBy === 'years') {
             allMovies.sort((a, b) => {
                 const aVal = a.years && a.years[0] ? a.years[0] : '';
                 const bVal = b.years && b.years[0] ? b.years[0] : '';
                 return aVal.localeCompare(bVal);
             });
-            console.log('Sorted by years:', allMovies.map(m => m.years?.[0] || ''));
+        } else if (collectionsSortBy === 'countries') {
+            allMovies.sort((a, b) => {
+                const aVal = a.countries && a.countries[0] ? a.countries[0] : '';
+                const bVal = b.countries && b.countries[0] ? b.countries[0] : '';
+                return aVal.localeCompare(bVal);
+            });
+        } else if (collectionsSortBy === 'languages') {
+            allMovies.sort((a, b) => {
+                const aVal = a.languages && a.languages[0] ? a.languages[0] : '';
+                const bVal = b.languages && b.languages[0] ? b.languages[0] : '';
+                return aVal.localeCompare(bVal);
+            });
         }
     } else if (activeTrashFilter) {
         allMovies = await getTrashMovies();
@@ -1214,6 +1514,12 @@ export async function loadAndDisplayAll() {
         if (activeYearFilter) {
             allMovies = allMovies.filter(movie => (movie.years || []).includes(activeYearFilter));
         }
+        if (activeCountryFilter) {
+            allMovies = allMovies.filter(movie => (movie.countries || []).includes(activeCountryFilter));
+        }
+        if (activeLanguageFilter) {
+            allMovies = allMovies.filter(movie => (movie.languages || []).includes(activeLanguageFilter));
+        }
     }
 
     let title;
@@ -1223,12 +1529,16 @@ export async function loadAndDisplayAll() {
         else if (collectionsSortBy === 'actors') sortLabel = 'Actor';
         else if (collectionsSortBy === 'genres') sortLabel = 'Genre';
         else if (collectionsSortBy === 'years') sortLabel = 'Year';
+        else if (collectionsSortBy === 'countries') sortLabel = 'Country';
+        else if (collectionsSortBy === 'languages') sortLabel = 'Language';
         
         let filterName = '';
         if (collectionsSortBy === 'directors' && activeDirectorFilter) filterName = `: ${activeDirectorFilter}`;
         else if (collectionsSortBy === 'actors' && activeActorFilter) filterName = `: ${activeActorFilter}`;
         else if (collectionsSortBy === 'genres' && activeGenreFilter) filterName = `: ${activeGenreFilter}`;
         else if (collectionsSortBy === 'years' && activeYearFilter) filterName = `: ${activeYearFilter}`;
+        else if (collectionsSortBy === 'countries' && activeCountryFilter) filterName = `: ${activeCountryFilter}`;
+        else if (collectionsSortBy === 'languages' && activeLanguageFilter) filterName = `: ${activeLanguageFilter}`;
         
         title = `Collections (${sortLabel}${filterName}) (${allMovies.length})`;
     } else if (activeTrashFilter) {
@@ -1249,6 +1559,10 @@ export async function loadAndDisplayAll() {
         title = `Genre: ${activeGenreFilter} (${allMovies.length})`;
     } else if (activeYearFilter) {
         title = `Year: ${activeYearFilter} (${allMovies.length})`;
+    } else if (activeCountryFilter) {
+        title = `Country: ${activeCountryFilter} (${allMovies.length})`;
+    } else if (activeLanguageFilter) {
+        title = `Language: ${activeLanguageFilter} (${allMovies.length})`;
     } else {
         title = `Exact match (${allMovies.length})`;
     }
@@ -1260,6 +1574,8 @@ export async function loadAndDisplayAll() {
             activeActorFilter = null;
             activeGenreFilter = null;
             activeYearFilter = null;
+            activeCountryFilter = null;
+            activeLanguageFilter = null;
             loadAndDisplayAll();
         } else {
             currentSort = newSort;
@@ -1272,7 +1588,9 @@ export async function loadAndDisplayAll() {
             { value: 'directors', label: 'Directors' },
             { value: 'actors', label: 'Actors' },
             { value: 'genres', label: 'Genres' },
-            { value: 'years', label: 'Years' }
+            { value: 'years', label: 'Years' },
+            { value: 'countries', label: 'Countries' },
+            { value: 'languages', label: 'Languages' }
         ];
         const collectionsSelectHtml = `
             <div class="sort-control" id="collectionsSortControl">
@@ -1283,7 +1601,6 @@ export async function loadAndDisplayAll() {
             </div>
         `;
         
-        // CORREGIDO: usar 'collections' como sort para evitar reordenamiento
         renderMovies(resultsGrid, allMovies, title, 'main', 'collections', null);
         
         const historyHeader = resultsGrid.querySelector('.history-header');
@@ -1337,6 +1654,8 @@ export async function loadAndDisplayAll() {
         if (actorsBar) actorsBar.classList.add('hidden');
         if (genresBar) genresBar.classList.add('hidden');
         if (yearsBar) yearsBar.classList.add('hidden');
+        if (countriesBar) countriesBar.classList.add('hidden');
+        if (languagesBar) languagesBar.classList.add('hidden');
     } else {
         if (collectionsSortBy === 'directors') {
             await refreshAvailableDirectors();
@@ -1344,24 +1663,48 @@ export async function loadAndDisplayAll() {
             if (actorsBar) actorsBar.classList.add('hidden');
             if (genresBar) genresBar.classList.add('hidden');
             if (yearsBar) yearsBar.classList.add('hidden');
+            if (countriesBar) countriesBar.classList.add('hidden');
+            if (languagesBar) languagesBar.classList.add('hidden');
         } else if (collectionsSortBy === 'actors') {
             await refreshAvailableActors();
             renderActorsBar();
             if (directorsBar) directorsBar.classList.add('hidden');
             if (genresBar) genresBar.classList.add('hidden');
             if (yearsBar) yearsBar.classList.add('hidden');
+            if (countriesBar) countriesBar.classList.add('hidden');
+            if (languagesBar) languagesBar.classList.add('hidden');
         } else if (collectionsSortBy === 'genres') {
             await refreshAvailableGenres();
             renderGenresBar();
             if (directorsBar) directorsBar.classList.add('hidden');
             if (actorsBar) actorsBar.classList.add('hidden');
             if (yearsBar) yearsBar.classList.add('hidden');
+            if (countriesBar) countriesBar.classList.add('hidden');
+            if (languagesBar) languagesBar.classList.add('hidden');
         } else if (collectionsSortBy === 'years') {
             await refreshAvailableYears();
             renderYearsBar();
             if (directorsBar) directorsBar.classList.add('hidden');
             if (actorsBar) actorsBar.classList.add('hidden');
             if (genresBar) genresBar.classList.add('hidden');
+            if (countriesBar) countriesBar.classList.add('hidden');
+            if (languagesBar) languagesBar.classList.add('hidden');
+        } else if (collectionsSortBy === 'countries') {
+            await refreshAvailableCountries();
+            renderCountriesBar();
+            if (directorsBar) directorsBar.classList.add('hidden');
+            if (actorsBar) actorsBar.classList.add('hidden');
+            if (genresBar) genresBar.classList.add('hidden');
+            if (yearsBar) yearsBar.classList.add('hidden');
+            if (languagesBar) languagesBar.classList.add('hidden');
+        } else if (collectionsSortBy === 'languages') {
+            await refreshAvailableLanguages();
+            renderLanguagesBar();
+            if (directorsBar) directorsBar.classList.add('hidden');
+            if (actorsBar) actorsBar.classList.add('hidden');
+            if (genresBar) genresBar.classList.add('hidden');
+            if (yearsBar) yearsBar.classList.add('hidden');
+            if (countriesBar) countriesBar.classList.add('hidden');
         }
         return;
     }
@@ -1370,6 +1713,8 @@ export async function loadAndDisplayAll() {
     await refreshAvailableActors();
     await refreshAvailableGenres();
     await refreshAvailableYears();
+    await refreshAvailableCountries();
+    await refreshAvailableLanguages();
 }
 
 // ---------------------- Modal helpers ----------------------
@@ -1445,6 +1790,8 @@ searchBtn.onclick = async () => {
     activeActorFilter = null;
     activeGenreFilter = null;
     activeYearFilter = null;
+    activeCountryFilter = null;
+    activeLanguageFilter = null;
     syncWindowTermFilter();
     
     let query = searchInput.value.trim();

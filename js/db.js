@@ -1,5 +1,5 @@
 const DB_NAME = 'PlatoDB';
-const DB_VERSION = 6; // Incrementado para agregar genres y years
+const DB_VERSION = 7; // Incrementado para agregar countries y languages
 const STORE_MOVIES = 'movies';
 const STORE_TRASH = 'trash';
 const STORE_EXTRA = 'movie_extra';
@@ -101,6 +101,8 @@ export async function saveMovie(movieData, searchTerm, isExact = true) {
                     actors: existing.actors || [],
                     genres: existing.genres || [],
                     years: existing.years || [],
+                    countries: existing.countries || [],
+                    languages: existing.languages || [],
                     viewCount: movieData.viewCount ?? existing.viewCount,
                     likeCount: movieData.likeCount ?? existing.likeCount,
                     commentCount: movieData.commentCount ?? existing.commentCount,
@@ -118,6 +120,8 @@ export async function saveMovie(movieData, searchTerm, isExact = true) {
                     actors: [],
                     genres: [],
                     years: [],
+                    countries: [],
+                    languages: [],
                     watching: false,
                     favorite: false,
                     dateSaved: new Date().toISOString(),
@@ -498,6 +502,114 @@ export async function removeYear(youtubeId, yearValue) {
                     movie.lastUpdated = new Date().toISOString();
                     const putRequest = store.put(movie);
                     putRequest.onsuccess = () => resolve(movie.years);
+                    putRequest.onerror = () => reject(putRequest.error);
+                } else {
+                    resolve([]);
+                }
+            } else {
+                reject(new Error('Movie not found'));
+            }
+        };
+        getRequest.onerror = () => reject(getRequest.error);
+    });
+}
+
+// ========== FUNCIONES PARA PAÍSES ==========
+export async function addCountry(youtubeId, countryName) {
+    const db = await openDB();
+    const transaction = db.transaction([STORE_MOVIES], 'readwrite');
+    const store = transaction.objectStore(STORE_MOVIES);
+    return new Promise((resolve, reject) => {
+        const getRequest = store.get(youtubeId);
+        getRequest.onsuccess = () => {
+            const movie = getRequest.result;
+            if (movie) {
+                if (!movie.countries) movie.countries = [];
+                if (!movie.countries.includes(countryName)) {
+                    movie.countries.push(countryName);
+                    movie.lastUpdated = new Date().toISOString();
+                    const putRequest = store.put(movie);
+                    putRequest.onsuccess = () => resolve(movie.countries);
+                    putRequest.onerror = () => reject(putRequest.error);
+                } else {
+                    resolve(movie.countries);
+                }
+            } else {
+                reject(new Error('Movie not found'));
+            }
+        };
+        getRequest.onerror = () => reject(getRequest.error);
+    });
+}
+
+export async function removeCountry(youtubeId, countryName) {
+    const db = await openDB();
+    const transaction = db.transaction([STORE_MOVIES], 'readwrite');
+    const store = transaction.objectStore(STORE_MOVIES);
+    return new Promise((resolve, reject) => {
+        const getRequest = store.get(youtubeId);
+        getRequest.onsuccess = () => {
+            const movie = getRequest.result;
+            if (movie) {
+                if (movie.countries) {
+                    movie.countries = movie.countries.filter(c => c !== countryName);
+                    movie.lastUpdated = new Date().toISOString();
+                    const putRequest = store.put(movie);
+                    putRequest.onsuccess = () => resolve(movie.countries);
+                    putRequest.onerror = () => reject(putRequest.error);
+                } else {
+                    resolve([]);
+                }
+            } else {
+                reject(new Error('Movie not found'));
+            }
+        };
+        getRequest.onerror = () => reject(getRequest.error);
+    });
+}
+
+// ========== FUNCIONES PARA IDIOMAS ==========
+export async function addLanguage(youtubeId, languageName) {
+    const db = await openDB();
+    const transaction = db.transaction([STORE_MOVIES], 'readwrite');
+    const store = transaction.objectStore(STORE_MOVIES);
+    return new Promise((resolve, reject) => {
+        const getRequest = store.get(youtubeId);
+        getRequest.onsuccess = () => {
+            const movie = getRequest.result;
+            if (movie) {
+                if (!movie.languages) movie.languages = [];
+                if (!movie.languages.includes(languageName)) {
+                    movie.languages.push(languageName);
+                    movie.lastUpdated = new Date().toISOString();
+                    const putRequest = store.put(movie);
+                    putRequest.onsuccess = () => resolve(movie.languages);
+                    putRequest.onerror = () => reject(putRequest.error);
+                } else {
+                    resolve(movie.languages);
+                }
+            } else {
+                reject(new Error('Movie not found'));
+            }
+        };
+        getRequest.onerror = () => reject(getRequest.error);
+    });
+}
+
+export async function removeLanguage(youtubeId, languageName) {
+    const db = await openDB();
+    const transaction = db.transaction([STORE_MOVIES], 'readwrite');
+    const store = transaction.objectStore(STORE_MOVIES);
+    return new Promise((resolve, reject) => {
+        const getRequest = store.get(youtubeId);
+        getRequest.onsuccess = () => {
+            const movie = getRequest.result;
+            if (movie) {
+                if (movie.languages) {
+                    movie.languages = movie.languages.filter(l => l !== languageName);
+                    movie.lastUpdated = new Date().toISOString();
+                    const putRequest = store.put(movie);
+                    putRequest.onsuccess = () => resolve(movie.languages);
                     putRequest.onerror = () => reject(putRequest.error);
                 } else {
                     resolve([]);
