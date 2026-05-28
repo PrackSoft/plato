@@ -177,12 +177,6 @@ body {
 .btn .material-symbols-outlined {
     font-size: 18px;
 }
-/*.btn-danger {
-    background: #990000;
-}
-.btn-danger:hover {
-    background: #660000;
-}*/
 .modal-watch-btn {
     width: 100%;
     margin-top: 15px;
@@ -470,12 +464,6 @@ body {
 .modal-input::placeholder {
     color: var(--text-secondary);
 }
-/*.modal-trash-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-}*/
-/* Separación entre las filas de acciones de la papelera */
 .trash-actions .toggle-row:first-child {
     margin-bottom: 16px;
 }
@@ -489,11 +477,45 @@ body {
     align-items: center;
     gap: 6px;
 }
-.term-chip .remove-term, .remove-director, .remove-actor, .remove-genre, .remove-year {
-    color: var(--accent-light);
-    cursor: pointer;
+
+/* Estilos unificados para todos los iconos de edición y eliminación */
+.term-edit, .term-delete,
+.director-edit, .director-delete,
+.actor-edit, .actor-delete,
+.genre-edit, .genre-delete,
+.year-edit, .year-delete {
     font-size: 14px;
+    cursor: pointer;
+    transition: color 0.2s;
     margin-left: 4px;
+}
+
+/* Iconos de edición (lápiz) */
+.term-edit, .director-edit, .actor-edit, .genre-edit, .year-edit {
+    color: var(--text-secondary);
+}
+.term-edit:hover, .director-edit:hover, .actor-edit:hover, .genre-edit:hover, .year-edit:hover {
+    color: var(--text-primary);
+}
+
+/* Iconos de eliminación (cruz) */
+.term-delete, .director-delete, .actor-delete, .genre-delete, .year-delete {
+    color: var(--accent-light);
+}
+.term-delete:hover, .director-delete:hover, .actor-delete:hover, .genre-delete:hover, .year-delete:hover {
+    color: var(--accent);
+}
+
+/* Eliminación dentro del modal (chips) */
+.remove-term, .remove-director, .remove-actor, .remove-genre, .remove-year {
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--accent-light);
+    transition: color 0.2s;
+    margin-left: 4px;
+}
+.remove-term:hover, .remove-director:hover, .remove-actor:hover, .remove-genre:hover, .remove-year:hover {
+    color: var(--accent);
 }
 
 .terms-bar {
@@ -507,17 +529,6 @@ body {
 }
 .terms-bar.hidden {
     display: none;
-}
-.term-delete, .term-edit {
-    font-size: 14px;
-    font-weight: bold;
-    margin-left: 4px;
-    cursor: pointer;
-    color: var(--accent-light);
-    transition: color 0.2s;
-}
-.term-delete:hover, .term-edit:hover {
-    color: var(--text-primary);
 }
 
 .terms-placeholder {
