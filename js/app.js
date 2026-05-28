@@ -1131,24 +1131,28 @@ export async function loadAndDisplayAll() {
                 const bVal = b.directors && b.directors[0] ? b.directors[0] : '';
                 return aVal.localeCompare(bVal);
             });
+            console.log('Sorted by directors:', allMovies.map(m => m.directors?.[0] || ''));
         } else if (collectionsSortBy === 'actors') {
             allMovies.sort((a, b) => {
                 const aVal = a.actors && a.actors[0] ? a.actors[0] : '';
                 const bVal = b.actors && b.actors[0] ? b.actors[0] : '';
                 return aVal.localeCompare(bVal);
             });
+            console.log('Sorted by actors:', allMovies.map(m => m.actors?.[0] || ''));
         } else if (collectionsSortBy === 'genres') {
             allMovies.sort((a, b) => {
                 const aVal = a.genres && a.genres[0] ? a.genres[0] : '';
                 const bVal = b.genres && b.genres[0] ? b.genres[0] : '';
                 return aVal.localeCompare(bVal);
             });
+            console.log('Sorted by genres:', allMovies.map(m => m.genres?.[0] || ''));
         } else if (collectionsSortBy === 'years') {
             allMovies.sort((a, b) => {
                 const aVal = a.years && a.years[0] ? a.years[0] : '';
                 const bVal = b.years && b.years[0] ? b.years[0] : '';
                 return aVal.localeCompare(bVal);
             });
+            console.log('Sorted by years:', allMovies.map(m => m.years?.[0] || ''));
         }
     } else if (activeTrashFilter) {
         allMovies = await getTrashMovies();
@@ -1264,7 +1268,6 @@ export async function loadAndDisplayAll() {
     };
 
     if (activeCollectionsFilter) {
-        // Crear selector de Collections aparte y ocultar el de sort normal
         const collectionsSortOptions = [
             { value: 'directors', label: 'Directors' },
             { value: 'actors', label: 'Actors' },
@@ -1280,13 +1283,11 @@ export async function loadAndDisplayAll() {
             </div>
         `;
         
-        // Renderizar sin el selector de sort normal
-        renderMovies(resultsGrid, allMovies, title, 'main', 'date', null);
+        // CORREGIDO: usar 'collections' como sort para evitar reordenamiento
+        renderMovies(resultsGrid, allMovies, title, 'main', 'collections', null);
         
-        // Insertar selector de Collections y eliminar el selector de sort normal
         const historyHeader = resultsGrid.querySelector('.history-header');
         if (historyHeader) {
-            // Eliminar selector de sort existente si lo hay
             const existingSortControl = historyHeader.querySelector('.sort-control');
             if (existingSortControl) existingSortControl.remove();
             historyHeader.insertAdjacentHTML('beforeend', collectionsSelectHtml);
