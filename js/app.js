@@ -1184,7 +1184,7 @@ export async function loadAndDisplayAll() {
     }
     renderTermsBar(termsToShow);
     
-    // Refrescar todas las barras
+    // Refrescar todas las barras SIEMPRE (tanto en trash como en vista normal)
     await refreshAvailableDirectors();
     await refreshAvailableActors();
     await refreshAvailableGenres();
