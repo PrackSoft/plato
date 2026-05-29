@@ -1,5 +1,5 @@
-// js/modal.js (con Countries y Languages)
-import { getExtraInfo, toggleExact, addDirector, removeDirector, addActor, removeActor, addGenre, removeGenre, addYear, removeYear, addCountry, removeCountry, addLanguage, removeLanguage } from './db.js';
+// js/modal.js (con actualización dinámica de Search terms al agregar datos de Collections)
+import { getExtraInfo, toggleExact, addDirector, removeDirector, addActor, removeActor, addGenre, removeGenre, addYear, removeYear, addCountry, removeCountry, addLanguage, removeLanguage, openDB } from './db.js';
 import { refreshAvailableTerms, loadAndDisplayAll, syncWindowTermFilter, getActiveTermFilter } from './app.js';
 
 
@@ -271,6 +271,23 @@ function renderModalContent(movie, source) {
     `;
 }
 
+// Función auxiliar para actualizar la lista de términos en el modal
+async function updateTermsListInModal(movie, source, attachModalEventsFn, {
+    updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete
+}) {
+    const termsContainer = document.getElementById('termsList');
+    if (termsContainer) {
+        termsContainer.innerHTML = (movie.searchTerms || []).map(t => `
+            <span class="term-chip">
+                ${escapeHtml(t.term)}
+                <span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>
+            </span>
+        `).join('');
+        // Reasignar eventos a los nuevos elementos .remove-term
+        attachModalEventsFn(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+    }
+}
+
 async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source) {
     const isInTrash = (source === 'trash');
 
@@ -480,6 +497,12 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                 if (newDirector) {
                     await addDirector(movie.youtubeId, newDirector);
                     movie.directors = [...(movie.directors || []), newDirector];
+                    // Actualizar searchTerms localmente después de addDirector (que ya actualizó la DB)
+                    // Necesitamos recargar la película desde DB para obtener los searchTerms actualizados
+                    const updatedMovie = await getMovieFromDB(movie.youtubeId);
+                    if (updatedMovie && updatedMovie.searchTerms) {
+                        movie.searchTerms = updatedMovie.searchTerms;
+                    }
                     newDirectorInput.value = '';
                     const directorsContainer = document.getElementById('directorsList');
                     if (directorsContainer) {
@@ -491,6 +514,10 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                         `).join('');
                         attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
                     }
+                    // Actualizar la lista de términos en el modal
+                    await updateTermsListInModal(movie, source, attachModalEvents, {
+                        updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete
+                    });
                     if (currentOnUpdate) await currentOnUpdate();
                 }
             };
@@ -530,6 +557,10 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                 if (newActor) {
                     await addActor(movie.youtubeId, newActor);
                     movie.actors = [...(movie.actors || []), newActor];
+                    const updatedMovie = await getMovieFromDB(movie.youtubeId);
+                    if (updatedMovie && updatedMovie.searchTerms) {
+                        movie.searchTerms = updatedMovie.searchTerms;
+                    }
                     newActorInput.value = '';
                     const actorsContainer = document.getElementById('actorsList');
                     if (actorsContainer) {
@@ -541,6 +572,9 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                         `).join('');
                         attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
                     }
+                    await updateTermsListInModal(movie, source, attachModalEvents, {
+                        updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete
+                    });
                     if (currentOnUpdate) await currentOnUpdate();
                 }
             };
@@ -580,6 +614,10 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                 if (newGenre) {
                     await addGenre(movie.youtubeId, newGenre);
                     movie.genres = [...(movie.genres || []), newGenre];
+                    const updatedMovie = await getMovieFromDB(movie.youtubeId);
+                    if (updatedMovie && updatedMovie.searchTerms) {
+                        movie.searchTerms = updatedMovie.searchTerms;
+                    }
                     newGenreInput.value = '';
                     const genresContainer = document.getElementById('genresList');
                     if (genresContainer) {
@@ -591,6 +629,9 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                         `).join('');
                         attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
                     }
+                    await updateTermsListInModal(movie, source, attachModalEvents, {
+                        updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete
+                    });
                     if (currentOnUpdate) await currentOnUpdate();
                 }
             };
@@ -630,6 +671,10 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                 if (newYear) {
                     await addYear(movie.youtubeId, newYear);
                     movie.years = [...(movie.years || []), newYear];
+                    const updatedMovie = await getMovieFromDB(movie.youtubeId);
+                    if (updatedMovie && updatedMovie.searchTerms) {
+                        movie.searchTerms = updatedMovie.searchTerms;
+                    }
                     newYearInput.value = '';
                     const yearsContainer = document.getElementById('yearsList');
                     if (yearsContainer) {
@@ -641,6 +686,9 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                         `).join('');
                         attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
                     }
+                    await updateTermsListInModal(movie, source, attachModalEvents, {
+                        updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete
+                    });
                     if (currentOnUpdate) await currentOnUpdate();
                 }
             };
@@ -680,6 +728,10 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                 if (newCountry) {
                     await addCountry(movie.youtubeId, newCountry);
                     movie.countries = [...(movie.countries || []), newCountry];
+                    const updatedMovie = await getMovieFromDB(movie.youtubeId);
+                    if (updatedMovie && updatedMovie.searchTerms) {
+                        movie.searchTerms = updatedMovie.searchTerms;
+                    }
                     newCountryInput.value = '';
                     const countriesContainer = document.getElementById('countriesList');
                     if (countriesContainer) {
@@ -691,6 +743,9 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                         `).join('');
                         attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
                     }
+                    await updateTermsListInModal(movie, source, attachModalEvents, {
+                        updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete
+                    });
                     if (currentOnUpdate) await currentOnUpdate();
                 }
             };
@@ -730,6 +785,10 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                 if (newLanguage) {
                     await addLanguage(movie.youtubeId, newLanguage);
                     movie.languages = [...(movie.languages || []), newLanguage];
+                    const updatedMovie = await getMovieFromDB(movie.youtubeId);
+                    if (updatedMovie && updatedMovie.searchTerms) {
+                        movie.searchTerms = updatedMovie.searchTerms;
+                    }
                     newLanguageInput.value = '';
                     const languagesContainer = document.getElementById('languagesList');
                     if (languagesContainer) {
@@ -741,6 +800,9 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                         `).join('');
                         attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
                     }
+                    await updateTermsListInModal(movie, source, attachModalEvents, {
+                        updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete
+                    });
                     if (currentOnUpdate) await currentOnUpdate();
                 }
             };
@@ -769,6 +831,18 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
             };
         });
     }
+}
+
+// Función auxiliar para obtener una película actualizada desde la DB
+async function getMovieFromDB(youtubeId) {
+    const db = await openDB();
+    const transaction = db.transaction(['movies'], 'readonly');
+    const store = transaction.objectStore('movies');
+    return new Promise((resolve, reject) => {
+        const req = store.get(youtubeId);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
 }
 
 function escapeHtml(str) {
