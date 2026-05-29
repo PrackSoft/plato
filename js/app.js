@@ -203,10 +203,11 @@ function buildCollectionsDropdown() {
         label.addEventListener('click', (e) => {
             e.stopPropagation();
             const value = label.dataset.value;
-            if (value && value !== collectionsSortBy) {
+            if (value) {
+                const changed = (value !== collectionsSortBy);
                 collectionsSortBy = value;
                 updateCollectionsButtonText();
-                if (!activeCollectionsFilter) {
+                if (!activeCollectionsFilter || changed) {
                     activeWatchingFilter = false;
                     activeFavoriteFilter = false;
                     activeTrashFilter = false;
@@ -239,13 +240,15 @@ function buildCollectionsDropdown() {
 function updateCollectionsButtonText() {
     if (!filterCollectionsBtn) return;
     let label = 'Collections';
-    switch (collectionsSortBy) {
-        case 'directors': label = 'Directors'; break;
-        case 'actors': label = 'Actors'; break;
-        case 'genres': label = 'Genres'; break;
-        case 'years': label = 'Years'; break;
-        case 'countries': label = 'Countries'; break;
-        case 'languages': label = 'Languages'; break;
+    if (activeCollectionsFilter) {
+        switch (collectionsSortBy) {
+            case 'directors': label = 'Directors'; break;
+            case 'actors': label = 'Actors'; break;
+            case 'genres': label = 'Genres'; break;
+            case 'years': label = 'Years'; break;
+            case 'countries': label = 'Countries'; break;
+            case 'languages': label = 'Languages'; break;
+        }
     }
     filterCollectionsBtn.innerHTML = `
         <span class="material-symbols-outlined">join_inner</span>
