@@ -177,13 +177,8 @@ function buildSearchInPanel() {
 function buildCollectionsDropdown() {
     if (!filterCollectionsBtn) return;
     
-    let panel = document.getElementById('collectionsPanel');
-    if (!panel) {
-        panel = document.createElement('div');
-        panel.id = 'collectionsPanel';
-        panel.className = 'dropdown-panel hidden';
-        filterCollectionsBtn.parentNode.insertBefore(panel, filterCollectionsBtn.nextSibling);
-    }
+    const panel = document.getElementById('collectionsPanel');
+    if (!panel) return;
     
     const options = [
         { value: 'directors', label: 'Directors', icon: 'person' },
@@ -204,11 +199,6 @@ function buildCollectionsDropdown() {
         `).join('')}
     `;
     
-    // Limpiar event listeners anteriores
-    const newPanel = panel.cloneNode(true);
-    panel.parentNode.replaceChild(newPanel, panel);
-    panel = newPanel;
-    
     panel.querySelectorAll('label').forEach(label => {
         label.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -224,13 +214,13 @@ function buildCollectionsDropdown() {
         });
     });
     
-    // Toggle panel
-    filterCollectionsBtn.onclick = (e) => {
+    // Toggle panel al hacer clic en el botón (misma lógica que Search in)
+    filterCollectionsBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        closeAllPanels();
         panel.classList.toggle('hidden');
-    };
+    });
     
+    // Cerrar panel al hacer clic fuera (misma lógica que Search in)
     document.addEventListener('click', (e) => {
         if (!filterCollectionsBtn.contains(e.target) && !panel.contains(e.target)) {
             panel.classList.add('hidden');
