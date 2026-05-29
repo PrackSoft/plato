@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con filtros de búsqueda en el desplegable Search in)
+// js/app.js - Plato App (con desplegable Collections)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -71,6 +71,8 @@ export function getActiveTermFilter() {
 // ---------------------- Helper: close panels ----------------------
 function closeAllPanels() {
     searchInPanel.classList.add('hidden');
+    const collectionsPanel = document.getElementById('collectionsPanel');
+    if (collectionsPanel) collectionsPanel.classList.add('hidden');
 }
 
 function closePanelWithDelay(panel) {
@@ -81,7 +83,6 @@ function closePanelWithDelay(panel) {
 function buildSearchInPanel() {
     searchInPanel.innerHTML = '';
 
-    // Sección YouTube Free Movies con filtros
     const youtubeSection = document.createElement('div');
     youtubeSection.innerHTML = `
         <div class="dropdown-header">YouTube Free Movies</div>
@@ -115,7 +116,6 @@ function buildSearchInPanel() {
     `;
     searchInPanel.appendChild(youtubeSection);
 
-    // Agregar opción Plato DB
     const platoDbLabel = document.createElement('label');
     const platoDbRadio = document.createElement('input');
     platoDbRadio.type = 'radio';
@@ -133,7 +133,6 @@ function buildSearchInPanel() {
     platoDbLabel.appendChild(document.createTextNode(' Plato DB'));
     searchInPanel.appendChild(platoDbLabel);
 
-    // Event listeners para los filtros dentro del panel
     const categoryRadios = searchInPanel.querySelectorAll('input[name="searchCategory"]');
     categoryRadios.forEach(radio => {
         radio.addEventListener('change', (e) => {
@@ -172,6 +171,110 @@ function buildSearchInPanel() {
     }
 
     updateSearchInButtonText();
+}
+
+// ---------------------- Build Collections dropdown ----------------------
+function buildCollectionsDropdown() {
+    if (!filterCollectionsBtn) return;
+    
+    let panel = document.getElementById('collectionsPanel');
+    if (!panel) {
+        panel = document.createElement('div');
+        panel.id = 'collectionsPanel';
+        panel.className = 'dropdown-panel hidden';
+        filterCollectionsBtn.parentNode.insertBefore(panel, filterCollectionsBtn.nextSibling);
+    }
+    
+    const options = [
+        { value: 'directors', label: 'Directors', icon: 'person' },
+        { value: 'actors', label: 'Actors', icon: 'group' },
+        { value: 'genres', label: 'Genres', icon: 'theater_comedy' },
+        { value: 'years', label: 'Years', icon: 'calendar_month' },
+        { value: 'countries', label: 'Countries', icon: 'flag' },
+        { value: 'languages', label: 'Languages', icon: 'translate' }
+    ];
+    
+    panel.innerHTML = `
+        <div class="dropdown-header">Group by</div>
+        ${options.map(opt => `
+            <label data-value="${opt.value}">
+                <span class="material-symbols-outlined">${opt.icon}</span>
+                ${opt.label}
+            </label>
+        `).join('')}
+    `;
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        #collectionsPanel label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+        #collectionsPanel label:hover {
+            background: var(--button-bg);
+        }
+        #collectionsPanel label .material-symbols-outlined {
+            font-size: 18px;
+        }
+    `;
+    if (!document.querySelector('#collectionsPanelStyle')) {
+        style.id = 'collectionsPanelStyle';
+        document.head.appendChild(style);
+    }
+    
+    panel.querySelectorAll('label').forEach(label => {
+        label.addEventListener('click', () => {
+            const value = label.dataset.value;
+            if (value) {
+                collectionsSortBy = value;
+                updateCollectionsButtonText();
+                if (activeCollectionsFilter) {
+                    loadAndDisplayAll();
+                }
+                closePanelWithDelay(panel);
+            }
+        });
+    });
+    
+    filterCollectionsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = panel.classList.toggle('hidden');
+        if (!isHidden) {
+            closeAllPanels();
+            panel.classList.remove('hidden');
+        }
+    });
+    
+    document.addEventListener('click', (e) => {
+        if (!filterCollectionsBtn.contains(e.target) && !panel.contains(e.target)) {
+            panel.classList.add('hidden');
+        }
+    });
+    
+    updateCollectionsButtonText();
+}
+
+function updateCollectionsButtonText() {
+    if (!filterCollectionsBtn) return;
+    let label = 'Collections';
+    switch (collectionsSortBy) {
+        case 'directors': label = 'Directors'; break;
+        case 'actors': label = 'Actors'; break;
+        case 'genres': label = 'Genres'; break;
+        case 'years': label = 'Years'; break;
+        case 'countries': label = 'Countries'; break;
+        case 'languages': label = 'Languages'; break;
+    }
+    filterCollectionsBtn.innerHTML = `
+        <span class="material-symbols-outlined">join_inner</span>
+        ${label}
+        <span class="material-symbols-outlined">arrow_drop_down</span>
+    `;
 }
 
 // ---------------------- Sidebar functions (settings) ----------------------
@@ -1371,6 +1474,7 @@ function toggleCollectionsFilter() {
     
     if (activeCollectionsFilter) {
         collectionsSortBy = 'directors';
+        updateCollectionsButtonText();
     }
     updateFilterButtonsUI();
     loadAndDisplayAll();
@@ -1399,7 +1503,7 @@ export async function loadAndDisplayAll() {
             return hasDirectors || hasActors || hasGenres || hasYears || hasCountries || hasLanguages;
         });
         
-        // Aplicar filtro por el chip seleccionado
+        // Aplicar filtro por el chip seleccionado según el tipo de colección
         if (collectionsSortBy === 'directors' && activeDirectorFilter) {
             allMovies = allMovies.filter(movie => (movie.directors || []).includes(activeDirectorFilter));
         } else if (collectionsSortBy === 'actors' && activeActorFilter) {
@@ -1568,6 +1672,7 @@ export async function loadAndDisplayAll() {
     const onSortChange = (newSort) => {
         if (activeCollectionsFilter) {
             collectionsSortBy = newSort;
+            updateCollectionsButtonText();
             activeDirectorFilter = null;
             activeActorFilter = null;
             activeGenreFilter = null;
@@ -1582,38 +1687,7 @@ export async function loadAndDisplayAll() {
     };
 
     if (activeCollectionsFilter) {
-        const collectionsSortOptions = [
-            { value: 'directors', label: 'Directors' },
-            { value: 'actors', label: 'Actors' },
-            { value: 'genres', label: 'Genres' },
-            { value: 'years', label: 'Years' },
-            { value: 'countries', label: 'Countries' },
-            { value: 'languages', label: 'Languages' }
-        ];
-        const collectionsSelectHtml = `
-            <div class="sort-control" id="collectionsSortControl">
-                <label>Group by:</label>
-                <select id="collectionsSortSelect">
-                    ${collectionsSortOptions.map(opt => `<option value="${opt.value}" ${collectionsSortBy === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
-                </select>
-            </div>
-        `;
-        
         renderMovies(resultsGrid, allMovies, title, 'main', 'collections', null);
-        
-        const historyHeader = resultsGrid.querySelector('.history-header');
-        if (historyHeader) {
-            const existingSortControl = historyHeader.querySelector('.sort-control');
-            if (existingSortControl) existingSortControl.remove();
-            historyHeader.insertAdjacentHTML('beforeend', collectionsSelectHtml);
-        }
-        
-        const collectionsSortSelect = document.getElementById('collectionsSortSelect');
-        if (collectionsSortSelect) {
-            collectionsSortSelect.addEventListener('change', (e) => {
-                onSortChange(e.target.value);
-            });
-        }
     } else {
         renderMovies(resultsGrid, allMovies, title, activeTrashFilter ? 'trash' : 'main', currentSort, onSortChange);
     }
@@ -1883,6 +1957,7 @@ async function init() {
     await dbReady;
     loadSearchPreferences();
     buildSearchInPanel();
+    buildCollectionsDropdown();
     buildSettingsSidebarContent();
     
     searchInBtn.addEventListener('click', (e) => {
