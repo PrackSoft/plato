@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con desplegable Collections)
+// js/app.js - Plato App (con desplegable Collections corregido)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -206,21 +206,31 @@ function buildCollectionsDropdown() {
             if (value && value !== collectionsSortBy) {
                 collectionsSortBy = value;
                 updateCollectionsButtonText();
-                if (activeCollectionsFilter) {
-                    loadAndDisplayAll();
+                // Activar Collections si no está activo
+                if (!activeCollectionsFilter) {
+                    // Desactivar otros filtros
+                    activeWatchingFilter = false;
+                    activeFavoriteFilter = false;
+                    activeTrashFilter = false;
+                    activeRelatedFilter = false;
+                    activeCollectionsFilter = true;
+                    updateFilterButtonsUI();
+                    if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
+                    if (termsBar) termsBar.classList.add('hidden');
                 }
+                loadAndDisplayAll();
             }
             panel.classList.add('hidden');
         });
     });
     
-    // Toggle panel al hacer clic en el botón (misma lógica que Search in)
+    // El botón solo abre/cierra el panel, NO activa/desactiva Collections
     filterCollectionsBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         panel.classList.toggle('hidden');
     });
     
-    // Cerrar panel al hacer clic fuera (misma lógica que Search in)
+    // Cerrar panel al hacer clic fuera
     document.addEventListener('click', (e) => {
         if (!filterCollectionsBtn.contains(e.target) && !panel.contains(e.target)) {
             panel.classList.add('hidden');
@@ -1334,7 +1344,7 @@ function updateFilterButtonsUI() {
     else if (filterCollectionsBtn) filterCollectionsBtn.classList.remove('active');
 }
 
-// ---------------------- Toggle functions ----------------------
+// ---------------------- Toggle functions (excluyendo Collections, que ahora maneja el dropdown) ----------------------
 function toggleWatchingFilter() {
     activeTermFilter = null;
     activeDirectorFilter = null;
@@ -1422,40 +1432,17 @@ function toggleRelatedFilter() {
     loadAndDisplayAll();
 }
 
+// toggleCollectionsFilter ya no se usa para el botón principal, pero se mantiene por si otros lugares la llaman
 function toggleCollectionsFilter() {
-    activeTermFilter = null;
-    activeDirectorFilter = null;
-    activeActorFilter = null;
-    activeGenreFilter = null;
-    activeYearFilter = null;
-    activeCountryFilter = null;
-    activeLanguageFilter = null;
-    activeWatchingFilter = false;
-    activeFavoriteFilter = false;
-    activeTrashFilter = false;
-    activeRelatedFilter = false;
-    activeCollectionsFilter = !activeCollectionsFilter;
-    
-    if (toggleTermsBtn) {
-        toggleTermsBtn.classList.remove('active');
-    }
-    if (termsBar) {
-        termsBar.classList.add('hidden');
-    }
-    
-    if (activeCollectionsFilter) {
-        collectionsSortBy = 'directors';
-        updateCollectionsButtonText();
-    }
-    updateFilterButtonsUI();
-    loadAndDisplayAll();
+    // Esta función ya no se ejecuta desde el botón Collections
+    // Se mantiene por compatibilidad, pero no hace nada
 }
 
 if (filterWatchingBtn) filterWatchingBtn.addEventListener('click', toggleWatchingFilter);
 if (filterFavoriteBtn) filterFavoriteBtn.addEventListener('click', toggleFavoriteFilter);
 if (filterTrashBtn) filterTrashBtn.addEventListener('click', toggleTrashFilter);
 if (filterRelatedBtn) filterRelatedBtn.addEventListener('click', toggleRelatedFilter);
-if (filterCollectionsBtn) filterCollectionsBtn.addEventListener('click', toggleCollectionsFilter);
+// El botón Collections ya tiene su propio listener en buildCollectionsDropdown
 
 // ---------------------- Load and display ----------------------
 export async function loadAndDisplayAll() {
