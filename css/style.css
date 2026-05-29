@@ -483,7 +483,9 @@ body {
 .director-edit, .director-delete,
 .actor-edit, .actor-delete,
 .genre-edit, .genre-delete,
-.year-edit, .year-delete {
+.year-edit, .year-delete,
+.country-edit, .country-delete,
+.language-edit, .language-delete {
     font-size: 14px;
     cursor: pointer;
     transition: color 0.2s;
@@ -491,18 +493,18 @@ body {
 }
 
 /* Iconos de edición (lápiz) */
-.term-edit, .director-edit, .actor-edit, .genre-edit, .year-edit {
+.term-edit, .director-edit, .actor-edit, .genre-edit, .year-edit, .country-edit, .language-edit {
     color: var(--text-secondary);
 }
-.term-edit:hover, .director-edit:hover, .actor-edit:hover, .genre-edit:hover, .year-edit:hover {
+.term-edit:hover, .director-edit:hover, .actor-edit:hover, .genre-edit:hover, .year-edit:hover, .country-edit:hover, .language-edit:hover {
     color: var(--text-primary);
 }
 
 /* Iconos de eliminación (cruz) */
-.term-delete, .director-delete, .actor-delete, .genre-delete, .year-delete {
+.term-delete, .director-delete, .actor-delete, .genre-delete, .year-delete, .country-delete, .language-delete {
     color: var(--accent-light);
 }
-.term-delete:hover, .director-delete:hover, .actor-delete:hover, .genre-delete:hover, .year-delete:hover {
+.term-delete:hover, .director-delete:hover, .actor-delete:hover, .genre-delete:hover, .year-delete:hover, .country-delete:hover, .language-delete:hover {
     color: var(--accent);
 }
 
