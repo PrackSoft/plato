@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con Countries y Languages)
+// js/app.js - Plato App (con filtros de búsqueda en el desplegable Search in)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -77,47 +77,99 @@ function closePanelWithDelay(panel) {
     setTimeout(() => panel.classList.add('hidden'), 150);
 }
 
-// ---------------------- Build Search In panel ----------------------
+// ---------------------- Build Search In panel (con filtros integrados) ----------------------
 function buildSearchInPanel() {
     searchInPanel.innerHTML = '';
 
-    const header = document.createElement('div');
-    header.className = 'dropdown-header';
-    header.textContent = 'Search in';
-    searchInPanel.appendChild(header);
+    // Sección YouTube Free Movies con filtros
+    const youtubeSection = document.createElement('div');
+    youtubeSection.innerHTML = `
+        <div class="dropdown-header">YouTube Free Movies</div>
+        <div style="padding: 8px 12px;">
+            <div class="settings-group">
+                <label class="settings-label">Content type:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="searchCategory" value="movies" ${searchCategoryFilter === 'movies' ? 'checked' : ''}> Include only movies</label>
+                    <label><input type="radio" name="searchCategory" value="all" ${searchCategoryFilter === 'all' ? 'checked' : ''}> Include non‑movies</label>
+                </div>
+            </div>
+            <div class="settings-group">
+                <label class="settings-label">Order by:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="searchOrder" value="relevance" ${searchOrder === 'relevance' ? 'checked' : ''}> Best match</label>
+                    <label><input type="radio" name="searchOrder" value="viewCount" ${searchOrder === 'viewCount' ? 'checked' : ''}> Most viewed</label>
+                    <label><input type="radio" name="searchOrder" value="rating" ${searchOrder === 'rating' ? 'checked' : ''}> Most liked</label>
+                </div>
+            </div>
+            <div class="settings-group">
+                <label class="settings-label">Duration:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="searchDuration" value="long" ${searchDuration === 'long' ? 'checked' : ''}> Long (&gt;20 min)</label>
+                    <label><input type="radio" name="searchDuration" value="medium" ${searchDuration === 'medium' ? 'checked' : ''}> Medium (4-20 min)</label>
+                    <label><input type="radio" name="searchDuration" value="short" ${searchDuration === 'short' ? 'checked' : ''}> Short (&lt;4 min)</label>
+                    <label><input type="radio" name="searchDuration" value="any" ${searchDuration === 'any' ? 'checked' : ''}> Any duration</label>
+                </div>
+            </div>
+        </div>
+        <div class="dropdown-header" style="margin-top: 8px;">Plato DB</div>
+    `;
+    searchInPanel.appendChild(youtubeSection);
 
-    function setExclusive(clickedOptionId) {
-        currentSearchOptionId = clickedOptionId;
-        updateSearchInButtonText();
-        closePanelWithDelay(searchInPanel);
-    }
+    // Agregar opción Plato DB
+    const platoDbLabel = document.createElement('label');
+    const platoDbRadio = document.createElement('input');
+    platoDbRadio.type = 'radio';
+    platoDbRadio.name = 'searchIn';
+    platoDbRadio.value = 'plato_db';
+    platoDbRadio.checked = (currentSearchOptionId === 'plato_db');
+    platoDbRadio.addEventListener('change', () => {
+        if (platoDbRadio.checked) {
+            currentSearchOptionId = 'plato_db';
+            updateSearchInButtonText();
+            closePanelWithDelay(searchInPanel);
+        }
+    });
+    platoDbLabel.appendChild(platoDbRadio);
+    platoDbLabel.appendChild(document.createTextNode(' Plato DB'));
+    searchInPanel.appendChild(platoDbLabel);
+
+    // Event listeners para los filtros dentro del panel
+    const categoryRadios = searchInPanel.querySelectorAll('input[name="searchCategory"]');
+    categoryRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.checked) saveSearchCategory(e.target.value);
+        });
+    });
+    const orderRadios = searchInPanel.querySelectorAll('input[name="searchOrder"]');
+    orderRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.checked) saveSearchOrder(e.target.value);
+        });
+    });
+    const durationRadios = searchInPanel.querySelectorAll('input[name="searchDuration"]');
+    durationRadios.forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.checked) saveSearchDuration(e.target.value);
+        });
+    });
 
     function updateSearchInButtonText() {
-        const option = SEARCH_OPTIONS.find(opt => opt.id === currentSearchOptionId);
-        const label = option ? option.name : 'Select';
-        searchInBtn.innerHTML = `
-            <span class="material-symbols-outlined">subscriptions</span>
-            ${label}
-            <span class="material-symbols-outlined">arrow_drop_down</span>
-        `;
+        if (currentSearchOptionId === 'plato_db') {
+            searchInBtn.innerHTML = `
+                <span class="material-symbols-outlined">storage</span>
+                Plato DB
+                <span class="material-symbols-outlined">arrow_drop_down</span>
+            `;
+        } else {
+            const option = SEARCH_OPTIONS.find(opt => opt.id === currentSearchOptionId);
+            const label = option ? option.name : 'YouTube Free Movies';
+            searchInBtn.innerHTML = `
+                <span class="material-symbols-outlined">subscriptions</span>
+                ${label}
+                <span class="material-symbols-outlined">arrow_drop_down</span>
+            `;
+        }
     }
-
-    SEARCH_OPTIONS.forEach(option => {
-        const label = document.createElement('label');
-        const radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.name = 'searchIn';
-        radio.value = option.id;
-        radio.checked = (currentSearchOptionId === option.id);
-        radio.addEventListener('change', () => {
-            if (radio.checked) {
-                setExclusive(option.id);
-            }
-        });
-        label.appendChild(radio);
-        label.appendChild(document.createTextNode(option.name));
-        searchInPanel.appendChild(label);
-    });
 
     updateSearchInButtonText();
 }
@@ -126,18 +178,6 @@ function buildSearchInPanel() {
 function openSettingsSidebar() {
     settingsSidebar.classList.remove('hidden');
     sidebarOverlay.classList.remove('hidden');
-    const orderRadios = document.querySelectorAll('input[name="searchOrder"]');
-    orderRadios.forEach(radio => {
-        if (radio.value === searchOrder) radio.checked = true;
-    });
-    const durationRadios = document.querySelectorAll('input[name="searchDuration"]');
-    durationRadios.forEach(radio => {
-        if (radio.value === searchDuration) radio.checked = true;
-    });
-    const categoryRadios = document.querySelectorAll('input[name="searchCategory"]');
-    categoryRadios.forEach(radio => {
-        if (radio.value === searchCategoryFilter) radio.checked = true;
-    });
 }
 function closeSettingsSidebar() {
     settingsSidebar.classList.add('hidden');
@@ -183,52 +223,10 @@ function buildSettingsSidebarContent() {
     }
     sidebarContent.innerHTML = `
         <div class="sidebar-section">
-            <h3>Search Filters</h3>
-            <div class="settings-group">
-                <label class="settings-label">Content type:</label>
-                <div class="radio-group">
-                    <label><input type="radio" name="searchCategory" value="movies"> Include only movies</label>
-                    <label><input type="radio" name="searchCategory" value="all"> Include non‑movies</label>
-                </div>
-            </div>
-            <div class="settings-group">
-                <label class="settings-label">Order by:</label>
-                <div class="radio-group">
-                    <label><input type="radio" name="searchOrder" value="relevance"> Best match</label>
-                    <label><input type="radio" name="searchOrder" value="viewCount"> Most viewed</label>
-                    <label><input type="radio" name="searchOrder" value="rating"> Most liked</label>
-                </div>
-            </div>
-            <div class="settings-group">
-                <label class="settings-label">Duration:</label>
-                <div class="radio-group">
-                    <label><input type="radio" name="searchDuration" value="long"> Long (&gt;20 min)</label>
-                    <label><input type="radio" name="searchDuration" value="medium"> Medium (4-20 min)</label>
-                    <label><input type="radio" name="searchDuration" value="short"> Short (&lt;4 min)</label>
-                    <label><input type="radio" name="searchDuration" value="any"> Any duration</label>
-                </div>
-            </div>
+            <h3>General Settings</h3>
+            <p style="color: #aaa; font-size: 0.875rem;">Future options: API key, default channel, theme, etc.</p>
         </div>
     `;
-
-    const orderRadios = document.querySelectorAll('input[name="searchOrder"]');
-    orderRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            if (e.target.checked) saveSearchOrder(e.target.value);
-        });
-    });
-    const durationRadios = document.querySelectorAll('input[name="searchDuration"]');
-    durationRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            if (e.target.checked) saveSearchDuration(e.target.value);
-        });
-    });
-    const categoryRadios = document.querySelectorAll('input[name="searchCategory"]');
-    categoryRadios.forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            if (e.target.checked) saveSearchCategory(e.target.value);
-        });
-    });
 }
 
 // ---------------------- Funciones globales para directores, actores, géneros, años, países, idiomas ----------------------
@@ -454,7 +452,7 @@ export async function deleteLanguageFromAllMovies(languageName) {
     }
 }
 
-// ---------------------- Terms Bar ----------------------
+// ---------------------- Search terms Bar ----------------------
 export async function refreshAvailableTerms() {
     const allMovies = await getAllMovies();
     const termsSet = new Set();
@@ -659,10 +657,10 @@ async function deleteMoviesWithTermFromCurrentView(term) {
     if (moviesWithTerm.length === 0) return;
 
     const confirmMsg = activeTrashFilter
-        ? `Permanently delete ${moviesWithTerm.length} movie(s) with term "${term}" from trash?`
+        ? `Permanently delete ${moviesWithTerm.length} movie(s) with search term "${term}" from trash?`
         : onlyRelated
-            ? `Remove term "${term}" from ${moviesWithTerm.length} related movie(s) (exact matches will be kept)`
-            : `Move ${moviesWithTerm.length} movie(s) with term "${term}" to trash?`;
+            ? `Remove search term "${term}" from ${moviesWithTerm.length} related movie(s) (exact matches will be kept)`
+            : `Move ${moviesWithTerm.length} movie(s) with search term "${term}" to trash?`;
     
     if (!confirm(confirmMsg)) return;
 
@@ -903,7 +901,7 @@ async function deleteLanguageFromCurrentView(languageName) {
 function renderTermsBar(termsArray = null) {
     const terms = termsArray !== null ? termsArray : availableTerms;
     if (!terms || terms.length === 0) {
-        termsBar.innerHTML = '<div class="terms-placeholder">No search terms yet</div>';
+        termsBar.innerHTML = '<div class="terms-placeholder">No Search terms yet.</div>';
         return;
     }
     const html = terms.map(term => {
@@ -911,8 +909,8 @@ function renderTermsBar(termsArray = null) {
         return `
             <button class="btn btn-secondary btn-sm ${activeTermFilter === termStr ? 'active' : ''}" data-term="${escapeHtml(termStr)}">
                 ${escapeHtml(termStr)}
-                <span class="term-edit material-symbols-outlined" data-term="${escapeHtml(termStr)}" title="Edit term globally">edit</span>
-                <span class="term-delete" data-term="${escapeHtml(termStr)}" title="Delete term from all movies">✖</span>
+                <span class="term-edit material-symbols-outlined" data-term="${escapeHtml(termStr)}" title="Edit search term globally.">edit</span>
+                <span class="term-delete" data-term="${escapeHtml(termStr)}" title="Delete search term from all movies.">✖</span>
             </button>
         `;
     }).join('');
@@ -952,7 +950,7 @@ function renderTermsBar(termsArray = null) {
 function renderDirectorsBar() {
     if (!directorsBar) return;
     if (availableDirectors.length === 0) {
-        directorsBar.innerHTML = '<div class="terms-placeholder">No directors yet</div>';
+        directorsBar.innerHTML = '<div class="terms-placeholder">No directors yet.</div>';
         directorsBar.classList.remove('hidden');
         return;
     }
@@ -960,8 +958,8 @@ function renderDirectorsBar() {
     const html = availableDirectors.map(name => `
         <button class="btn btn-secondary btn-sm ${activeDirectorFilter === name ? 'active' : ''}" data-director="${escapeHtml(name)}">
             ${escapeHtml(name)}
-            <span class="director-edit material-symbols-outlined" data-director="${escapeHtml(name)}" title="Edit director globally">edit</span>
-            <span class="director-delete" data-director="${escapeHtml(name)}" title="Delete director from all movies">✖</span>
+            <span class="director-edit material-symbols-outlined" data-director="${escapeHtml(name)}" title="Edit director globally.">edit</span>
+            <span class="director-delete" data-director="${escapeHtml(name)}" title="Delete director from all movies.">✖</span>
         </button>
     `).join('');
     directorsBar.innerHTML = html;
@@ -999,7 +997,7 @@ function renderDirectorsBar() {
 function renderActorsBar() {
     if (!actorsBar) return;
     if (availableActors.length === 0) {
-        actorsBar.innerHTML = '<div class="terms-placeholder">No actors yet</div>';
+        actorsBar.innerHTML = '<div class="terms-placeholder">No Actors yet.</div>';
         actorsBar.classList.remove('hidden');
         return;
     }
@@ -1007,8 +1005,8 @@ function renderActorsBar() {
     const html = availableActors.map(name => `
         <button class="btn btn-secondary btn-sm ${activeActorFilter === name ? 'active' : ''}" data-actor="${escapeHtml(name)}">
             ${escapeHtml(name)}
-            <span class="actor-edit material-symbols-outlined" data-actor="${escapeHtml(name)}" title="Edit actor globally">edit</span>
-            <span class="actor-delete" data-actor="${escapeHtml(name)}" title="Delete actor from all movies">✖</span>
+            <span class="actor-edit material-symbols-outlined" data-actor="${escapeHtml(name)}" title="Edit actor globally.">edit</span>
+            <span class="actor-delete" data-actor="${escapeHtml(name)}" title="Delete actor from all movies.">✖</span>
         </button>
     `).join('');
     actorsBar.innerHTML = html;
@@ -1046,7 +1044,7 @@ function renderActorsBar() {
 function renderGenresBar() {
     if (!genresBar) return;
     if (availableGenres.length === 0) {
-        genresBar.innerHTML = '<div class="terms-placeholder">No genres yet</div>';
+        genresBar.innerHTML = '<div class="terms-placeholder">No Genres yet.</div>';
         genresBar.classList.remove('hidden');
         return;
     }
@@ -1054,8 +1052,8 @@ function renderGenresBar() {
     const html = availableGenres.map(name => `
         <button class="btn btn-secondary btn-sm ${activeGenreFilter === name ? 'active' : ''}" data-genre="${escapeHtml(name)}">
             ${escapeHtml(name)}
-            <span class="genre-edit material-symbols-outlined" data-genre="${escapeHtml(name)}" title="Edit genre globally">edit</span>
-            <span class="genre-delete" data-genre="${escapeHtml(name)}" title="Delete genre from all movies">✖</span>
+            <span class="genre-edit material-symbols-outlined" data-genre="${escapeHtml(name)}" title="Edit genre globally.">edit</span>
+            <span class="genre-delete" data-genre="${escapeHtml(name)}" title="Delete genre from all movies.">✖</span>
         </button>
     `).join('');
     genresBar.innerHTML = html;
@@ -1093,7 +1091,7 @@ function renderGenresBar() {
 function renderYearsBar() {
     if (!yearsBar) return;
     if (availableYears.length === 0) {
-        yearsBar.innerHTML = '<div class="terms-placeholder">No years yet</div>';
+        yearsBar.innerHTML = '<div class="terms-placeholder">No years yet.</div>';
         yearsBar.classList.remove('hidden');
         return;
     }
@@ -1101,8 +1099,8 @@ function renderYearsBar() {
     const html = availableYears.map(year => `
         <button class="btn btn-secondary btn-sm ${activeYearFilter === year ? 'active' : ''}" data-year="${escapeHtml(year)}">
             ${escapeHtml(year)}
-            <span class="year-edit material-symbols-outlined" data-year="${escapeHtml(year)}" title="Edit year globally">edit</span>
-            <span class="year-delete" data-year="${escapeHtml(year)}" title="Delete year from all movies">✖</span>
+            <span class="year-edit material-symbols-outlined" data-year="${escapeHtml(year)}" title="Edit year globally.">edit</span>
+            <span class="year-delete" data-year="${escapeHtml(year)}" title="Delete year from all movies.">✖</span>
         </button>
     `).join('');
     yearsBar.innerHTML = html;
@@ -1140,7 +1138,7 @@ function renderYearsBar() {
 function renderCountriesBar() {
     if (!countriesBar) return;
     if (availableCountries.length === 0) {
-        countriesBar.innerHTML = '<div class="terms-placeholder">No countries yet</div>';
+        countriesBar.innerHTML = '<div class="terms-placeholder">No countries yet.</div>';
         countriesBar.classList.remove('hidden');
         return;
     }
@@ -1148,8 +1146,8 @@ function renderCountriesBar() {
     const html = availableCountries.map(name => `
         <button class="btn btn-secondary btn-sm ${activeCountryFilter === name ? 'active' : ''}" data-country="${escapeHtml(name)}">
             ${escapeHtml(name)}
-            <span class="country-edit material-symbols-outlined" data-country="${escapeHtml(name)}" title="Edit country globally">edit</span>
-            <span class="country-delete" data-country="${escapeHtml(name)}" title="Delete country from all movies">✖</span>
+            <span class="country-edit material-symbols-outlined" data-country="${escapeHtml(name)}" title="Edit country globally.">edit</span>
+            <span class="country-delete" data-country="${escapeHtml(name)}" title="Delete country from all movies.">✖</span>
         </button>
     `).join('');
     countriesBar.innerHTML = html;
@@ -1187,7 +1185,7 @@ function renderCountriesBar() {
 function renderLanguagesBar() {
     if (!languagesBar) return;
     if (availableLanguages.length === 0) {
-        languagesBar.innerHTML = '<div class="terms-placeholder">No languages yet</div>';
+        languagesBar.innerHTML = '<div class="terms-placeholder">No languages yet.</div>';
         languagesBar.classList.remove('hidden');
         return;
     }
@@ -1195,8 +1193,8 @@ function renderLanguagesBar() {
     const html = availableLanguages.map(name => `
         <button class="btn btn-secondary btn-sm ${activeLanguageFilter === name ? 'active' : ''}" data-language="${escapeHtml(name)}">
             ${escapeHtml(name)}
-            <span class="language-edit material-symbols-outlined" data-language="${escapeHtml(name)}" title="Edit language globally">edit</span>
-            <span class="language-delete" data-language="${escapeHtml(name)}" title="Delete language from all movies">✖</span>
+            <span class="language-edit material-symbols-outlined" data-language="${escapeHtml(name)}" title="Edit language globally.">edit</span>
+            <span class="language-delete" data-language="${escapeHtml(name)}" title="Delete language from all movies.">✖</span>
         </button>
     `).join('');
     languagesBar.innerHTML = html;
@@ -1815,12 +1813,12 @@ searchBtn.onclick = async () => {
     if (!selectedOption) return;
     
     if (selectedOption.type === 'api') {
-        resultsGrid.innerHTML = '<div class="stats">Searching YouTube...</div>';
+        resultsGrid.innerHTML = '<div class="stats">Searching YouTube Movies...</div>';
         try {
             const channelId = selectedOption.id === 'plato_db' ? null : selectedOption.id;
             const moviesFromAPI = await searchYouTube(effectiveQuery, channelId, searchOrder, searchDuration, searchCategoryFilter);
             if (moviesFromAPI.length === 0) {
-                resultsGrid.innerHTML = '<div class="stats">No movies found on YouTube</div>';
+                resultsGrid.innerHTML = '<div class="stats">No results found on YouTube Movies</div>';
                 return;
             }
             const termToSave = customTermName ? customTermName : (query || effectiveQuery);
