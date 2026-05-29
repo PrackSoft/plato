@@ -175,14 +175,19 @@ function buildSearchInPanel() {
 
 // ---------------------- Build Collections dropdown ----------------------
 function buildCollectionsDropdown() {
-    if (!filterCollectionsBtn) return;
+    if (!filterCollectionsBtn) {
+        console.error('filterCollectionsBtn not found');
+        return;
+    }
     
     let panel = document.getElementById('collectionsPanel');
     if (!panel) {
         panel = document.createElement('div');
         panel.id = 'collectionsPanel';
         panel.className = 'dropdown-panel hidden';
+        // Insertar después del botón
         filterCollectionsBtn.parentNode.insertBefore(panel, filterCollectionsBtn.nextSibling);
+        console.log('Collections panel created');
     }
     
     const options = [
@@ -204,57 +209,77 @@ function buildCollectionsDropdown() {
         `).join('')}
     `;
     
-    const style = document.createElement('style');
-    style.textContent = `
-        #collectionsPanel label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 12px;
-            cursor: pointer;
-            color: var(--text-primary);
-            font-size: 0.875rem;
-        }
-        #collectionsPanel label:hover {
-            background: var(--button-bg);
-        }
-        #collectionsPanel label .material-symbols-outlined {
-            font-size: 18px;
-        }
-    `;
-    if (!document.querySelector('#collectionsPanelStyle')) {
-        style.id = 'collectionsPanelStyle';
-        document.head.appendChild(style);
+    // Asegurar estilos
+    const style = document.getElementById('collectionsPanelStyle');
+    if (!style) {
+        const newStyle = document.createElement('style');
+        newStyle.id = 'collectionsPanelStyle';
+        newStyle.textContent = `
+            #collectionsPanel label {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 8px 12px;
+                cursor: pointer;
+                color: var(--text-primary);
+                font-size: 0.875rem;
+            }
+            #collectionsPanel label:hover {
+                background: var(--button-bg);
+            }
+            #collectionsPanel label .material-symbols-outlined {
+                font-size: 18px;
+            }
+        `;
+        document.head.appendChild(newStyle);
     }
     
+    // Remover event listeners anteriores para evitar duplicación
+    const newPanel = panel.cloneNode(true);
+    panel.parentNode.replaceChild(newPanel, panel);
+    panel = newPanel;
+    
     panel.querySelectorAll('label').forEach(label => {
-        label.addEventListener('click', () => {
+        label.addEventListener('click', (e) => {
+            e.stopPropagation();
             const value = label.dataset.value;
             if (value) {
+                console.log('Collections option selected:', value);
                 collectionsSortBy = value;
                 updateCollectionsButtonText();
                 if (activeCollectionsFilter) {
                     loadAndDisplayAll();
                 }
-                closePanelWithDelay(panel);
+                panel.classList.add('hidden');
             }
         });
     });
     
-    filterCollectionsBtn.addEventListener('click', (e) => {
+    // Toggle panel al hacer clic en el botón
+    const togglePanel = (e) => {
         e.stopPropagation();
-        const isHidden = panel.classList.toggle('hidden');
-        if (!isHidden) {
-            closeAllPanels();
+        const isHidden = panel.classList.contains('hidden');
+        // Cerrar otros paneles
+        closeAllPanels();
+        if (isHidden) {
             panel.classList.remove('hidden');
+        } else {
+            panel.classList.add('hidden');
         }
-    });
+    };
     
-    document.addEventListener('click', (e) => {
+    // Remover event listener anterior si existe
+    filterCollectionsBtn.removeEventListener('click', togglePanel);
+    filterCollectionsBtn.addEventListener('click', togglePanel);
+    
+    // Cerrar panel al hacer clic fuera
+    const outsideClickListener = (e) => {
         if (!filterCollectionsBtn.contains(e.target) && !panel.contains(e.target)) {
             panel.classList.add('hidden');
         }
-    });
+    };
+    document.removeEventListener('click', outsideClickListener);
+    document.addEventListener('click', outsideClickListener);
     
     updateCollectionsButtonText();
 }
