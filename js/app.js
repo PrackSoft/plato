@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con desplegable Collections corregido)
+// js/app.js - Plato App (Collections con sort by normal)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -206,9 +206,7 @@ function buildCollectionsDropdown() {
             if (value && value !== collectionsSortBy) {
                 collectionsSortBy = value;
                 updateCollectionsButtonText();
-                // Activar Collections si no está activo
                 if (!activeCollectionsFilter) {
-                    // Desactivar otros filtros
                     activeWatchingFilter = false;
                     activeFavoriteFilter = false;
                     activeTrashFilter = false;
@@ -224,13 +222,11 @@ function buildCollectionsDropdown() {
         });
     });
     
-    // El botón solo abre/cierra el panel, NO activa/desactiva Collections
     filterCollectionsBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         panel.classList.toggle('hidden');
     });
     
-    // Cerrar panel al hacer clic fuera
     document.addEventListener('click', (e) => {
         if (!filterCollectionsBtn.contains(e.target) && !panel.contains(e.target)) {
             panel.classList.add('hidden');
@@ -1432,17 +1428,14 @@ function toggleRelatedFilter() {
     loadAndDisplayAll();
 }
 
-// toggleCollectionsFilter ya no se usa para el botón principal, pero se mantiene por si otros lugares la llaman
 function toggleCollectionsFilter() {
-    // Esta función ya no se ejecuta desde el botón Collections
-    // Se mantiene por compatibilidad, pero no hace nada
+    // Ya no se usa desde el botón, se mantiene por compatibilidad
 }
 
 if (filterWatchingBtn) filterWatchingBtn.addEventListener('click', toggleWatchingFilter);
 if (filterFavoriteBtn) filterFavoriteBtn.addEventListener('click', toggleFavoriteFilter);
 if (filterTrashBtn) filterTrashBtn.addEventListener('click', toggleTrashFilter);
 if (filterRelatedBtn) filterRelatedBtn.addEventListener('click', toggleRelatedFilter);
-// El botón Collections ya tiene su propio listener en buildCollectionsDropdown
 
 // ---------------------- Load and display ----------------------
 export async function loadAndDisplayAll() {
@@ -1476,44 +1469,9 @@ export async function loadAndDisplayAll() {
             allMovies = allMovies.filter(movie => (movie.languages || []).includes(activeLanguageFilter));
         }
         
-        // Ordenar alfabéticamente según el campo del grupo
-        if (collectionsSortBy === 'directors') {
-            allMovies.sort((a, b) => {
-                const aVal = a.directors && a.directors[0] ? a.directors[0] : '';
-                const bVal = b.directors && b.directors[0] ? b.directors[0] : '';
-                return aVal.localeCompare(bVal);
-            });
-        } else if (collectionsSortBy === 'actors') {
-            allMovies.sort((a, b) => {
-                const aVal = a.actors && a.actors[0] ? a.actors[0] : '';
-                const bVal = b.actors && b.actors[0] ? b.actors[0] : '';
-                return aVal.localeCompare(bVal);
-            });
-        } else if (collectionsSortBy === 'genres') {
-            allMovies.sort((a, b) => {
-                const aVal = a.genres && a.genres[0] ? a.genres[0] : '';
-                const bVal = b.genres && b.genres[0] ? b.genres[0] : '';
-                return aVal.localeCompare(bVal);
-            });
-        } else if (collectionsSortBy === 'years') {
-            allMovies.sort((a, b) => {
-                const aVal = a.years && a.years[0] ? a.years[0] : '';
-                const bVal = b.years && b.years[0] ? b.years[0] : '';
-                return aVal.localeCompare(bVal);
-            });
-        } else if (collectionsSortBy === 'countries') {
-            allMovies.sort((a, b) => {
-                const aVal = a.countries && a.countries[0] ? a.countries[0] : '';
-                const bVal = b.countries && b.countries[0] ? b.countries[0] : '';
-                return aVal.localeCompare(bVal);
-            });
-        } else if (collectionsSortBy === 'languages') {
-            allMovies.sort((a, b) => {
-                const aVal = a.languages && a.languages[0] ? a.languages[0] : '';
-                const bVal = b.languages && b.languages[0] ? b.languages[0] : '';
-                return aVal.localeCompare(bVal);
-            });
-        }
+        // NO ordenar alfabéticamente por grupo. El orden se definirá por currentSort en renderMovies
+        // (eliminado el bloque de sort alfabético)
+        
     } else if (activeTrashFilter) {
         allMovies = await getTrashMovies();
         if (activeTermFilter) {
@@ -1629,14 +1587,8 @@ export async function loadAndDisplayAll() {
 
     const onSortChange = (newSort) => {
         if (activeCollectionsFilter) {
-            collectionsSortBy = newSort;
-            updateCollectionsButtonText();
-            activeDirectorFilter = null;
-            activeActorFilter = null;
-            activeGenreFilter = null;
-            activeYearFilter = null;
-            activeCountryFilter = null;
-            activeLanguageFilter = null;
+            // En Collections, cambiar el sort (Date, Title, etc.)
+            currentSort = newSort;
             loadAndDisplayAll();
         } else {
             currentSort = newSort;
@@ -1644,8 +1596,9 @@ export async function loadAndDisplayAll() {
         }
     };
 
+    // En Collections, usar renderMovies con currentSort (Date, Title, etc.)
     if (activeCollectionsFilter) {
-        renderMovies(resultsGrid, allMovies, title, 'main', 'collections', null);
+        renderMovies(resultsGrid, allMovies, title, 'main', currentSort, onSortChange);
     } else {
         renderMovies(resultsGrid, allMovies, title, activeTrashFilter ? 'trash' : 'main', currentSort, onSortChange);
     }
