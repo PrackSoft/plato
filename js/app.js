@@ -175,19 +175,14 @@ function buildSearchInPanel() {
 
 // ---------------------- Build Collections dropdown ----------------------
 function buildCollectionsDropdown() {
-    if (!filterCollectionsBtn) {
-        console.error('filterCollectionsBtn not found');
-        return;
-    }
+    if (!filterCollectionsBtn) return;
     
     let panel = document.getElementById('collectionsPanel');
     if (!panel) {
         panel = document.createElement('div');
         panel.id = 'collectionsPanel';
         panel.className = 'dropdown-panel hidden';
-        // Insertar después del botón
         filterCollectionsBtn.parentNode.insertBefore(panel, filterCollectionsBtn.nextSibling);
-        console.log('Collections panel created');
     }
     
     const options = [
@@ -209,32 +204,7 @@ function buildCollectionsDropdown() {
         `).join('')}
     `;
     
-    // Asegurar estilos
-    const style = document.getElementById('collectionsPanelStyle');
-    if (!style) {
-        const newStyle = document.createElement('style');
-        newStyle.id = 'collectionsPanelStyle';
-        newStyle.textContent = `
-            #collectionsPanel label {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                padding: 8px 12px;
-                cursor: pointer;
-                color: var(--text-primary);
-                font-size: 0.875rem;
-            }
-            #collectionsPanel label:hover {
-                background: var(--button-bg);
-            }
-            #collectionsPanel label .material-symbols-outlined {
-                font-size: 18px;
-            }
-        `;
-        document.head.appendChild(newStyle);
-    }
-    
-    // Remover event listeners anteriores para evitar duplicación
+    // Limpiar event listeners anteriores
     const newPanel = panel.cloneNode(true);
     panel.parentNode.replaceChild(newPanel, panel);
     panel = newPanel;
@@ -243,43 +213,29 @@ function buildCollectionsDropdown() {
         label.addEventListener('click', (e) => {
             e.stopPropagation();
             const value = label.dataset.value;
-            if (value) {
-                console.log('Collections option selected:', value);
+            if (value && value !== collectionsSortBy) {
                 collectionsSortBy = value;
                 updateCollectionsButtonText();
                 if (activeCollectionsFilter) {
                     loadAndDisplayAll();
                 }
-                panel.classList.add('hidden');
             }
+            panel.classList.add('hidden');
         });
     });
     
-    // Toggle panel al hacer clic en el botón
-    const togglePanel = (e) => {
+    // Toggle panel
+    filterCollectionsBtn.onclick = (e) => {
         e.stopPropagation();
-        const isHidden = panel.classList.contains('hidden');
-        // Cerrar otros paneles
         closeAllPanels();
-        if (isHidden) {
-            panel.classList.remove('hidden');
-        } else {
-            panel.classList.add('hidden');
-        }
+        panel.classList.toggle('hidden');
     };
     
-    // Remover event listener anterior si existe
-    filterCollectionsBtn.removeEventListener('click', togglePanel);
-    filterCollectionsBtn.addEventListener('click', togglePanel);
-    
-    // Cerrar panel al hacer clic fuera
-    const outsideClickListener = (e) => {
+    document.addEventListener('click', (e) => {
         if (!filterCollectionsBtn.contains(e.target) && !panel.contains(e.target)) {
             panel.classList.add('hidden');
         }
-    };
-    document.removeEventListener('click', outsideClickListener);
-    document.addEventListener('click', outsideClickListener);
+    });
     
     updateCollectionsButtonText();
 }
