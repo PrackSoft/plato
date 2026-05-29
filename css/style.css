@@ -507,14 +507,14 @@ body {
 }
 
 /* Eliminación dentro del modal (chips) */
-.remove-term, .remove-director, .remove-actor, .remove-genre, .remove-year {
+.remove-term, .remove-director, .remove-actor, .remove-genre, .remove-year, .remove-country, .remove-language {
     font-size: 14px;
     cursor: pointer;
     color: var(--accent-light);
     transition: color 0.2s;
     margin-left: 4px;
 }
-.remove-term:hover, .remove-director:hover, .remove-actor:hover, .remove-genre:hover, .remove-year:hover {
+.remove-term:hover, .remove-director:hover, .remove-actor:hover, .remove-genre:hover, .remove-year:hover, .remove-country:hover, .remove-language:hover {
     color: var(--accent);
 }
 
