@@ -1,5 +1,5 @@
 const DB_NAME = 'PlatoDB';
-const DB_VERSION = 7; // Incrementado para agregar countries y languages
+const DB_VERSION = 7;
 const STORE_MOVIES = 'movies';
 const STORE_TRASH = 'trash';
 const STORE_EXTRA = 'movie_extra';
@@ -298,7 +298,7 @@ export async function toggleExact(youtubeId, term) {
     });
 }
 
-// ========== FUNCIONES PARA DIRECTORES ==========
+// ========== FUNCIONES PARA DIRECTORES (con sincronización a searchTerms) ==========
 export async function addDirector(youtubeId, directorName) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
@@ -308,16 +308,25 @@ export async function addDirector(youtubeId, directorName) {
         getRequest.onsuccess = () => {
             const movie = getRequest.result;
             if (movie) {
+                // Agregar director
                 if (!movie.directors) movie.directors = [];
                 if (!movie.directors.includes(directorName)) {
                     movie.directors.push(directorName);
-                    movie.lastUpdated = new Date().toISOString();
-                    const putRequest = store.put(movie);
-                    putRequest.onsuccess = () => resolve(movie.directors);
-                    putRequest.onerror = () => reject(putRequest.error);
-                } else {
-                    resolve(movie.directors);
                 }
+                
+                // Sincronizar searchTerms: asegurar que exista el término exacto
+                if (!movie.searchTerms) movie.searchTerms = [];
+                const termIndex = movie.searchTerms.findIndex(t => t.term === directorName);
+                if (termIndex === -1) {
+                    movie.searchTerms.push({ term: directorName, exact: true });
+                } else {
+                    movie.searchTerms[termIndex].exact = true;
+                }
+                
+                movie.lastUpdated = new Date().toISOString();
+                const putRequest = store.put(movie);
+                putRequest.onsuccess = () => resolve(movie.directors);
+                putRequest.onerror = () => reject(putRequest.error);
             } else {
                 reject(new Error('Movie not found'));
             }
@@ -352,7 +361,7 @@ export async function removeDirector(youtubeId, directorName) {
     });
 }
 
-// ========== FUNCIONES PARA ACTORES ==========
+// ========== FUNCIONES PARA ACTORES (con sincronización a searchTerms) ==========
 export async function addActor(youtubeId, actorName) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
@@ -365,13 +374,20 @@ export async function addActor(youtubeId, actorName) {
                 if (!movie.actors) movie.actors = [];
                 if (!movie.actors.includes(actorName)) {
                     movie.actors.push(actorName);
-                    movie.lastUpdated = new Date().toISOString();
-                    const putRequest = store.put(movie);
-                    putRequest.onsuccess = () => resolve(movie.actors);
-                    putRequest.onerror = () => reject(putRequest.error);
-                } else {
-                    resolve(movie.actors);
                 }
+                
+                if (!movie.searchTerms) movie.searchTerms = [];
+                const termIndex = movie.searchTerms.findIndex(t => t.term === actorName);
+                if (termIndex === -1) {
+                    movie.searchTerms.push({ term: actorName, exact: true });
+                } else {
+                    movie.searchTerms[termIndex].exact = true;
+                }
+                
+                movie.lastUpdated = new Date().toISOString();
+                const putRequest = store.put(movie);
+                putRequest.onsuccess = () => resolve(movie.actors);
+                putRequest.onerror = () => reject(putRequest.error);
             } else {
                 reject(new Error('Movie not found'));
             }
@@ -406,7 +422,7 @@ export async function removeActor(youtubeId, actorName) {
     });
 }
 
-// ========== FUNCIONES PARA GÉNEROS ==========
+// ========== FUNCIONES PARA GÉNEROS (con sincronización a searchTerms) ==========
 export async function addGenre(youtubeId, genreName) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
@@ -419,13 +435,20 @@ export async function addGenre(youtubeId, genreName) {
                 if (!movie.genres) movie.genres = [];
                 if (!movie.genres.includes(genreName)) {
                     movie.genres.push(genreName);
-                    movie.lastUpdated = new Date().toISOString();
-                    const putRequest = store.put(movie);
-                    putRequest.onsuccess = () => resolve(movie.genres);
-                    putRequest.onerror = () => reject(putRequest.error);
-                } else {
-                    resolve(movie.genres);
                 }
+                
+                if (!movie.searchTerms) movie.searchTerms = [];
+                const termIndex = movie.searchTerms.findIndex(t => t.term === genreName);
+                if (termIndex === -1) {
+                    movie.searchTerms.push({ term: genreName, exact: true });
+                } else {
+                    movie.searchTerms[termIndex].exact = true;
+                }
+                
+                movie.lastUpdated = new Date().toISOString();
+                const putRequest = store.put(movie);
+                putRequest.onsuccess = () => resolve(movie.genres);
+                putRequest.onerror = () => reject(putRequest.error);
             } else {
                 reject(new Error('Movie not found'));
             }
@@ -460,7 +483,7 @@ export async function removeGenre(youtubeId, genreName) {
     });
 }
 
-// ========== FUNCIONES PARA AÑOS ==========
+// ========== FUNCIONES PARA AÑOS (con sincronización a searchTerms) ==========
 export async function addYear(youtubeId, yearValue) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
@@ -473,13 +496,20 @@ export async function addYear(youtubeId, yearValue) {
                 if (!movie.years) movie.years = [];
                 if (!movie.years.includes(yearValue)) {
                     movie.years.push(yearValue);
-                    movie.lastUpdated = new Date().toISOString();
-                    const putRequest = store.put(movie);
-                    putRequest.onsuccess = () => resolve(movie.years);
-                    putRequest.onerror = () => reject(putRequest.error);
-                } else {
-                    resolve(movie.years);
                 }
+                
+                if (!movie.searchTerms) movie.searchTerms = [];
+                const termIndex = movie.searchTerms.findIndex(t => t.term === yearValue);
+                if (termIndex === -1) {
+                    movie.searchTerms.push({ term: yearValue, exact: true });
+                } else {
+                    movie.searchTerms[termIndex].exact = true;
+                }
+                
+                movie.lastUpdated = new Date().toISOString();
+                const putRequest = store.put(movie);
+                putRequest.onsuccess = () => resolve(movie.years);
+                putRequest.onerror = () => reject(putRequest.error);
             } else {
                 reject(new Error('Movie not found'));
             }
@@ -514,7 +544,7 @@ export async function removeYear(youtubeId, yearValue) {
     });
 }
 
-// ========== FUNCIONES PARA PAÍSES ==========
+// ========== FUNCIONES PARA PAÍSES (con sincronización a searchTerms) ==========
 export async function addCountry(youtubeId, countryName) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
@@ -527,13 +557,20 @@ export async function addCountry(youtubeId, countryName) {
                 if (!movie.countries) movie.countries = [];
                 if (!movie.countries.includes(countryName)) {
                     movie.countries.push(countryName);
-                    movie.lastUpdated = new Date().toISOString();
-                    const putRequest = store.put(movie);
-                    putRequest.onsuccess = () => resolve(movie.countries);
-                    putRequest.onerror = () => reject(putRequest.error);
-                } else {
-                    resolve(movie.countries);
                 }
+                
+                if (!movie.searchTerms) movie.searchTerms = [];
+                const termIndex = movie.searchTerms.findIndex(t => t.term === countryName);
+                if (termIndex === -1) {
+                    movie.searchTerms.push({ term: countryName, exact: true });
+                } else {
+                    movie.searchTerms[termIndex].exact = true;
+                }
+                
+                movie.lastUpdated = new Date().toISOString();
+                const putRequest = store.put(movie);
+                putRequest.onsuccess = () => resolve(movie.countries);
+                putRequest.onerror = () => reject(putRequest.error);
             } else {
                 reject(new Error('Movie not found'));
             }
@@ -568,7 +605,7 @@ export async function removeCountry(youtubeId, countryName) {
     });
 }
 
-// ========== FUNCIONES PARA IDIOMAS ==========
+// ========== FUNCIONES PARA IDIOMAS (con sincronización a searchTerms) ==========
 export async function addLanguage(youtubeId, languageName) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
@@ -581,13 +618,20 @@ export async function addLanguage(youtubeId, languageName) {
                 if (!movie.languages) movie.languages = [];
                 if (!movie.languages.includes(languageName)) {
                     movie.languages.push(languageName);
-                    movie.lastUpdated = new Date().toISOString();
-                    const putRequest = store.put(movie);
-                    putRequest.onsuccess = () => resolve(movie.languages);
-                    putRequest.onerror = () => reject(putRequest.error);
-                } else {
-                    resolve(movie.languages);
                 }
+                
+                if (!movie.searchTerms) movie.searchTerms = [];
+                const termIndex = movie.searchTerms.findIndex(t => t.term === languageName);
+                if (termIndex === -1) {
+                    movie.searchTerms.push({ term: languageName, exact: true });
+                } else {
+                    movie.searchTerms[termIndex].exact = true;
+                }
+                
+                movie.lastUpdated = new Date().toISOString();
+                const putRequest = store.put(movie);
+                putRequest.onsuccess = () => resolve(movie.languages);
+                putRequest.onerror = () => reject(putRequest.error);
             } else {
                 reject(new Error('Movie not found'));
             }
