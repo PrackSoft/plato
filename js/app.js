@@ -1,4 +1,4 @@
-// js/app.js - Plato App (Watching/Favorites ignoran Exact/Related)
+// js/app.js - Plato App (Watching/Favorites desactivan Exact/Related visualmente)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -37,6 +37,7 @@ let activeWatchingFilter = false;
 let activeFavoriteFilter = false;
 let activeTrashFilter = false;
 let activeRelatedFilter = 'exact'; // 'exact' o 'related'
+let savedRelatedFilter = 'exact'; // Para restaurar al salir de Watching/Favorites
 let activeCollectionsFilter = false;
 let activeTermFilter = null;
 let activeDirectorFilter = null;
@@ -203,6 +204,7 @@ function buildRelatedDropdown() {
             const value = label.dataset.value;
             if (value && value !== activeRelatedFilter) {
                 activeRelatedFilter = value;
+                savedRelatedFilter = value;
                 updateRelatedButtonText();
                 loadAndDisplayAll();
             }
@@ -1394,7 +1396,21 @@ function updateFilterButtonsUI() {
     else filterTrashBtn.classList.remove('active');
     if (activeCollectionsFilter && filterCollectionsBtn) filterCollectionsBtn.classList.add('active');
     else if (filterCollectionsBtn) filterCollectionsBtn.classList.remove('active');
-    // El botón Related siempre está activo (btn-primary en HTML)
+    
+    // Si Watching o Favorites están activos, desactivar visualmente el botón Related (ponerlo gris)
+    if (activeWatchingFilter || activeFavoriteFilter) {
+        if (filterRelatedBtn) {
+            filterRelatedBtn.classList.remove('btn-primary');
+            filterRelatedBtn.classList.add('btn-secondary');
+            filterRelatedBtn.style.opacity = '0.6';
+        }
+    } else {
+        if (filterRelatedBtn) {
+            filterRelatedBtn.classList.remove('btn-secondary');
+            filterRelatedBtn.classList.add('btn-primary');
+            filterRelatedBtn.style.opacity = '1';
+        }
+    }
 }
 
 // ---------------------- Toggle functions ----------------------
@@ -1407,6 +1423,12 @@ function toggleWatchingFilter() {
     activeCountryFilter = null;
     activeLanguageFilter = null;
     activeCollectionsFilter = false;
+    
+    // Guardar el estado actual de Related antes de desactivar
+    if (!activeWatchingFilter && !activeFavoriteFilter) {
+        savedRelatedFilter = activeRelatedFilter;
+    }
+    
     if (activeTrashFilter) {
         activeTrashFilter = false;
     }
@@ -1414,6 +1436,13 @@ function toggleWatchingFilter() {
     if (activeWatchingFilter) {
         activeFavoriteFilter = false;
     }
+    
+    // Restaurar Related al salir de Watching/Favorites
+    if (!activeWatchingFilter && !activeFavoriteFilter) {
+        activeRelatedFilter = savedRelatedFilter;
+        updateRelatedButtonText();
+    }
+    
     updateFilterButtonsUI();
     loadAndDisplayAll();
 }
@@ -1427,6 +1456,12 @@ function toggleFavoriteFilter() {
     activeCountryFilter = null;
     activeLanguageFilter = null;
     activeCollectionsFilter = false;
+    
+    // Guardar el estado actual de Related antes de desactivar
+    if (!activeWatchingFilter && !activeFavoriteFilter) {
+        savedRelatedFilter = activeRelatedFilter;
+    }
+    
     if (activeTrashFilter) {
         activeTrashFilter = false;
     }
@@ -1434,6 +1469,13 @@ function toggleFavoriteFilter() {
     if (activeFavoriteFilter) {
         activeWatchingFilter = false;
     }
+    
+    // Restaurar Related al salir de Watching/Favorites
+    if (!activeWatchingFilter && !activeFavoriteFilter) {
+        activeRelatedFilter = savedRelatedFilter;
+        updateRelatedButtonText();
+    }
+    
     updateFilterButtonsUI();
     loadAndDisplayAll();
 }
@@ -1742,6 +1784,12 @@ searchBtn.onclick = async () => {
         activeFavoriteFilter = false;
         activeCollectionsFilter = false;
         updateFilterButtonsUI();
+        
+        // Restaurar Related al salir de Watching/Favorites
+        if (!activeWatchingFilter && !activeFavoriteFilter) {
+            activeRelatedFilter = savedRelatedFilter;
+            updateRelatedButtonText();
+        }
     }
     activeTermFilter = null;
     activeDirectorFilter = null;
