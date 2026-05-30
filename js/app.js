@@ -28,9 +28,6 @@ const settingsBtn = document.getElementById('settingsBtn');
 const settingsSidebar = document.getElementById('settingsSidebar');
 const sidebarOverlay = document.getElementById('sidebarOverlay');
 const closeSidebarBtn = document.getElementById('closeSidebarBtn');
-// Separar clic en texto/ícono principal vs flecha
-const btnText = filterRelatedBtn.querySelector('.btn-text');
-const arrowSpan = filterRelatedBtn.querySelector('.material-symbols-outlined:last-child');
 
 // ---------------------- Global state ----------------------
 let dbReady = openDB();
@@ -180,6 +177,7 @@ function buildSearchInPanel() {
 }
 
 // ---------------------- Build Related dropdown ----------------------
+// ---------------------- Build Related dropdown ----------------------
 function buildRelatedDropdown() {
     if (!filterRelatedBtn) return;
     
@@ -201,120 +199,74 @@ function buildRelatedDropdown() {
         `).join('')}
     `;
     
-    // Guardar referencia a la flecha (ícono arrow_drop_down dentro del botón)
-    let arrowIcon = null;
-    
-    // Limpiar event listeners previos clonando el botón para evitar duplicados
-    const newFilterRelatedBtn = filterRelatedBtn.cloneNode(true);
-    filterRelatedBtn.parentNode.replaceChild(newFilterRelatedBtn, filterRelatedBtn);
-    filterRelatedBtn = newFilterRelatedBtn;
-    
-    // Obtener referencia a la flecha después de clonar
-    const arrows = filterRelatedBtn.querySelectorAll('.material-symbols-outlined');
-    if (arrows.length > 1) {
-        arrowIcon = arrows[1]; // El segundo ícono suele ser la flecha
-    }
-    
-    // Función para salir de filtros activos y restaurar Related
-    function exitActiveFiltersAndSetRelated(value) {
-        if (value && value !== activeRelatedFilter) {
-            activeRelatedFilter = value;
-            savedRelatedFilter = value;
-            updateRelatedButtonText();
-        }
-        
-        // Salir de Watching/Favorites/Trash si están activos
-        let changed = false;
-        if (activeWatchingFilter) {
-            activeWatchingFilter = false;
-            changed = true;
-        }
-        if (activeFavoriteFilter) {
-            activeFavoriteFilter = false;
-            changed = true;
-        }
-        if (activeTrashFilter) {
-            activeTrashFilter = false;
-            changed = true;
-        }
-        if (activeCollectionsFilter) {
-            activeCollectionsFilter = false;
-            changed = true;
-        }
-        
-        if (changed) {
-            updateFilterButtonsUI();
-            loadAndDisplayAll();
-        } else {
-            // Si solo cambió el valor de Related, recargar
-            if (value && value !== activeRelatedFilter) {
-                loadAndDisplayAll();
-            }
-        }
-    }
-    
-    // Click en el área del texto/ícono principal (excluyendo la flecha)
-    filterRelatedBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        
-        // Verificar si el clic fue en la flecha o su contenedor
-        let isArrow = false;
-        let target = e.target;
-        while (target && target !== filterRelatedBtn) {
-            if (target === arrowIcon || (target.classList && target.classList.contains('material-symbols-outlined') && target.textContent === 'arrow_drop_down')) {
-                isArrow = true;
-                break;
-            }
-            target = target.parentElement;
-        }
-        
-        if (isArrow) {
-            // Solo abrir/cerrar el panel, no salir de filtros
-            panel.classList.toggle('hidden');
-        } else {
-            // Clic en el área principal: salir de filtros y restaurar el estado guardado
-            panel.classList.add('hidden');
-            exitActiveFiltersAndSetRelated(savedRelatedFilter);
-        }
-    });
-    
-    // Selección desde el panel
     panel.querySelectorAll('label').forEach(label => {
         label.addEventListener('click', (e) => {
             e.stopPropagation();
             const value = label.dataset.value;
             if (value && value !== activeRelatedFilter) {
+                // Al seleccionar una opción, salir de cualquier filtro activo
+                if (activeWatchingFilter || activeFavoriteFilter || activeTrashFilter) {
+                    activeWatchingFilter = false;
+                    activeFavoriteFilter = false;
+                    activeTrashFilter = false;
+                    updateFilterButtonsUI();
+                }
                 activeRelatedFilter = value;
                 savedRelatedFilter = value;
                 updateRelatedButtonText();
-                
-                // Salir de filtros activos al cambiar la opción
-                let changed = false;
-                if (activeWatchingFilter) {
-                    activeWatchingFilter = false;
-                    changed = true;
-                }
-                if (activeFavoriteFilter) {
-                    activeFavoriteFilter = false;
-                    changed = true;
-                }
-                if (activeTrashFilter) {
-                    activeTrashFilter = false;
-                    changed = true;
-                }
-                if (activeCollectionsFilter) {
-                    activeCollectionsFilter = false;
-                    changed = true;
-                }
-                
-                updateFilterButtonsUI();
                 loadAndDisplayAll();
             }
             panel.classList.add('hidden');
         });
     });
     
-    // Cerrar panel al hacer clic fuera
+    // Guardar referencia a la flecha y al botón principal para manejo separado
+    const originalBtnHtml = filterRelatedBtn.innerHTML;
+    
+    // Reemplazar estructura del botón para tener click en ícono/texto vs flecha separados
+    filterRelatedBtn.innerHTML = `
+        <span class="related-main" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+            <span class="material-symbols-outlined related-icon">${activeRelatedFilter === 'exact' ? 'verified' : 'verified_off'}</span>
+            <span class="related-label">${activeRelatedFilter === 'exact' ? 'Exact' : 'Related'}</span>
+        </span>
+        <span class="related-arrow" style="display: inline-flex; align-items: center; cursor: pointer;">
+            <span class="material-symbols-outlined">arrow_drop_down</span>
+        </span>
+    `;
+    
+    const mainPart = filterRelatedBtn.querySelector('.related-main');
+    const arrowPart = filterRelatedBtn.querySelector('.related-arrow');
+    
+    // Click en el área principal (ícono + texto): salir de filtros y restaurar
+    if (mainPart) {
+        mainPart.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Si está deshabilitado visualmente (por Watching/Favorites/Trash)
+            if (activeWatchingFilter || activeFavoriteFilter || activeTrashFilter) {
+                // Salir de los filtros activos
+                activeWatchingFilter = false;
+                activeFavoriteFilter = false;
+                activeTrashFilter = false;
+                updateFilterButtonsUI();
+                // Restaurar el estado guardado
+                activeRelatedFilter = savedRelatedFilter;
+                updateRelatedButtonText();
+                loadAndDisplayAll();
+            } else {
+                // Si ya está activo, solo alternar el panel? No, mantener comportamiento: abrir panel
+                panel.classList.toggle('hidden');
+            }
+        });
+    }
+    
+    // Click en la flecha: solo abrir/cerrar panel
+    if (arrowPart) {
+        arrowPart.addEventListener('click', (e) => {
+            e.stopPropagation();
+            panel.classList.toggle('hidden');
+        });
+    }
+    
     document.addEventListener('click', (e) => {
         if (!filterRelatedBtn.contains(e.target) && !panel.contains(e.target)) {
             panel.classList.add('hidden');
@@ -322,6 +274,35 @@ function buildRelatedDropdown() {
     });
     
     updateRelatedButtonText();
+}
+
+function updateRelatedButtonText() {
+    if (!filterRelatedBtn) return;
+    let label = 'Exact';
+    let icon = 'verified';
+    if (activeRelatedFilter === 'related') {
+        label = 'Related';
+        icon = 'verified_off';
+    }
+    // Actualizar solo los spans internos sin romper la estructura
+    const mainPart = filterRelatedBtn.querySelector('.related-main');
+    if (mainPart) {
+        const iconSpan = mainPart.querySelector('.related-icon');
+        const labelSpan = mainPart.querySelector('.related-label');
+        if (iconSpan) iconSpan.textContent = icon;
+        if (labelSpan) labelSpan.textContent = label;
+    } else {
+        // Fallback si la estructura no existe (reconstruir)
+        filterRelatedBtn.innerHTML = `
+            <span class="related-main" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                <span class="material-symbols-outlined related-icon">${icon}</span>
+                <span class="related-label">${label}</span>
+            </span>
+            <span class="related-arrow" style="display: inline-flex; align-items: center; cursor: pointer;">
+                <span class="material-symbols-outlined">arrow_drop_down</span>
+            </span>
+        `;
+    }
 }
 
 function updateRelatedButtonText() {
