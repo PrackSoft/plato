@@ -204,7 +204,6 @@ function buildRelatedDropdown() {
             e.stopPropagation();
             const value = label.dataset.value;
             if (value && value !== activeRelatedFilter) {
-                // Al seleccionar una opción, salir de cualquier filtro activo
                 if (activeWatchingFilter || activeFavoriteFilter || activeTrashFilter) {
                     activeWatchingFilter = false;
                     activeFavoriteFilter = false;
@@ -220,10 +219,8 @@ function buildRelatedDropdown() {
         });
     });
     
-    // Guardar referencia a la flecha y al botón principal para manejo separado
     const originalBtnHtml = filterRelatedBtn.innerHTML;
     
-    // Reemplazar estructura del botón para tener click en ícono/texto vs flecha separados
     filterRelatedBtn.innerHTML = `
         <span class="related-main" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
             <span class="material-symbols-outlined related-icon">${activeRelatedFilter === 'exact' ? 'verified' : 'verified_off'}</span>
@@ -237,29 +234,23 @@ function buildRelatedDropdown() {
     const mainPart = filterRelatedBtn.querySelector('.related-main');
     const arrowPart = filterRelatedBtn.querySelector('.related-arrow');
     
-    // Click en el área principal (ícono + texto): salir de filtros y restaurar
     if (mainPart) {
         mainPart.addEventListener('click', (e) => {
             e.stopPropagation();
-            // Si está deshabilitado visualmente (por Watching/Favorites/Trash)
             if (activeWatchingFilter || activeFavoriteFilter || activeTrashFilter) {
-                // Salir de los filtros activos
                 activeWatchingFilter = false;
                 activeFavoriteFilter = false;
                 activeTrashFilter = false;
                 updateFilterButtonsUI();
-                // Restaurar el estado guardado
                 activeRelatedFilter = savedRelatedFilter;
                 updateRelatedButtonText();
                 loadAndDisplayAll();
             } else {
-                // Si ya está activo, solo alternar el panel? No, mantener comportamiento: abrir panel
                 panel.classList.toggle('hidden');
             }
         });
     }
     
-    // Click en la flecha: solo abrir/cerrar panel
     if (arrowPart) {
         arrowPart.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -303,21 +294,6 @@ function updateRelatedButtonText() {
             </span>
         `;
     }
-}
-
-function updateRelatedButtonText() {
-    if (!filterRelatedBtn) return;
-    let label = 'Exact';
-    let icon = 'verified';
-    if (activeRelatedFilter === 'related') {
-        label = 'Related';
-        icon = 'verified_off';
-    }
-    filterRelatedBtn.innerHTML = `
-        <span class="material-symbols-outlined">${icon}</span>
-        ${label}
-        <span class="material-symbols-outlined">arrow_drop_down</span>
-    `;
 }
 
 // ---------------------- Build Collections dropdown ----------------------
