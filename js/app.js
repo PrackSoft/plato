@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con desplegable Exact/Related)
+// js/app.js - Plato App (Watching/Favorites ignoran Exact/Related)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -1394,8 +1394,7 @@ function updateFilterButtonsUI() {
     else filterTrashBtn.classList.remove('active');
     if (activeCollectionsFilter && filterCollectionsBtn) filterCollectionsBtn.classList.add('active');
     else if (filterCollectionsBtn) filterCollectionsBtn.classList.remove('active');
-    // El botón Related siempre está activo (rojo) porque es un desplegable
-    if (filterRelatedBtn) filterRelatedBtn.classList.add('active');
+    // El botón Related siempre está activo (btn-primary en HTML)
 }
 
 // ---------------------- Toggle functions ----------------------
@@ -1513,20 +1512,27 @@ export async function loadAndDisplayAll() {
             });
         }
         
-        if (activeWatchingFilter) allMovies = allMovies.filter(movie => movie.watching === true);
-        if (activeFavoriteFilter) allMovies = allMovies.filter(movie => movie.favorite === true);
+        // Watching y Favorites tienen prioridad sobre Exact/Related
+        if (activeWatchingFilter) {
+            allMovies = allMovies.filter(movie => movie.watching === true);
+        }
+        if (activeFavoriteFilter) {
+            allMovies = allMovies.filter(movie => movie.favorite === true);
+        }
         
-        // Filtrar por Exact o Related
-        if (activeRelatedFilter === 'exact') {
-            allMovies = allMovies.filter(movie => {
-                const terms = movie.searchTerms || [];
-                return terms.some(t => t.exact === true);
-            });
-        } else {
-            allMovies = allMovies.filter(movie => {
-                const terms = movie.searchTerms || [];
-                return terms.some(t => t.exact === false);
-            });
+        // Si no hay filtros Watching ni Favorites, aplicar Exact/Related
+        if (!activeWatchingFilter && !activeFavoriteFilter) {
+            if (activeRelatedFilter === 'exact') {
+                allMovies = allMovies.filter(movie => {
+                    const terms = movie.searchTerms || [];
+                    return terms.some(t => t.exact === true);
+                });
+            } else {
+                allMovies = allMovies.filter(movie => {
+                    const terms = movie.searchTerms || [];
+                    return terms.some(t => t.exact === false);
+                });
+            }
         }
         
         if (activeDirectorFilter) {
@@ -1573,6 +1579,8 @@ export async function loadAndDisplayAll() {
         title = `Collections (${sortLabel}${filterName}) (${allMovies.length})`;
     } else if (activeTrashFilter) {
         title = `Trash (${allMovies.length})`;
+    } else if (activeWatchingFilter && activeFavoriteFilter) {
+        title = `Watching & Favorites (${allMovies.length})`;
     } else if (activeWatchingFilter) {
         title = `Watching (${allMovies.length})`;
     } else if (activeFavoriteFilter) {
@@ -1857,9 +1865,6 @@ async function init() {
     
     if (termsBar) termsBar.classList.add('hidden');
     if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
-    
-    // Asegurar que el botón Related esté activo (rojo)
-    if (filterRelatedBtn) filterRelatedBtn.classList.add('active');
 }
 init();
 
