@@ -103,7 +103,7 @@ function renderModalContent(movie, source) {
 
         <!-- Sección Directores -->
         <div class="modal-section">
-            <strong>Directors:</strong>
+            <strong>Director:</strong>
             <div id="directorsList" class="terms-list">
                 ${directors.map(name => `
                     <span class="term-chip">
@@ -124,7 +124,7 @@ function renderModalContent(movie, source) {
 
         <!-- Sección Actores -->
         <div class="modal-section">
-            <strong>Actors:</strong>
+            <strong>Actor:</strong>
             <div id="actorsList" class="terms-list">
                 ${actors.map(name => `
                     <span class="term-chip">
@@ -145,7 +145,7 @@ function renderModalContent(movie, source) {
 
         <!-- Sección Géneros -->
         <div class="modal-section">
-            <strong>Genres:</strong>
+            <strong>Genre:</strong>
             <div id="genresList" class="terms-list">
                 ${genres.map(name => `
                     <span class="term-chip">
@@ -166,7 +166,7 @@ function renderModalContent(movie, source) {
 
         <!-- Sección Años -->
         <div class="modal-section">
-            <strong>Years:</strong>
+            <strong>Year:</strong>
             <div id="yearsList" class="terms-list">
                 ${years.map(year => `
                     <span class="term-chip">
@@ -187,7 +187,7 @@ function renderModalContent(movie, source) {
 
         <!-- Sección Países -->
         <div class="modal-section">
-            <strong>Countries:</strong>
+            <strong>Country:</strong>
             <div id="countriesList" class="terms-list">
                 ${countries.map(name => `
                     <span class="term-chip">
@@ -208,7 +208,7 @@ function renderModalContent(movie, source) {
 
         <!-- Sección Idiomas -->
         <div class="modal-section">
-            <strong>Languages:</strong>
+            <strong>Language:</strong>
             <div id="languagesList" class="terms-list">
                 ${languages.map(name => `
                     <span class="term-chip">
