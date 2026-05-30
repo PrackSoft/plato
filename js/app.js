@@ -1,4 +1,4 @@
-// js/app.js - Plato App (Collections con sort by normal)
+// js/app.js - Plato App (con Collections y opción "All")
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -181,6 +181,7 @@ function buildCollectionsDropdown() {
     if (!panel) return;
     
     const options = [
+        { value: 'all', label: 'All', icon: 'all_inclusive' },
         { value: 'directors', label: 'Directors', icon: 'person' },
         { value: 'actors', label: 'Actors', icon: 'group' },
         { value: 'genres', label: 'Genres', icon: 'theater_comedy' },
@@ -242,6 +243,7 @@ function updateCollectionsButtonText() {
     let label = 'Collections';
     if (activeCollectionsFilter) {
         switch (collectionsSortBy) {
+            case 'all': label = 'All'; break;
             case 'directors': label = 'Directors'; break;
             case 'actors': label = 'Actors'; break;
             case 'genres': label = 'Genres'; break;
@@ -1457,7 +1459,7 @@ export async function loadAndDisplayAll() {
             return hasDirectors || hasActors || hasGenres || hasYears || hasCountries || hasLanguages;
         });
         
-        // Aplicar filtro por el chip seleccionado según el tipo de colección
+        // Aplicar filtro por el chip seleccionado según el tipo de colección (excepto 'all')
         if (collectionsSortBy === 'directors' && activeDirectorFilter) {
             allMovies = allMovies.filter(movie => (movie.directors || []).includes(activeDirectorFilter));
         } else if (collectionsSortBy === 'actors' && activeActorFilter) {
@@ -1471,9 +1473,7 @@ export async function loadAndDisplayAll() {
         } else if (collectionsSortBy === 'languages' && activeLanguageFilter) {
             allMovies = allMovies.filter(movie => (movie.languages || []).includes(activeLanguageFilter));
         }
-        
-        // NO ordenar alfabéticamente por grupo. El orden se definirá por currentSort en renderMovies
-        // (eliminado el bloque de sort alfabético)
+        // Si collectionsSortBy === 'all', no se aplica filtro adicional
         
     } else if (activeTrashFilter) {
         allMovies = await getTrashMovies();
@@ -1546,7 +1546,8 @@ export async function loadAndDisplayAll() {
     let title;
     if (activeCollectionsFilter) {
         let sortLabel = '';
-        if (collectionsSortBy === 'directors') sortLabel = 'Director';
+        if (collectionsSortBy === 'all') sortLabel = 'All';
+        else if (collectionsSortBy === 'directors') sortLabel = 'Director';
         else if (collectionsSortBy === 'actors') sortLabel = 'Actor';
         else if (collectionsSortBy === 'genres') sortLabel = 'Genre';
         else if (collectionsSortBy === 'years') sortLabel = 'Year';
@@ -1554,12 +1555,14 @@ export async function loadAndDisplayAll() {
         else if (collectionsSortBy === 'languages') sortLabel = 'Language';
         
         let filterName = '';
-        if (collectionsSortBy === 'directors' && activeDirectorFilter) filterName = `: ${activeDirectorFilter}`;
-        else if (collectionsSortBy === 'actors' && activeActorFilter) filterName = `: ${activeActorFilter}`;
-        else if (collectionsSortBy === 'genres' && activeGenreFilter) filterName = `: ${activeGenreFilter}`;
-        else if (collectionsSortBy === 'years' && activeYearFilter) filterName = `: ${activeYearFilter}`;
-        else if (collectionsSortBy === 'countries' && activeCountryFilter) filterName = `: ${activeCountryFilter}`;
-        else if (collectionsSortBy === 'languages' && activeLanguageFilter) filterName = `: ${activeLanguageFilter}`;
+        if (collectionsSortBy !== 'all') {
+            if (collectionsSortBy === 'directors' && activeDirectorFilter) filterName = `: ${activeDirectorFilter}`;
+            else if (collectionsSortBy === 'actors' && activeActorFilter) filterName = `: ${activeActorFilter}`;
+            else if (collectionsSortBy === 'genres' && activeGenreFilter) filterName = `: ${activeGenreFilter}`;
+            else if (collectionsSortBy === 'years' && activeYearFilter) filterName = `: ${activeYearFilter}`;
+            else if (collectionsSortBy === 'countries' && activeCountryFilter) filterName = `: ${activeCountryFilter}`;
+            else if (collectionsSortBy === 'languages' && activeLanguageFilter) filterName = `: ${activeLanguageFilter}`;
+        }
         
         title = `Collections (${sortLabel}${filterName}) (${allMovies.length})`;
     } else if (activeTrashFilter) {
@@ -1590,7 +1593,6 @@ export async function loadAndDisplayAll() {
 
     const onSortChange = (newSort) => {
         if (activeCollectionsFilter) {
-            // En Collections, cambiar el sort (Date, Title, etc.)
             currentSort = newSort;
             loadAndDisplayAll();
         } else {
@@ -1643,7 +1645,16 @@ export async function loadAndDisplayAll() {
         if (countriesBar) countriesBar.classList.add('hidden');
         if (languagesBar) languagesBar.classList.add('hidden');
     } else {
-        if (collectionsSortBy === 'directors') {
+        // En Collections, mostrar la barra de chips solo si no es 'all'
+        if (collectionsSortBy === 'all') {
+            // Ocultar todas las barras
+            if (directorsBar) directorsBar.classList.add('hidden');
+            if (actorsBar) actorsBar.classList.add('hidden');
+            if (genresBar) genresBar.classList.add('hidden');
+            if (yearsBar) yearsBar.classList.add('hidden');
+            if (countriesBar) countriesBar.classList.add('hidden');
+            if (languagesBar) languagesBar.classList.add('hidden');
+        } else if (collectionsSortBy === 'directors') {
             await refreshAvailableDirectors();
             renderDirectorsBar();
             if (actorsBar) actorsBar.classList.add('hidden');
