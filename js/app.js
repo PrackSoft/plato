@@ -240,21 +240,9 @@ function buildCollectionsDropdown() {
 
 function updateCollectionsButtonText() {
     if (!filterCollectionsBtn) return;
-    let label = 'Collections';
-    if (activeCollectionsFilter) {
-        switch (collectionsSortBy) {
-            case 'all': label = 'All'; break;
-            case 'directors': label = 'Directors'; break;
-            case 'actors': label = 'Actors'; break;
-            case 'genres': label = 'Genres'; break;
-            case 'years': label = 'Years'; break;
-            case 'countries': label = 'Countries'; break;
-            case 'languages': label = 'Languages'; break;
-        }
-    }
     filterCollectionsBtn.innerHTML = `
         <span class="material-symbols-outlined">join_inner</span>
-        ${label}
+        Collections
         <span class="material-symbols-outlined">arrow_drop_down</span>
     `;
 }
