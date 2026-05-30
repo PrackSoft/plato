@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con agrupación en Collections)
+// js/app.js - Plato App (sin chips en Collections)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -1627,6 +1627,7 @@ export async function loadAndDisplayAll() {
         }
         renderTermsBar(termsToShow);
         
+        // Ocultar todas las barras de Collections
         if (directorsBar) directorsBar.classList.add('hidden');
         if (actorsBar) actorsBar.classList.add('hidden');
         if (genresBar) genresBar.classList.add('hidden');
@@ -1634,63 +1635,13 @@ export async function loadAndDisplayAll() {
         if (countriesBar) countriesBar.classList.add('hidden');
         if (languagesBar) languagesBar.classList.add('hidden');
     } else {
-        // En Collections, mostrar la barra de chips solo si no es 'all'
-        if (collectionsSortBy === 'all') {
-            if (directorsBar) directorsBar.classList.add('hidden');
-            if (actorsBar) actorsBar.classList.add('hidden');
-            if (genresBar) genresBar.classList.add('hidden');
-            if (yearsBar) yearsBar.classList.add('hidden');
-            if (countriesBar) countriesBar.classList.add('hidden');
-            if (languagesBar) languagesBar.classList.add('hidden');
-        } else if (collectionsSortBy === 'directors') {
-            await refreshAvailableDirectors();
-            renderDirectorsBar();
-            if (actorsBar) actorsBar.classList.add('hidden');
-            if (genresBar) genresBar.classList.add('hidden');
-            if (yearsBar) yearsBar.classList.add('hidden');
-            if (countriesBar) countriesBar.classList.add('hidden');
-            if (languagesBar) languagesBar.classList.add('hidden');
-        } else if (collectionsSortBy === 'actors') {
-            await refreshAvailableActors();
-            renderActorsBar();
-            if (directorsBar) directorsBar.classList.add('hidden');
-            if (genresBar) genresBar.classList.add('hidden');
-            if (yearsBar) yearsBar.classList.add('hidden');
-            if (countriesBar) countriesBar.classList.add('hidden');
-            if (languagesBar) languagesBar.classList.add('hidden');
-        } else if (collectionsSortBy === 'genres') {
-            await refreshAvailableGenres();
-            renderGenresBar();
-            if (directorsBar) directorsBar.classList.add('hidden');
-            if (actorsBar) actorsBar.classList.add('hidden');
-            if (yearsBar) yearsBar.classList.add('hidden');
-            if (countriesBar) countriesBar.classList.add('hidden');
-            if (languagesBar) languagesBar.classList.add('hidden');
-        } else if (collectionsSortBy === 'years') {
-            await refreshAvailableYears();
-            renderYearsBar();
-            if (directorsBar) directorsBar.classList.add('hidden');
-            if (actorsBar) actorsBar.classList.add('hidden');
-            if (genresBar) genresBar.classList.add('hidden');
-            if (countriesBar) countriesBar.classList.add('hidden');
-            if (languagesBar) languagesBar.classList.add('hidden');
-        } else if (collectionsSortBy === 'countries') {
-            await refreshAvailableCountries();
-            renderCountriesBar();
-            if (directorsBar) directorsBar.classList.add('hidden');
-            if (actorsBar) actorsBar.classList.add('hidden');
-            if (genresBar) genresBar.classList.add('hidden');
-            if (yearsBar) yearsBar.classList.add('hidden');
-            if (languagesBar) languagesBar.classList.add('hidden');
-        } else if (collectionsSortBy === 'languages') {
-            await refreshAvailableLanguages();
-            renderLanguagesBar();
-            if (directorsBar) directorsBar.classList.add('hidden');
-            if (actorsBar) actorsBar.classList.add('hidden');
-            if (genresBar) genresBar.classList.add('hidden');
-            if (yearsBar) yearsBar.classList.add('hidden');
-            if (countriesBar) countriesBar.classList.add('hidden');
-        }
+        // En Collections, no mostrar ninguna barra de chips
+        if (directorsBar) directorsBar.classList.add('hidden');
+        if (actorsBar) actorsBar.classList.add('hidden');
+        if (genresBar) genresBar.classList.add('hidden');
+        if (yearsBar) yearsBar.classList.add('hidden');
+        if (countriesBar) countriesBar.classList.add('hidden');
+        if (languagesBar) languagesBar.classList.add('hidden');
         return;
     }
     
