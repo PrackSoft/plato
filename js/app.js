@@ -179,13 +179,8 @@ function buildSearchInPanel() {
 function buildRelatedDropdown() {
     if (!filterRelatedBtn) return;
     
-    let panel = document.getElementById('relatedPanel');
-    if (!panel) {
-        panel = document.createElement('div');
-        panel.id = 'relatedPanel';
-        panel.className = 'dropdown-panel hidden';
-        filterRelatedBtn.parentNode.insertBefore(panel, filterRelatedBtn.nextSibling);
-    }
+    const panel = document.getElementById('relatedPanel');
+    if (!panel) return;
     
     const options = [
         { value: 'exact', label: 'Exact', icon: 'verified' },
@@ -202,31 +197,9 @@ function buildRelatedDropdown() {
         `).join('')}
     `;
     
-    const style = document.createElement('style');
-    style.textContent = `
-        #relatedPanel label {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px 12px;
-            cursor: pointer;
-            color: var(--text-primary);
-            font-size: 0.875rem;
-        }
-        #relatedPanel label:hover {
-            background: var(--button-bg);
-        }
-        #relatedPanel label .material-symbols-outlined {
-            font-size: 18px;
-        }
-    `;
-    if (!document.querySelector('#relatedPanelStyle')) {
-        style.id = 'relatedPanelStyle';
-        document.head.appendChild(style);
-    }
-    
     panel.querySelectorAll('label').forEach(label => {
-        label.addEventListener('click', () => {
+        label.addEventListener('click', (e) => {
+            e.stopPropagation();
             const value = label.dataset.value;
             if (value && value !== activeRelatedFilter) {
                 activeRelatedFilter = value;
@@ -239,11 +212,7 @@ function buildRelatedDropdown() {
     
     filterRelatedBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const isHidden = panel.classList.toggle('hidden');
-        if (!isHidden) {
-            closeAllPanels();
-            panel.classList.remove('hidden');
-        }
+        panel.classList.toggle('hidden');
     });
     
     document.addEventListener('click', (e) => {
