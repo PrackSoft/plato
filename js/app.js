@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con Collections y opción "All")
+// js/app.js - Plato App (con agrupación en Collections)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -1589,9 +1589,10 @@ export async function loadAndDisplayAll() {
         }
     };
 
-    // En Collections, usar renderMovies con currentSort (Date, Title, etc.)
+    // En Collections, pasar groupBy según collectionsSortBy (excepto 'all')
     if (activeCollectionsFilter) {
-        renderMovies(resultsGrid, allMovies, title, 'main', currentSort, onSortChange);
+        const groupBy = (collectionsSortBy === 'all' ? null : collectionsSortBy);
+        renderMovies(resultsGrid, allMovies, title, 'collections', currentSort, onSortChange, groupBy);
     } else {
         renderMovies(resultsGrid, allMovies, title, activeTrashFilter ? 'trash' : 'main', currentSort, onSortChange);
     }
@@ -1635,7 +1636,6 @@ export async function loadAndDisplayAll() {
     } else {
         // En Collections, mostrar la barra de chips solo si no es 'all'
         if (collectionsSortBy === 'all') {
-            // Ocultar todas las barras
             if (directorsBar) directorsBar.classList.add('hidden');
             if (actorsBar) actorsBar.classList.add('hidden');
             if (genresBar) genresBar.classList.add('hidden');
@@ -1889,7 +1889,7 @@ async function init() {
     });
     await refreshAvailableTerms();
     await loadAndDisplayAll();
-
+    
     // Ocultar barra de Search terms al inicio
     if (termsBar) termsBar.classList.add('hidden');
     if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
