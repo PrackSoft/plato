@@ -1,4 +1,4 @@
-// js/app.js - Plato App (con botón Exact/Related alternado)
+// js/app.js - Plato App (con desplegable Exact/Related)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -14,8 +14,8 @@ const searchInPanel = document.getElementById('searchInPanel');
 const filterWatchingBtn = document.getElementById('filterWatchingBtn');
 const filterFavoriteBtn = document.getElementById('filterFavoriteBtn');
 const filterTrashBtn = document.getElementById('filterTrashBtn');
-const filterRelatedBtn = document.getElementById('filterRelatedBtn');
 const filterCollectionsBtn = document.getElementById('filterCollectionsBtn');
+const filterRelatedBtn = document.getElementById('filterRelatedBtn');
 const termsBar = document.getElementById('termsBar');
 const directorsBar = document.getElementById('directorsBar');
 const actorsBar = document.getElementById('actorsBar');
@@ -36,7 +36,7 @@ let currentSearchOptionId = "UCuVPpxrm2VAgpH3Ktln4HXg";
 let activeWatchingFilter = false;
 let activeFavoriteFilter = false;
 let activeTrashFilter = false;
-let activeRelatedFilter = true; // true = Exact (exact: true), false = Related (exact: false)
+let activeRelatedFilter = 'exact'; // 'exact' o 'related'
 let activeCollectionsFilter = false;
 let activeTermFilter = null;
 let activeDirectorFilter = null;
@@ -73,6 +73,8 @@ function closeAllPanels() {
     searchInPanel.classList.add('hidden');
     const collectionsPanel = document.getElementById('collectionsPanel');
     if (collectionsPanel) collectionsPanel.classList.add('hidden');
+    const relatedPanel = document.getElementById('relatedPanel');
+    if (relatedPanel) relatedPanel.classList.add('hidden');
 }
 
 function closePanelWithDelay(panel) {
@@ -171,6 +173,101 @@ function buildSearchInPanel() {
     }
 
     updateSearchInButtonText();
+}
+
+// ---------------------- Build Related dropdown ----------------------
+function buildRelatedDropdown() {
+    if (!filterRelatedBtn) return;
+    
+    let panel = document.getElementById('relatedPanel');
+    if (!panel) {
+        panel = document.createElement('div');
+        panel.id = 'relatedPanel';
+        panel.className = 'dropdown-panel hidden';
+        filterRelatedBtn.parentNode.insertBefore(panel, filterRelatedBtn.nextSibling);
+    }
+    
+    const options = [
+        { value: 'exact', label: 'Exact', icon: 'verified' },
+        { value: 'related', label: 'Related', icon: 'verified_off' }
+    ];
+    
+    panel.innerHTML = `
+        <div class="dropdown-header">Show</div>
+        ${options.map(opt => `
+            <label data-value="${opt.value}">
+                <span class="material-symbols-outlined">${opt.icon}</span>
+                ${opt.label}
+            </label>
+        `).join('')}
+    `;
+    
+    const style = document.createElement('style');
+    style.textContent = `
+        #relatedPanel label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            cursor: pointer;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+        #relatedPanel label:hover {
+            background: var(--button-bg);
+        }
+        #relatedPanel label .material-symbols-outlined {
+            font-size: 18px;
+        }
+    `;
+    if (!document.querySelector('#relatedPanelStyle')) {
+        style.id = 'relatedPanelStyle';
+        document.head.appendChild(style);
+    }
+    
+    panel.querySelectorAll('label').forEach(label => {
+        label.addEventListener('click', () => {
+            const value = label.dataset.value;
+            if (value && value !== activeRelatedFilter) {
+                activeRelatedFilter = value;
+                updateRelatedButtonText();
+                loadAndDisplayAll();
+            }
+            panel.classList.add('hidden');
+        });
+    });
+    
+    filterRelatedBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = panel.classList.toggle('hidden');
+        if (!isHidden) {
+            closeAllPanels();
+            panel.classList.remove('hidden');
+        }
+    });
+    
+    document.addEventListener('click', (e) => {
+        if (!filterRelatedBtn.contains(e.target) && !panel.contains(e.target)) {
+            panel.classList.add('hidden');
+        }
+    });
+    
+    updateRelatedButtonText();
+}
+
+function updateRelatedButtonText() {
+    if (!filterRelatedBtn) return;
+    let label = 'Exact';
+    let icon = 'verified';
+    if (activeRelatedFilter === 'related') {
+        label = 'Related';
+        icon = 'verified_off';
+    }
+    filterRelatedBtn.innerHTML = `
+        <span class="material-symbols-outlined">${icon}</span>
+        ${label}
+        <span class="material-symbols-outlined">arrow_drop_down</span>
+    `;
 }
 
 // ---------------------- Build Collections dropdown ----------------------
@@ -531,7 +628,7 @@ export async function refreshAvailableTerms() {
     for (const movie of allMovies) {
         (movie.searchTerms || []).forEach(t => {
             if (t && typeof t === 'object' && t.term) {
-                if (activeRelatedFilter) {
+                if (activeRelatedFilter === 'exact') {
                     if (t.exact === true) termsSet.add(t.term);
                 } else {
                     if (t.exact === false) termsSet.add(t.term);
@@ -601,7 +698,7 @@ export async function termHasChildren(term) {
     for (const movie of allMovies) {
         const found = (movie.searchTerms || []).some(t => {
             if (t && typeof t === 'object' && t.term === term) {
-                if (activeRelatedFilter) {
+                if (activeRelatedFilter === 'exact') {
                     return t.exact === true;
                 } else {
                     return t.exact === false;
@@ -708,7 +805,7 @@ async function deleteMoviesWithTermFromCurrentView(term) {
         }
         if (activeWatchingFilter) moviesToProcess = moviesToProcess.filter(movie => movie.watching === true);
         if (activeFavoriteFilter) moviesToProcess = moviesToProcess.filter(movie => movie.favorite === true);
-        if (!activeRelatedFilter) {
+        if (activeRelatedFilter === 'related') {
             onlyRelated = true;
             moviesToProcess = moviesToProcess.filter(movie => {
                 const terms = movie.searchTerms || [];
@@ -1326,21 +1423,10 @@ function updateFilterButtonsUI() {
     else filterFavoriteBtn.classList.remove('active');
     if (activeTrashFilter) filterTrashBtn.classList.add('active');
     else filterTrashBtn.classList.remove('active');
-    if (activeRelatedFilter) {
-        filterRelatedBtn.classList.add('active');
-        filterRelatedBtn.innerHTML = `
-            <span class="material-symbols-outlined">verified</span>
-            Exact
-        `;
-    } else {
-        filterRelatedBtn.classList.remove('active');
-        filterRelatedBtn.innerHTML = `
-            <span class="material-symbols-outlined">verified_off</span>
-            Related
-        `;
-    }
     if (activeCollectionsFilter && filterCollectionsBtn) filterCollectionsBtn.classList.add('active');
     else if (filterCollectionsBtn) filterCollectionsBtn.classList.remove('active');
+    // El botón Related siempre está activo (rojo) porque es un desplegable
+    if (filterRelatedBtn) filterRelatedBtn.classList.add('active');
 }
 
 // ---------------------- Toggle functions ----------------------
@@ -1402,21 +1488,6 @@ function toggleTrashFilter() {
     loadAndDisplayAll();
 }
 
-function toggleRelatedFilter() {
-    activeTermFilter = null;
-    activeDirectorFilter = null;
-    activeActorFilter = null;
-    activeGenreFilter = null;
-    activeYearFilter = null;
-    activeCountryFilter = null;
-    activeLanguageFilter = null;
-    activeCollectionsFilter = false;
-    activeTrashFilter = false;
-    activeRelatedFilter = !activeRelatedFilter;
-    updateFilterButtonsUI();
-    loadAndDisplayAll();
-}
-
 function toggleCollectionsFilter() {
     // Ya no se usa desde el botón, se mantiene por compatibilidad
 }
@@ -1424,7 +1495,6 @@ function toggleCollectionsFilter() {
 if (filterWatchingBtn) filterWatchingBtn.addEventListener('click', toggleWatchingFilter);
 if (filterFavoriteBtn) filterFavoriteBtn.addEventListener('click', toggleFavoriteFilter);
 if (filterTrashBtn) filterTrashBtn.addEventListener('click', toggleTrashFilter);
-if (filterRelatedBtn) filterRelatedBtn.addEventListener('click', toggleRelatedFilter);
 
 // ---------------------- Load and display ----------------------
 export async function loadAndDisplayAll() {
@@ -1476,7 +1546,9 @@ export async function loadAndDisplayAll() {
         
         if (activeWatchingFilter) allMovies = allMovies.filter(movie => movie.watching === true);
         if (activeFavoriteFilter) allMovies = allMovies.filter(movie => movie.favorite === true);
-        if (activeRelatedFilter) {
+        
+        // Filtrar por Exact o Related
+        if (activeRelatedFilter === 'exact') {
             allMovies = allMovies.filter(movie => {
                 const terms = movie.searchTerms || [];
                 return terms.some(t => t.exact === true);
@@ -1550,7 +1622,7 @@ export async function loadAndDisplayAll() {
         title = `Country: ${activeCountryFilter} (${allMovies.length})`;
     } else if (activeLanguageFilter) {
         title = `Language: ${activeLanguageFilter} (${allMovies.length})`;
-    } else if (activeRelatedFilter) {
+    } else if (activeRelatedFilter === 'exact') {
         title = `Exact results (${allMovies.length})`;
     } else {
         title = `Related results (${allMovies.length})`;
@@ -1592,7 +1664,7 @@ export async function loadAndDisplayAll() {
                 const terms = movie.searchTerms || [];
                 terms.forEach(t => {
                     if (!t.term) return;
-                    if (activeRelatedFilter) {
+                    if (activeRelatedFilter === 'exact') {
                         if (t.exact === true) allTerms.add(t.term);
                     } else {
                         if (t.exact === false) allTerms.add(t.term);
@@ -1794,6 +1866,7 @@ async function init() {
     loadSearchPreferences();
     buildSearchInPanel();
     buildCollectionsDropdown();
+    buildRelatedDropdown();
     buildSettingsSidebarContent();
     
     searchInBtn.addEventListener('click', (e) => {
@@ -1816,8 +1889,8 @@ async function init() {
     if (termsBar) termsBar.classList.add('hidden');
     if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
     
-    activeRelatedFilter = true;
-    updateFilterButtonsUI();
+    // Asegurar que el botón Related esté activo (rojo)
+    if (filterRelatedBtn) filterRelatedBtn.classList.add('active');
 }
 init();
 

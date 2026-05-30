@@ -38,9 +38,14 @@
                     <button id="toggleTermsBtn" class="btn btn-secondary active">
                         <span class="material-symbols-outlined">filter_list</span> Search term
                     </button>
-                    <button id="filterRelatedBtn" class="btn btn-secondary">
-                        <span class="material-symbols-outlined">graph_4</span> Related
-                    </button> 
+                    <div class="dropdown-related">
+                        <button id="filterRelatedBtn" class="btn btn-primary">
+                            <span class="material-symbols-outlined">verified</span>
+                            Exact
+                            <span class="material-symbols-outlined">arrow_drop_down</span>
+                        </button>
+                        <div id="relatedPanel" class="dropdown-panel hidden"></div>
+                    </div>
                     <button id="filterWatchingBtn" class="btn btn-secondary">
                         <span class="material-symbols-outlined">visibility</span> Watching
                     </button>
