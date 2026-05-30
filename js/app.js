@@ -36,7 +36,7 @@ let currentSearchOptionId = "UCuVPpxrm2VAgpH3Ktln4HXg";
 let activeWatchingFilter = false;
 let activeFavoriteFilter = false;
 let activeTrashFilter = false;
-let activeRelatedFilter = true; // true = modo Exact (exact: true), false = modo Related (exact: false)
+let activeRelatedFilter = true; // true = Exact (exact: true), false = Related (exact: false)
 let activeCollectionsFilter = false;
 let activeTermFilter = null;
 let activeDirectorFilter = null;
@@ -531,10 +531,10 @@ export async function refreshAvailableTerms() {
     for (const movie of allMovies) {
         (movie.searchTerms || []).forEach(t => {
             if (t && typeof t === 'object' && t.term) {
-                if (!activeRelatedFilter) {
-                    if (t.exact === false) termsSet.add(t.term);
-                } else {
+                if (activeRelatedFilter) {
                     if (t.exact === true) termsSet.add(t.term);
+                } else {
+                    if (t.exact === false) termsSet.add(t.term);
                 }
             }
         });
@@ -601,10 +601,10 @@ export async function termHasChildren(term) {
     for (const movie of allMovies) {
         const found = (movie.searchTerms || []).some(t => {
             if (t && typeof t === 'object' && t.term === term) {
-                if (!activeRelatedFilter) {
-                    return t.exact === false;
-                } else {
+                if (activeRelatedFilter) {
                     return t.exact === true;
+                } else {
+                    return t.exact === false;
                 }
             }
             return false;
@@ -1412,7 +1412,6 @@ function toggleRelatedFilter() {
     activeLanguageFilter = null;
     activeCollectionsFilter = false;
     activeTrashFilter = false;
-    // Alternar entre Exact (true) y Related (false)
     activeRelatedFilter = !activeRelatedFilter;
     updateFilterButtonsUI();
     loadAndDisplayAll();
@@ -1537,10 +1536,6 @@ export async function loadAndDisplayAll() {
         title = `Watching (${allMovies.length})`;
     } else if (activeFavoriteFilter) {
         title = `Favorites (${allMovies.length})`;
-    } else if (activeRelatedFilter) {
-        title = `Exact results (${allMovies.length})`;
-    } else {
-        title = `Related results (${allMovies.length})`;
     } else if (activeTermFilter) {
         title = `Search term: "${activeTermFilter}" (${allMovies.length})`;
     } else if (activeDirectorFilter) {
@@ -1555,8 +1550,10 @@ export async function loadAndDisplayAll() {
         title = `Country: ${activeCountryFilter} (${allMovies.length})`;
     } else if (activeLanguageFilter) {
         title = `Language: ${activeLanguageFilter} (${allMovies.length})`;
+    } else if (activeRelatedFilter) {
+        title = `Exact results (${allMovies.length})`;
     } else {
-        title = `Exact match (${allMovies.length})`;
+        title = `Related results (${allMovies.length})`;
     }
 
     const onSortChange = (newSort) => {
@@ -1819,7 +1816,6 @@ async function init() {
     if (termsBar) termsBar.classList.add('hidden');
     if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
     
-    // Estado inicial del botón Exact/Related: Exact activo (true)
     activeRelatedFilter = true;
     updateFilterButtonsUI();
 }
