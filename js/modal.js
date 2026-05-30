@@ -1,4 +1,4 @@
-// js/modal.js (con actualización dinámica de Search terms al agregar datos de Collections)
+// js/modal.js (con actualización dinámica de Search term al agregar datos de Collections)
 import { getExtraInfo, toggleExact, addDirector, removeDirector, addActor, removeActor, addGenre, removeGenre, addYear, removeYear, addCountry, removeCountry, addLanguage, removeLanguage, openDB } from './db.js';
 import { refreshAvailableTerms, loadAndDisplayAll, syncWindowTermFilter, getActiveTermFilter } from './app.js';
 
@@ -82,7 +82,7 @@ function renderModalContent(movie, source) {
         ${isInTrash ? `<p><strong>Deleted on:</strong> ${movie.deletedAt ? new Date(movie.deletedAt).toLocaleString() : 'Unknown'}</p>` : ''}
         
         <div class="modal-section">
-            <strong>Search terms:</strong>
+            <strong>Search term:</strong>
             <div id="termsList" class="terms-list">
                 ${(movie.searchTerms || []).map(t => `
                     <span class="term-chip">

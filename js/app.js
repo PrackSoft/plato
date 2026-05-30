@@ -525,7 +525,7 @@ export async function deleteLanguageFromAllMovies(languageName) {
     }
 }
 
-// ---------------------- Search terms Bar ----------------------
+// ---------------------- Search term Bar ----------------------
 export async function refreshAvailableTerms() {
     const allMovies = await getAllMovies();
     const termsSet = new Set();
@@ -974,7 +974,7 @@ async function deleteLanguageFromCurrentView(languageName) {
 function renderTermsBar(termsArray = null) {
     const terms = termsArray !== null ? termsArray : availableTerms;
     if (!terms || terms.length === 0) {
-        termsBar.innerHTML = '<div class="terms-placeholder">No Search terms yet.</div>';
+        termsBar.innerHTML = '<div class="terms-placeholder">No Search term yet.</div>';
         return;
     }
     const html = terms.map(term => {
@@ -1841,7 +1841,7 @@ async function init() {
     await refreshAvailableTerms();
     await loadAndDisplayAll();
     
-    // Ocultar barra de Search terms al inicio
+    // Ocultar barra de Search term al inicio
     if (termsBar) termsBar.classList.add('hidden');
     if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
 }
