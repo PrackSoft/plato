@@ -1901,6 +1901,10 @@ async function init() {
     });
     await refreshAvailableTerms();
     await loadAndDisplayAll();
+
+    // Ocultar barra de Search terms al inicio
+    if (termsBar) termsBar.classList.add('hidden');
+    if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
 }
 init();
 
