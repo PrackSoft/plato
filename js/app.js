@@ -1,4 +1,4 @@
-// js/app.js - Plato App (Watching/Favorites desactivan Exact/Related visualmente)
+// js/app.js - Plato App (Trashcan también desactiva Exact/Related)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -37,7 +37,7 @@ let activeWatchingFilter = false;
 let activeFavoriteFilter = false;
 let activeTrashFilter = false;
 let activeRelatedFilter = 'exact'; // 'exact' o 'related'
-let savedRelatedFilter = 'exact'; // Para restaurar al salir de Watching/Favorites
+let savedRelatedFilter = 'exact'; // Para restaurar al salir de Watching/Favorites/Trash
 let activeCollectionsFilter = false;
 let activeTermFilter = null;
 let activeDirectorFilter = null;
@@ -1397,8 +1397,8 @@ function updateFilterButtonsUI() {
     if (activeCollectionsFilter && filterCollectionsBtn) filterCollectionsBtn.classList.add('active');
     else if (filterCollectionsBtn) filterCollectionsBtn.classList.remove('active');
     
-    // Si Watching o Favorites están activos, desactivar visualmente el botón Related (ponerlo gris)
-    if (activeWatchingFilter || activeFavoriteFilter) {
+    // Si Watching, Favorites o Trash están activos, desactivar visualmente el botón Related
+    if (activeWatchingFilter || activeFavoriteFilter || activeTrashFilter) {
         if (filterRelatedBtn) {
             filterRelatedBtn.classList.remove('btn-primary');
             filterRelatedBtn.classList.add('btn-secondary');
@@ -1425,7 +1425,7 @@ function toggleWatchingFilter() {
     activeCollectionsFilter = false;
     
     // Guardar el estado actual de Related antes de desactivar
-    if (!activeWatchingFilter && !activeFavoriteFilter) {
+    if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
         savedRelatedFilter = activeRelatedFilter;
     }
     
@@ -1437,8 +1437,8 @@ function toggleWatchingFilter() {
         activeFavoriteFilter = false;
     }
     
-    // Restaurar Related al salir de Watching/Favorites
-    if (!activeWatchingFilter && !activeFavoriteFilter) {
+    // Restaurar Related al salir de Watching/Favorites/Trash
+    if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
         activeRelatedFilter = savedRelatedFilter;
         updateRelatedButtonText();
     }
@@ -1458,7 +1458,7 @@ function toggleFavoriteFilter() {
     activeCollectionsFilter = false;
     
     // Guardar el estado actual de Related antes de desactivar
-    if (!activeWatchingFilter && !activeFavoriteFilter) {
+    if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
         savedRelatedFilter = activeRelatedFilter;
     }
     
@@ -1470,8 +1470,8 @@ function toggleFavoriteFilter() {
         activeWatchingFilter = false;
     }
     
-    // Restaurar Related al salir de Watching/Favorites
-    if (!activeWatchingFilter && !activeFavoriteFilter) {
+    // Restaurar Related al salir de Watching/Favorites/Trash
+    if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
         activeRelatedFilter = savedRelatedFilter;
         updateRelatedButtonText();
     }
@@ -1489,11 +1489,24 @@ function toggleTrashFilter() {
     activeCountryFilter = null;
     activeLanguageFilter = null;
     activeCollectionsFilter = false;
+    
+    // Guardar el estado actual de Related antes de desactivar
+    if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
+        savedRelatedFilter = activeRelatedFilter;
+    }
+    
     activeTrashFilter = !activeTrashFilter;
     if (activeTrashFilter) {
         activeWatchingFilter = false;
         activeFavoriteFilter = false;
     }
+    
+    // Restaurar Related al salir de Watching/Favorites/Trash
+    if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
+        activeRelatedFilter = savedRelatedFilter;
+        updateRelatedButtonText();
+    }
+    
     updateFilterButtonsUI();
     loadAndDisplayAll();
 }
@@ -1544,6 +1557,7 @@ export async function loadAndDisplayAll() {
                 return terms.some(t => t.term === activeTermFilter);
             });
         }
+        // Trash no aplica filtro Exact/Related
     } else {
         allMovies = await getAllMovies();
         
@@ -1785,8 +1799,8 @@ searchBtn.onclick = async () => {
         activeCollectionsFilter = false;
         updateFilterButtonsUI();
         
-        // Restaurar Related al salir de Watching/Favorites
-        if (!activeWatchingFilter && !activeFavoriteFilter) {
+        // Restaurar Related al salir de Watching/Favorites/Trash
+        if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
             activeRelatedFilter = savedRelatedFilter;
             updateRelatedButtonText();
         }
