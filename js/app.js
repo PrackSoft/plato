@@ -1,4 +1,4 @@
-// js/app.js - Plato App (sin chips en Collections)
+// js/app.js - Plato App (con botón Exact/Related alternado)
 import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
@@ -36,7 +36,7 @@ let currentSearchOptionId = "UCuVPpxrm2VAgpH3Ktln4HXg";
 let activeWatchingFilter = false;
 let activeFavoriteFilter = false;
 let activeTrashFilter = false;
-let activeRelatedFilter = false;
+let activeRelatedFilter = true; // true = modo Exact (exact: true), false = modo Related (exact: false)
 let activeCollectionsFilter = false;
 let activeTermFilter = null;
 let activeDirectorFilter = null;
@@ -46,12 +46,12 @@ let activeYearFilter = null;
 let activeCountryFilter = null;
 let activeLanguageFilter = null;
 let availableTerms = [];
-let availableDirector = [];
-let availableActor = [];
-let availableGenre = [];
-let availableYear = [];
-let availableCountry = [];
-let availableLanguage = [];
+let availableDirectors = [];
+let availableActors = [];
+let availableGenres = [];
+let availableYears = [];
+let availableCountries = [];
+let availableLanguages = [];
 let currentSort = 'date';
 let collectionsSortBy = 'directors';
 
@@ -182,12 +182,12 @@ function buildCollectionsDropdown() {
     
     const options = [
         { value: 'all', label: 'All', icon: 'all_inclusive' },
-        { value: 'directors', label: 'Director', icon: 'person' },
-        { value: 'actors', label: 'Actor', icon: 'group' },
-        { value: 'genres', label: 'Genre', icon: 'theater_comedy' },
-        { value: 'years', label: 'Year', icon: 'calendar_month' },
-        { value: 'countries', label: 'Country', icon: 'flag' },
-        { value: 'languages', label: 'Language', icon: 'translate' }
+        { value: 'directors', label: 'Directors', icon: 'person' },
+        { value: 'actors', label: 'Actors', icon: 'group' },
+        { value: 'genres', label: 'Genres', icon: 'theater_comedy' },
+        { value: 'years', label: 'Years', icon: 'calendar_month' },
+        { value: 'countries', label: 'Countries', icon: 'flag' },
+        { value: 'languages', label: 'Languages', icon: 'translate' }
     ];
     
     panel.innerHTML = `
@@ -212,7 +212,6 @@ function buildCollectionsDropdown() {
                     activeWatchingFilter = false;
                     activeFavoriteFilter = false;
                     activeTrashFilter = false;
-                    activeRelatedFilter = false;
                     activeCollectionsFilter = true;
                     updateFilterButtonsUI();
                     if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
@@ -525,14 +524,14 @@ export async function deleteLanguageFromAllMovies(languageName) {
     }
 }
 
-// ---------------------- Search term Bar ----------------------
+// ---------------------- Search terms Bar ----------------------
 export async function refreshAvailableTerms() {
     const allMovies = await getAllMovies();
     const termsSet = new Set();
     for (const movie of allMovies) {
         (movie.searchTerms || []).forEach(t => {
             if (t && typeof t === 'object' && t.term) {
-                if (activeRelatedFilter) {
+                if (!activeRelatedFilter) {
                     if (t.exact === false) termsSet.add(t.term);
                 } else {
                     if (t.exact === true) termsSet.add(t.term);
@@ -543,58 +542,58 @@ export async function refreshAvailableTerms() {
     availableTerms = Array.from(termsSet).sort();
 }
 
-export async function refreshAvailableDirector() {
+export async function refreshAvailableDirectors() {
     const allMovies = await getAllMovies();
     const directorsSet = new Set();
     for (const movie of allMovies) {
         (movie.directors || []).forEach(d => directorsSet.add(d));
     }
-    availableDirector = Array.from(directorsSet).sort();
+    availableDirectors = Array.from(directorsSet).sort();
 }
 
-export async function refreshAvailableActor() {
+export async function refreshAvailableActors() {
     const allMovies = await getAllMovies();
     const actorsSet = new Set();
     for (const movie of allMovies) {
         (movie.actors || []).forEach(a => actorsSet.add(a));
     }
-    availableActor = Array.from(actorsSet).sort();
+    availableActors = Array.from(actorsSet).sort();
 }
 
-export async function refreshAvailableGenre() {
+export async function refreshAvailableGenres() {
     const allMovies = await getAllMovies();
     const genresSet = new Set();
     for (const movie of allMovies) {
         (movie.genres || []).forEach(g => genresSet.add(g));
     }
-    availableGenre = Array.from(genresSet).sort();
+    availableGenres = Array.from(genresSet).sort();
 }
 
-export async function refreshAvailableYear() {
+export async function refreshAvailableYears() {
     const allMovies = await getAllMovies();
     const yearsSet = new Set();
     for (const movie of allMovies) {
         (movie.years || []).forEach(y => yearsSet.add(y));
     }
-    availableYear = Array.from(yearsSet).sort();
+    availableYears = Array.from(yearsSet).sort();
 }
 
-export async function refreshAvailableCountry() {
+export async function refreshAvailableCountries() {
     const allMovies = await getAllMovies();
     const countriesSet = new Set();
     for (const movie of allMovies) {
         (movie.countries || []).forEach(c => countriesSet.add(c));
     }
-    availableCountry = Array.from(countriesSet).sort();
+    availableCountries = Array.from(countriesSet).sort();
 }
 
-export async function refreshAvailableLanguage() {
+export async function refreshAvailableLanguages() {
     const allMovies = await getAllMovies();
     const languagesSet = new Set();
     for (const movie of allMovies) {
         (movie.languages || []).forEach(l => languagesSet.add(l));
     }
-    availableLanguage = Array.from(languagesSet).sort();
+    availableLanguages = Array.from(languagesSet).sort();
 }
 
 export async function termHasChildren(term) {
@@ -602,7 +601,7 @@ export async function termHasChildren(term) {
     for (const movie of allMovies) {
         const found = (movie.searchTerms || []).some(t => {
             if (t && typeof t === 'object' && t.term === term) {
-                if (activeRelatedFilter) {
+                if (!activeRelatedFilter) {
                     return t.exact === false;
                 } else {
                     return t.exact === true;
@@ -709,7 +708,7 @@ async function deleteMoviesWithTermFromCurrentView(term) {
         }
         if (activeWatchingFilter) moviesToProcess = moviesToProcess.filter(movie => movie.watching === true);
         if (activeFavoriteFilter) moviesToProcess = moviesToProcess.filter(movie => movie.favorite === true);
-        if (activeRelatedFilter) {
+        if (!activeRelatedFilter) {
             onlyRelated = true;
             moviesToProcess = moviesToProcess.filter(movie => {
                 const terms = movie.searchTerms || [];
@@ -771,7 +770,7 @@ async function editDirectorGlobally(oldName, newName) {
     if (oldName === newName || !newName.trim()) return;
     await renameDirectorInAllMovies(oldName, newName.trim());
     if (activeDirectorFilter === oldName) activeDirectorFilter = newName.trim();
-    await refreshAvailableDirector();
+    await refreshAvailableDirectors();
     await loadAndDisplayAll();
 }
 
@@ -797,7 +796,7 @@ async function deleteDirectorFromCurrentView(directorName) {
     }
     
     if (activeDirectorFilter === directorName) activeDirectorFilter = null;
-    await refreshAvailableDirector();
+    await refreshAvailableDirectors();
     await loadAndDisplayAll();
 }
 
@@ -805,7 +804,7 @@ async function editActorGlobally(oldName, newName) {
     if (oldName === newName || !newName.trim()) return;
     await renameActorInAllMovies(oldName, newName.trim());
     if (activeActorFilter === oldName) activeActorFilter = newName.trim();
-    await refreshAvailableActor();
+    await refreshAvailableActors();
     await loadAndDisplayAll();
 }
 
@@ -831,7 +830,7 @@ async function deleteActorFromCurrentView(actorName) {
     }
     
     if (activeActorFilter === actorName) activeActorFilter = null;
-    await refreshAvailableActor();
+    await refreshAvailableActors();
     await loadAndDisplayAll();
 }
 
@@ -839,7 +838,7 @@ async function editGenreGlobally(oldName, newName) {
     if (oldName === newName || !newName.trim()) return;
     await renameGenreInAllMovies(oldName, newName.trim());
     if (activeGenreFilter === oldName) activeGenreFilter = newName.trim();
-    await refreshAvailableGenre();
+    await refreshAvailableGenres();
     await loadAndDisplayAll();
 }
 
@@ -865,7 +864,7 @@ async function deleteGenreFromCurrentView(genreName) {
     }
     
     if (activeGenreFilter === genreName) activeGenreFilter = null;
-    await refreshAvailableGenre();
+    await refreshAvailableGenres();
     await loadAndDisplayAll();
 }
 
@@ -873,7 +872,7 @@ async function editYearGlobally(oldYear, newYear) {
     if (oldYear === newYear || !newYear.trim()) return;
     await renameYearInAllMovies(oldYear, newYear.trim());
     if (activeYearFilter === oldYear) activeYearFilter = newYear.trim();
-    await refreshAvailableYear();
+    await refreshAvailableYears();
     await loadAndDisplayAll();
 }
 
@@ -899,7 +898,7 @@ async function deleteYearFromCurrentView(yearValue) {
     }
     
     if (activeYearFilter === yearValue) activeYearFilter = null;
-    await refreshAvailableYear();
+    await refreshAvailableYears();
     await loadAndDisplayAll();
 }
 
@@ -907,7 +906,7 @@ async function editCountryGlobally(oldName, newName) {
     if (oldName === newName || !newName.trim()) return;
     await renameCountryInAllMovies(oldName, newName.trim());
     if (activeCountryFilter === oldName) activeCountryFilter = newName.trim();
-    await refreshAvailableCountry();
+    await refreshAvailableCountries();
     await loadAndDisplayAll();
 }
 
@@ -933,7 +932,7 @@ async function deleteCountryFromCurrentView(countryName) {
     }
     
     if (activeCountryFilter === countryName) activeCountryFilter = null;
-    await refreshAvailableCountry();
+    await refreshAvailableCountries();
     await loadAndDisplayAll();
 }
 
@@ -941,7 +940,7 @@ async function editLanguageGlobally(oldName, newName) {
     if (oldName === newName || !newName.trim()) return;
     await renameLanguageInAllMovies(oldName, newName.trim());
     if (activeLanguageFilter === oldName) activeLanguageFilter = newName.trim();
-    await refreshAvailableLanguage();
+    await refreshAvailableLanguages();
     await loadAndDisplayAll();
 }
 
@@ -967,14 +966,14 @@ async function deleteLanguageFromCurrentView(languageName) {
     }
     
     if (activeLanguageFilter === languageName) activeLanguageFilter = null;
-    await refreshAvailableLanguage();
+    await refreshAvailableLanguages();
     await loadAndDisplayAll();
 }
 
 function renderTermsBar(termsArray = null) {
     const terms = termsArray !== null ? termsArray : availableTerms;
     if (!terms || terms.length === 0) {
-        termsBar.innerHTML = '<div class="terms-placeholder">No Search term yet.</div>';
+        termsBar.innerHTML = '<div class="terms-placeholder">No Search terms yet.</div>';
         return;
     }
     const html = terms.map(term => {
@@ -1020,15 +1019,15 @@ function renderTermsBar(termsArray = null) {
     });
 }
 
-function renderDirectorBar() {
+function renderDirectorsBar() {
     if (!directorsBar) return;
-    if (availableDirector.length === 0) {
+    if (availableDirectors.length === 0) {
         directorsBar.innerHTML = '<div class="terms-placeholder">No directors yet.</div>';
         directorsBar.classList.remove('hidden');
         return;
     }
     directorsBar.classList.remove('hidden');
-    const html = availableDirector.map(name => `
+    const html = availableDirectors.map(name => `
         <button class="btn btn-secondary btn-sm ${activeDirectorFilter === name ? 'active' : ''}" data-director="${escapeHtml(name)}">
             ${escapeHtml(name)}
             <span class="director-edit material-symbols-outlined" data-director="${escapeHtml(name)}" title="Edit director globally.">edit</span>
@@ -1067,15 +1066,15 @@ function renderDirectorBar() {
     });
 }
 
-function renderActorBar() {
+function renderActorsBar() {
     if (!actorsBar) return;
-    if (availableActor.length === 0) {
-        actorsBar.innerHTML = '<div class="terms-placeholder">No Actor yet.</div>';
+    if (availableActors.length === 0) {
+        actorsBar.innerHTML = '<div class="terms-placeholder">No Actors yet.</div>';
         actorsBar.classList.remove('hidden');
         return;
     }
     actorsBar.classList.remove('hidden');
-    const html = availableActor.map(name => `
+    const html = availableActors.map(name => `
         <button class="btn btn-secondary btn-sm ${activeActorFilter === name ? 'active' : ''}" data-actor="${escapeHtml(name)}">
             ${escapeHtml(name)}
             <span class="actor-edit material-symbols-outlined" data-actor="${escapeHtml(name)}" title="Edit actor globally.">edit</span>
@@ -1114,15 +1113,15 @@ function renderActorBar() {
     });
 }
 
-function renderGenreBar() {
+function renderGenresBar() {
     if (!genresBar) return;
-    if (availableGenre.length === 0) {
-        genresBar.innerHTML = '<div class="terms-placeholder">No Genre yet.</div>';
+    if (availableGenres.length === 0) {
+        genresBar.innerHTML = '<div class="terms-placeholder">No Genres yet.</div>';
         genresBar.classList.remove('hidden');
         return;
     }
     genresBar.classList.remove('hidden');
-    const html = availableGenre.map(name => `
+    const html = availableGenres.map(name => `
         <button class="btn btn-secondary btn-sm ${activeGenreFilter === name ? 'active' : ''}" data-genre="${escapeHtml(name)}">
             ${escapeHtml(name)}
             <span class="genre-edit material-symbols-outlined" data-genre="${escapeHtml(name)}" title="Edit genre globally.">edit</span>
@@ -1161,15 +1160,15 @@ function renderGenreBar() {
     });
 }
 
-function renderYearBar() {
+function renderYearsBar() {
     if (!yearsBar) return;
-    if (availableYear.length === 0) {
+    if (availableYears.length === 0) {
         yearsBar.innerHTML = '<div class="terms-placeholder">No years yet.</div>';
         yearsBar.classList.remove('hidden');
         return;
     }
     yearsBar.classList.remove('hidden');
-    const html = availableYear.map(year => `
+    const html = availableYears.map(year => `
         <button class="btn btn-secondary btn-sm ${activeYearFilter === year ? 'active' : ''}" data-year="${escapeHtml(year)}">
             ${escapeHtml(year)}
             <span class="year-edit material-symbols-outlined" data-year="${escapeHtml(year)}" title="Edit year globally.">edit</span>
@@ -1208,15 +1207,15 @@ function renderYearBar() {
     });
 }
 
-function renderCountryBar() {
+function renderCountriesBar() {
     if (!countriesBar) return;
-    if (availableCountry.length === 0) {
+    if (availableCountries.length === 0) {
         countriesBar.innerHTML = '<div class="terms-placeholder">No countries yet.</div>';
         countriesBar.classList.remove('hidden');
         return;
     }
     countriesBar.classList.remove('hidden');
-    const html = availableCountry.map(name => `
+    const html = availableCountries.map(name => `
         <button class="btn btn-secondary btn-sm ${activeCountryFilter === name ? 'active' : ''}" data-country="${escapeHtml(name)}">
             ${escapeHtml(name)}
             <span class="country-edit material-symbols-outlined" data-country="${escapeHtml(name)}" title="Edit country globally.">edit</span>
@@ -1255,15 +1254,15 @@ function renderCountryBar() {
     });
 }
 
-function renderLanguageBar() {
+function renderLanguagesBar() {
     if (!languagesBar) return;
-    if (availableLanguage.length === 0) {
+    if (availableLanguages.length === 0) {
         languagesBar.innerHTML = '<div class="terms-placeholder">No languages yet.</div>';
         languagesBar.classList.remove('hidden');
         return;
     }
     languagesBar.classList.remove('hidden');
-    const html = availableLanguage.map(name => `
+    const html = availableLanguages.map(name => `
         <button class="btn btn-secondary btn-sm ${activeLanguageFilter === name ? 'active' : ''}" data-language="${escapeHtml(name)}">
             ${escapeHtml(name)}
             <span class="language-edit material-symbols-outlined" data-language="${escapeHtml(name)}" title="Edit language globally.">edit</span>
@@ -1327,13 +1326,24 @@ function updateFilterButtonsUI() {
     else filterFavoriteBtn.classList.remove('active');
     if (activeTrashFilter) filterTrashBtn.classList.add('active');
     else filterTrashBtn.classList.remove('active');
-    if (activeRelatedFilter && filterRelatedBtn) filterRelatedBtn.classList.add('active');
-    else if (filterRelatedBtn) filterRelatedBtn.classList.remove('active');
+    if (activeRelatedFilter) {
+        filterRelatedBtn.classList.add('active');
+        filterRelatedBtn.innerHTML = `
+            <span class="material-symbols-outlined">verified</span>
+            Exact
+        `;
+    } else {
+        filterRelatedBtn.classList.remove('active');
+        filterRelatedBtn.innerHTML = `
+            <span class="material-symbols-outlined">verified_off</span>
+            Related
+        `;
+    }
     if (activeCollectionsFilter && filterCollectionsBtn) filterCollectionsBtn.classList.add('active');
     else if (filterCollectionsBtn) filterCollectionsBtn.classList.remove('active');
 }
 
-// ---------------------- Toggle functions (excluyendo Collections, que ahora maneja el dropdown) ----------------------
+// ---------------------- Toggle functions ----------------------
 function toggleWatchingFilter() {
     activeTermFilter = null;
     activeDirectorFilter = null;
@@ -1343,15 +1353,12 @@ function toggleWatchingFilter() {
     activeCountryFilter = null;
     activeLanguageFilter = null;
     activeCollectionsFilter = false;
-    syncWindowTermFilter();
-    activeRelatedFilter = false;
     if (activeTrashFilter) {
         activeTrashFilter = false;
     }
     activeWatchingFilter = !activeWatchingFilter;
     if (activeWatchingFilter) {
         activeFavoriteFilter = false;
-        activeRelatedFilter = false;
     }
     updateFilterButtonsUI();
     loadAndDisplayAll();
@@ -1366,15 +1373,12 @@ function toggleFavoriteFilter() {
     activeCountryFilter = null;
     activeLanguageFilter = null;
     activeCollectionsFilter = false;
-    syncWindowTermFilter();
-    activeRelatedFilter = false;
     if (activeTrashFilter) {
         activeTrashFilter = false;
     }
     activeFavoriteFilter = !activeFavoriteFilter;
     if (activeFavoriteFilter) {
         activeWatchingFilter = false;
-        activeRelatedFilter = false;
     }
     updateFilterButtonsUI();
     loadAndDisplayAll();
@@ -1389,13 +1393,10 @@ function toggleTrashFilter() {
     activeCountryFilter = null;
     activeLanguageFilter = null;
     activeCollectionsFilter = false;
-    syncWindowTermFilter();
-    activeRelatedFilter = false;
     activeTrashFilter = !activeTrashFilter;
     if (activeTrashFilter) {
         activeWatchingFilter = false;
         activeFavoriteFilter = false;
-        activeRelatedFilter = false;
     }
     updateFilterButtonsUI();
     loadAndDisplayAll();
@@ -1410,13 +1411,9 @@ function toggleRelatedFilter() {
     activeCountryFilter = null;
     activeLanguageFilter = null;
     activeCollectionsFilter = false;
-    syncWindowTermFilter();
     activeTrashFilter = false;
+    // Alternar entre Exact (true) y Related (false)
     activeRelatedFilter = !activeRelatedFilter;
-    if (activeRelatedFilter) {
-        activeWatchingFilter = false;
-        activeFavoriteFilter = false;
-    }
     updateFilterButtonsUI();
     loadAndDisplayAll();
 }
@@ -1438,16 +1435,15 @@ export async function loadAndDisplayAll() {
     if (activeCollectionsFilter) {
         allMovies = await getAllMovies();
         allMovies = allMovies.filter(movie => {
-            const hasDirector = (movie.directors || []).length > 0;
-            const hasActor = (movie.actors || []).length > 0;
-            const hasGenre = (movie.genres || []).length > 0;
-            const hasYear = (movie.years || []).length > 0;
-            const hasCountry = (movie.countries || []).length > 0;
-            const hasLanguage = (movie.languages || []).length > 0;
-            return hasDirector || hasActor || hasGenre || hasYear || hasCountry || hasLanguage;
+            const hasDirectors = (movie.directors || []).length > 0;
+            const hasActors = (movie.actors || []).length > 0;
+            const hasGenres = (movie.genres || []).length > 0;
+            const hasYears = (movie.years || []).length > 0;
+            const hasCountries = (movie.countries || []).length > 0;
+            const hasLanguages = (movie.languages || []).length > 0;
+            return hasDirectors || hasActors || hasGenres || hasYears || hasCountries || hasLanguages;
         });
         
-        // Aplicar filtro por el chip seleccionado según el tipo de colección (excepto 'all')
         if (collectionsSortBy === 'directors' && activeDirectorFilter) {
             allMovies = allMovies.filter(movie => (movie.directors || []).includes(activeDirectorFilter));
         } else if (collectionsSortBy === 'actors' && activeActorFilter) {
@@ -1461,8 +1457,6 @@ export async function loadAndDisplayAll() {
         } else if (collectionsSortBy === 'languages' && activeLanguageFilter) {
             allMovies = allMovies.filter(movie => (movie.languages || []).includes(activeLanguageFilter));
         }
-        // Si collectionsSortBy === 'all', no se aplica filtro adicional
-        
     } else if (activeTrashFilter) {
         allMovies = await getTrashMovies();
         if (activeTermFilter) {
@@ -1486,28 +1480,12 @@ export async function loadAndDisplayAll() {
         if (activeRelatedFilter) {
             allMovies = allMovies.filter(movie => {
                 const terms = movie.searchTerms || [];
-
-                if (activeTermFilter) {
-                    return terms.some(t =>
-                        t.term === activeTermFilter &&
-                        t.exact === false
-                    );
-                }
-
-                return terms.some(t => t.exact === false);
+                return terms.some(t => t.exact === true);
             });
         } else {
             allMovies = allMovies.filter(movie => {
                 const terms = movie.searchTerms || [];
-
-                if (activeTermFilter) {
-                    return terms.some(t =>
-                        t.term === activeTermFilter &&
-                        t.exact === true
-                    );
-                }
-
-                return terms.some(t => t.exact === true);
+                return terms.some(t => t.exact === false);
             });
         }
         
@@ -1560,6 +1538,8 @@ export async function loadAndDisplayAll() {
     } else if (activeFavoriteFilter) {
         title = `Favorites (${allMovies.length})`;
     } else if (activeRelatedFilter) {
+        title = `Exact results (${allMovies.length})`;
+    } else {
         title = `Related results (${allMovies.length})`;
     } else if (activeTermFilter) {
         title = `Search term: "${activeTermFilter}" (${allMovies.length})`;
@@ -1589,7 +1569,6 @@ export async function loadAndDisplayAll() {
         }
     };
 
-    // En Collections, pasar groupBy según collectionsSortBy (excepto 'all')
     if (activeCollectionsFilter) {
         const groupBy = (collectionsSortBy === 'all' ? null : collectionsSortBy);
         renderMovies(resultsGrid, allMovies, title, 'collections', currentSort, onSortChange, groupBy);
@@ -1617,9 +1596,9 @@ export async function loadAndDisplayAll() {
                 terms.forEach(t => {
                     if (!t.term) return;
                     if (activeRelatedFilter) {
-                        if (t.exact === false) allTerms.add(t.term);
-                    } else {
                         if (t.exact === true) allTerms.add(t.term);
+                    } else {
+                        if (t.exact === false) allTerms.add(t.term);
                     }
                 });
             }
@@ -1627,7 +1606,6 @@ export async function loadAndDisplayAll() {
         }
         renderTermsBar(termsToShow);
         
-        // Ocultar todas las barras de Collections
         if (directorsBar) directorsBar.classList.add('hidden');
         if (actorsBar) actorsBar.classList.add('hidden');
         if (genresBar) genresBar.classList.add('hidden');
@@ -1635,7 +1613,6 @@ export async function loadAndDisplayAll() {
         if (countriesBar) countriesBar.classList.add('hidden');
         if (languagesBar) languagesBar.classList.add('hidden');
     } else {
-        // En Collections, no mostrar ninguna barra de chips
         if (directorsBar) directorsBar.classList.add('hidden');
         if (actorsBar) actorsBar.classList.add('hidden');
         if (genresBar) genresBar.classList.add('hidden');
@@ -1645,12 +1622,12 @@ export async function loadAndDisplayAll() {
         return;
     }
     
-    await refreshAvailableDirector();
-    await refreshAvailableActor();
-    await refreshAvailableGenre();
-    await refreshAvailableYear();
-    await refreshAvailableCountry();
-    await refreshAvailableLanguage();
+    await refreshAvailableDirectors();
+    await refreshAvailableActors();
+    await refreshAvailableGenres();
+    await refreshAvailableYears();
+    await refreshAvailableCountries();
+    await refreshAvailableLanguages();
 }
 
 // ---------------------- Modal helpers ----------------------
@@ -1713,11 +1690,10 @@ window.openMovieModal = (movie, source = 'main') => {
 
 // ---------------------- Search ----------------------
 searchBtn.onclick = async () => {
-    if (activeTrashFilter || activeWatchingFilter || activeFavoriteFilter || activeRelatedFilter || activeCollectionsFilter) {
+    if (activeTrashFilter || activeWatchingFilter || activeFavoriteFilter || activeCollectionsFilter) {
         activeTrashFilter = false;
         activeWatchingFilter = false;
         activeFavoriteFilter = false;
-        activeRelatedFilter = false;
         activeCollectionsFilter = false;
         updateFilterButtonsUI();
     }
@@ -1728,7 +1704,6 @@ searchBtn.onclick = async () => {
     activeYearFilter = null;
     activeCountryFilter = null;
     activeLanguageFilter = null;
-    syncWindowTermFilter();
     
     let query = searchInput.value.trim();
     let effectiveQuery = query;
@@ -1841,9 +1816,12 @@ async function init() {
     await refreshAvailableTerms();
     await loadAndDisplayAll();
     
-    // Ocultar barra de Search term al inicio
     if (termsBar) termsBar.classList.add('hidden');
     if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
+    
+    // Estado inicial del botón Exact/Related: Exact activo (true)
+    activeRelatedFilter = true;
+    updateFilterButtonsUI();
 }
 init();
 
