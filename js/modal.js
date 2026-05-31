@@ -1,4 +1,4 @@
-// js/modal.js (con actualización dinámica de Search term al agregar datos de Collections)
+// js/modal.js (con actualización dinámica de Search term al agregar datos de Collection)
 import { getExtraInfo, toggleExact, addDirector, removeDirector, addActor, removeActor, addGenre, removeGenre, addYear, removeYear, addCountry, removeCountry, addLanguage, removeLanguage, openDB } from './db.js';
 import { refreshAvailableTerms, loadAndDisplayAll, syncWindowTermFilter, getActiveTermFilter } from './app.js';
 

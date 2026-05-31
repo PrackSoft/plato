@@ -1,4 +1,4 @@
-// js/render.js (con agrupación para Collections)
+// js/render.js (con agrupación para Collection)
 import { toggleWatching } from './db.js';
 
 function formatNumber(num) {
@@ -30,7 +30,7 @@ export function renderMovies(container, movies, title, source = 'main', currentS
     let isGrouped = false;
     let groups = null;
 
-    // Si estamos en Collections con un grupo específico (no 'all')
+    // Si estamos en Collection con un grupo específico (no 'all')
     if (source === 'collections' && groupBy && groupBy !== 'all') {
         isGrouped = true;
         // Agrupar por el primer valor del campo correspondiente
@@ -68,7 +68,7 @@ export function renderMovies(container, movies, title, source = 'main', currentS
     }
 
     const isDateSort = (currentSort === 'date' && !isGrouped);
-    const isCollectionsSort = (currentSort === 'collections');
+    const isCollectionSort = (currentSort === 'collections');
 
     const sortOptions = [
         { value: 'date', label: 'Date' },
@@ -120,7 +120,7 @@ export function renderMovies(container, movies, title, source = 'main', currentS
                 </div>
             </div>
         `).join('');
-    } else if (isDateSort && !isCollectionsSort) {
+    } else if (isDateSort && !isCollectionSort) {
         const todayKey = getLocalDateKey(new Date().toISOString());
         const yesterdayDate = new Date();
         yesterdayDate.setDate(yesterdayDate.getDate() - 1);
@@ -157,13 +157,13 @@ export function renderMovies(container, movies, title, source = 'main', currentS
     container.innerHTML = `
         <div class="history-header">
             <h2>${escapeHtml(title)}</h2>
-            ${!isCollectionsSort && !isGrouped ? sortSelectHtml : ''}
+            ${!isCollectionSort && !isGrouped ? sortSelectHtml : ''}
         </div>
         ${bodyHtml}
     `;
 
     const sortSelect = document.getElementById('sortSelect');
-    if (sortSelect && onSortChange && !isCollectionsSort && !isGrouped) {
+    if (sortSelect && onSortChange && !isCollectionSort && !isGrouped) {
         sortSelect.addEventListener('change', (e) => {
             onSortChange(e.target.value);
         });
