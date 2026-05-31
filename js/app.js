@@ -1,5 +1,5 @@
 // js/app.js - Plato App (Trash también desactiva Exact/Related)
-import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo } from './db.js';
+import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo, addYear } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
 import { SEARCH_OPTIONS } from './channels.js';
@@ -2003,8 +2003,19 @@ searchBtn.onclick = async () => {
                     madeForKids: movie.madeForKids,
                     selfDeclaredMadeForKids: movie.selfDeclaredMadeForKids
                 });
+                
+                // Extraer año de publishedAt y agregarlo como Year y Search term
+                if (movie.publishedAt) {
+                    const year = new Date(movie.publishedAt).getFullYear();
+                    if (year && !isNaN(year)) {
+                        const yearStr = year.toString();
+                        // Agregar a years (evita duplicados internamente)
+                        await addYear(movie.youtubeId, yearStr);
+                    }
+                }
             }
             await refreshAvailableTerms();
+            await refreshAvailableYear();
             await loadAndDisplayAll();
             searchInput.value = '';
         } catch (err) {
