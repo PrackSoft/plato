@@ -1,4 +1,4 @@
-// js/render.js (con agrupación para Collection)
+// js/render.js (con agrupación para Collection y sort dentro de grupos)
 import { toggleWatching } from './db.js';
 
 function formatNumber(num) {
@@ -154,10 +154,13 @@ export function renderMovies(container, movies, title, source = 'main', currentS
         bodyHtml = `<div class="movies-grid">${sorted.map(m => generateCard(m)).join('')}</div>`;
     }
 
+    // Mostrar sort selector también en Collection mode (isGrouped true)
+    const showSortSelector = !isCollectionSort && (!isGrouped || source === 'collections');
+    
     container.innerHTML = `
         <div class="history-header">
             <h2>${escapeHtml(title)}</h2>
-            ${source === 'collections' && isGrouped ? sortSelectHtml : (!isCollectionSort && !isGrouped ? sortSelectHtml : '')}
+            ${showSortSelector ? sortSelectHtml : ''}
         </div>
         ${bodyHtml}
     `;
@@ -168,6 +171,16 @@ export function renderMovies(container, movies, title, source = 'main', currentS
             onSortChange(e.target.value);
         });
     }
+
+    document.querySelectorAll('.video-card').forEach(card => {
+        const movieId = card.dataset.id;
+        const movie = movies.find(m => String(m.youtubeId) === String(movieId));
+        if (movie && window.openMovieModal) {
+            card.onclick = () => {
+                window.openMovieModal(movie, source);
+            };
+        }
+    });
 }
 
 function sortMovies(movies, sortBy) {
