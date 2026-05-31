@@ -505,7 +505,7 @@ body {
     color: var(--accent-light);
 }
 .term-delete:hover, .director-delete:hover, .actor-delete:hover, .genre-delete:hover, .year-delete:hover, .country-delete:hover, .language-delete:hover {
-    color: var(--accent-dark);
+    color: var(--accent-light);
 }
 
 /* Eliminación dentro del modal (chips) */
