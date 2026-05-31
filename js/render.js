@@ -1,4 +1,4 @@
-// js/render.js (con agrupación para Collection)
+// js/render.js (con agrupación para Collection - sin nombre de canal en cards)
 import { toggleWatching } from './db.js';
 
 function formatNumber(num) {
@@ -94,7 +94,6 @@ export function renderMovies(container, movies, title, source = 'main', currentS
                 <img src="${movie.imageUrl}" alt="${movie.title}">
                 <div class="info">
                     <h3>${escapeHtml(movie.title)}</h3>
-                    <div class="channel">${escapeHtml(movie.channelTitle)}</div>
                     <div class="card-stats">
                         <span class="comments">
                             <span class="material-symbols-outlined stat-icon">forum</span>
