@@ -415,15 +415,6 @@ function updateCollectionsButtonText() {
     }
 }
 
-function updateCollectionsButtonText() {
-    if (!filterCollectionsBtn) return;
-    filterCollectionsBtn.innerHTML = `
-        <span class="material-symbols-outlined">join_inner</span>
-        Collections
-        <span class="material-symbols-outlined">arrow_drop_down</span>
-    `;
-}
-
 // ---------------------- Sidebar functions (settings) ----------------------
 function openSettingsSidebar() {
     settingsSidebar.classList.remove('hidden');
