@@ -1771,7 +1771,7 @@ export async function loadAndDisplayAll() {
             else if (collectionsSortBy === 'languages' && activeLanguageFilter) filterName = `: ${activeLanguageFilter}`;
         }
         
-        title = `Collection: ${sortLabel}${filterName} (${allMovies.length})`;
+        title = `${sortLabel}${filterName} (${allMovies.length})`;
     } else if (activeTrashFilter) {
         title = `Trash (${allMovies.length})`;
     } else if (activeWatchingFilter && activeFavoriteFilter) {
@@ -1795,9 +1795,9 @@ export async function loadAndDisplayAll() {
     } else if (activeLanguageFilter) {
         title = `Language: ${activeLanguageFilter} (${allMovies.length})`;
     } else if (activeRelatedFilter === 'exact') {
-        title = `Exact Search term (${allMovies.length})`;
+        title = `Exact results (${allMovies.length})`;
     } else {
-        title = `Related Search term (${allMovies.length})`;
+        title = `Related results (${allMovies.length})`;
     }
 
     const onSortChange = (newSort) => {
