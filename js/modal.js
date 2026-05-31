@@ -80,12 +80,12 @@ function renderModalContent(movie, source) {
             <div class="modal-spacer"></div>
         </div>
         <img class="modal-image" src="${movie.imageUrl}" alt="${movie.title}">
-        <p><strong>YouTube Premiere:</strong> ${movie.publishedAt ? new Date(movie.publishedAt).toLocaleDateString() : 'Unknown'}</p>
+        <p><strong>Year:</strong> ${movie.publishedAt ? new Date(movie.publishedAt).toLocaleDateString() : 'Unknown year'}</p>
         <div class="modal-description">${escapeHtml(movie.description || 'No Description')}</div>
         ${tagsHtml}
         <p><strong>Duration:</strong> ${formatDuration(movie.duration)}</p>
         <p><strong>Saved on:</strong> ${new Date(movie.dateSaved).toLocaleString()}</p>
-        ${isInTrash ? `<p><strong>Deleted on:</strong> ${movie.deletedAt ? new Date(movie.deletedAt).toLocaleString() : 'Unknown'}</p>` : ''}
+        ${isInTrash ? `<p><strong>Deleted on:</strong> ${movie.deletedAt ? new Date(movie.deletedAt).toLocaleString() : 'Unknown date'}</p>` : ''}
         
         <!-- ========== SEARCH TERM SECTION ========== -->
         <div class="modal-section">
@@ -439,22 +439,22 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
             if (extraInfoPanel.classList.contains('hidden')) {
                 const extra = await getExtraInfo(movie.youtubeId);
                 const fields = [
-                    { label: 'channelId', value: movie.channelId || 'N/A' },
-                    { label: 'channelTitle', value: movie.channelTitle || 'N/A' },
-                    { label: 'tags', value: (movie.tags && movie.tags.length) ? movie.tags.join(', ') : 'N/A' },
-                    { label: 'viewCount', value: movie.viewCount || 'N/A' },
-                    { label: 'duration', value: movie.duration || 'N/A' },
-                    { label: 'categoryId', value: extra?.categoryId || 'N/A' },
-                    { label: 'defaultLanguage', value: extra?.defaultLanguage || 'N/A' },
-                    { label: 'defaultAudioLanguage', value: extra?.defaultAudioLanguage || 'N/A' },
-                    { label: 'dimension', value: extra?.dimension || 'N/A' },
-                    { label: 'definition', value: extra?.definition || 'N/A' },
-                    { label: 'caption', value: extra?.caption || 'N/A' },
-                    { label: 'licensedContent', value: extra?.licensedContent !== undefined ? extra.licensedContent : 'N/A' },
-                    { label: 'projection', value: extra?.projection || 'N/A' },
-                    { label: 'publicStatsViewable', value: extra?.publicStatsViewable !== undefined ? extra.publicStatsViewable : 'N/A' },
-                    { label: 'madeForKids', value: extra?.madeForKids !== undefined ? extra.madeForKids : 'N/A' },
-                    { label: 'selfDeclaredMadeForKids', value: extra?.selfDeclaredMadeForKids !== undefined ? extra.selfDeclaredMadeForKids : 'N/A' }
+                    { label: 'channelId', value: movie.channelId || 'Unknown' },
+                    { label: 'channelTitle', value: movie.channelTitle || 'Unknown' },
+                    { label: 'tags', value: (movie.tags && movie.tags.length) ? movie.tags.join(', ') : 'Unknown' },
+                    { label: 'viewCount', value: movie.viewCount || 'Unknown' },
+                    { label: 'duration', value: movie.duration || 'Unknown' },
+                    { label: 'categoryId', value: extra?.categoryId || 'Unknown' },
+                    { label: 'defaultLanguage', value: extra?.defaultLanguage || 'Unknown' },
+                    { label: 'defaultAudioLanguage', value: extra?.defaultAudioLanguage || 'Unknown' },
+                    { label: 'dimension', value: extra?.dimension || 'Unknown' },
+                    { label: 'definition', value: extra?.definition || 'Unknown' },
+                    { label: 'caption', value: extra?.caption || 'Unknown' },
+                    { label: 'licensedContent', value: extra?.licensedContent !== undefined ? extra.licensedContent : 'Unknown' },
+                    { label: 'projection', value: extra?.projection || 'Unknown' },
+                    { label: 'publicStatsViewable', value: extra?.publicStatsViewable !== undefined ? extra.publicStatsViewable : 'Unknown' },
+                    { label: 'madeForKids', value: extra?.madeForKids !== undefined ? extra.madeForKids : 'Unknown' },
+                    { label: 'selfDeclaredMadeForKids', value: extra?.selfDeclaredMadeForKids !== undefined ? extra.selfDeclaredMadeForKids : 'Unknown' }
                 ];
                 extraInfoPanel.innerHTML = fields.map(f => `
                     <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border-light);">
@@ -1048,7 +1048,7 @@ function escapeHtml(str) {
 }
 
 function formatDuration(duration) {
-    if (!duration || duration === 'N/A') return 'Unknown';
+    if (!duration || duration === 'Unknown') return 'Unknown';
     const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
     const hours = (match[1] ? match[1].slice(0, -1) : 0);
     const minutes = (match[2] ? match[2].slice(0, -1) : 0);

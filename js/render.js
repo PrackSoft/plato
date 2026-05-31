@@ -2,7 +2,7 @@
 import { toggleWatching } from './db.js';
 
 function formatNumber(num) {
-    if (num === undefined || num === null || num === 'N/A') return 'N/A';
+    if (num === undefined || num === null || num === 'Unknown') return 'Unknown';
     let n = parseInt(num, 10);
     if (isNaN(n)) return num;
     if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
@@ -37,12 +37,12 @@ export function renderMovies(container, movies, title, source = 'main', currentS
         const groupMap = new Map();
         for (const movie of movies) {
             let groupValue = '';
-            if (groupBy === 'directors') groupValue = movie.directors && movie.directors[0] ? movie.directors[0] : 'Unknown';
-            else if (groupBy === 'actors') groupValue = movie.actors && movie.actors[0] ? movie.actors[0] : 'Unknown';
-            else if (groupBy === 'genres') groupValue = movie.genres && movie.genres[0] ? movie.genres[0] : 'Unknown';
-            else if (groupBy === 'years') groupValue = movie.years && movie.years[0] ? movie.years[0] : 'Unknown';
-            else if (groupBy === 'countries') groupValue = movie.countries && movie.countries[0] ? movie.countries[0] : 'Unknown';
-            else if (groupBy === 'languages') groupValue = movie.languages && movie.languages[0] ? movie.languages[0] : 'Unknown';
+            if (groupBy === 'directors') groupValue = movie.directors && movie.directors[0] ? movie.directors[0] : 'Unknown director';
+            else if (groupBy === 'actors') groupValue = movie.actors && movie.actors[0] ? movie.actors[0] : 'Unknown actor';
+            else if (groupBy === 'genres') groupValue = movie.genres && movie.genres[0] ? movie.genres[0] : 'Unknown genre';
+            else if (groupBy === 'years') groupValue = movie.years && movie.years[0] ? movie.years[0] : 'Unknown year';
+            else if (groupBy === 'countries') groupValue = movie.countries && movie.countries[0] ? movie.countries[0] : 'Unknown country';
+            else if (groupBy === 'languages') groupValue = movie.languages && movie.languages[0] ? movie.languages[0] : 'Unknown language';
             
             if (!groupMap.has(groupValue)) groupMap.set(groupValue, []);
             groupMap.get(groupValue).push(movie);
