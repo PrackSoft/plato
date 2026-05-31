@@ -295,35 +295,6 @@ function updateRelatedButtonText() {
     }
 }
 
-function updateRelatedButtonText() {
-    if (!filterRelatedBtn) return;
-    let label = 'Exact';
-    let icon = 'verified';
-    if (activeRelatedFilter === 'related') {
-        label = 'Related';
-        icon = 'verified_off';
-    }
-    // Actualizar solo los spans internos sin romper la estructura
-    const mainPart = filterRelatedBtn.querySelector('.related-main');
-    if (mainPart) {
-        const iconSpan = mainPart.querySelector('.related-icon');
-        const labelSpan = mainPart.querySelector('.related-label');
-        if (iconSpan) iconSpan.textContent = icon;
-        if (labelSpan) labelSpan.textContent = label;
-    } else {
-        // Fallback si la estructura no existe (reconstruir)
-        filterRelatedBtn.innerHTML = `
-            <span class="related-main" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
-                <span class="material-symbols-outlined related-icon">${icon}</span>
-                <span class="related-label">${label}</span>
-            </span>
-            <span class="related-arrow" style="display: inline-flex; align-items: center; cursor: pointer;">
-                <span class="material-symbols-outlined">arrow_drop_down</span>
-            </span>
-        `;
-    }
-}
-
 // ---------------------- Build Collections dropdown ----------------------
 function buildCollectionsDropdown() {
     if (!filterCollectionsBtn) return;
