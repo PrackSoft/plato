@@ -154,16 +154,19 @@ export function renderMovies(container, movies, title, source = 'main', currentS
         bodyHtml = `<div class="movies-grid">${sorted.map(m => generateCard(m)).join('')}</div>`;
     }
 
+    // Mostrar sort selector en Collection mode (cuando está agrupado)
+    const showSortSelector = (!isCollectionSort && !isGrouped) || (source === 'collections' && isGrouped);
+    
     container.innerHTML = `
         <div class="history-header">
             <h2>${escapeHtml(title)}</h2>
-            ${!isCollectionSort && !isGrouped ? sortSelectHtml : ''}
+            ${showSortSelector ? sortSelectHtml : ''}
         </div>
         ${bodyHtml}
     `;
 
     const sortSelect = document.getElementById('sortSelect');
-    if (sortSelect && onSortChange && !isCollectionSort && !isGrouped) {
+    if (sortSelect && onSortChange) {
         sortSelect.addEventListener('change', (e) => {
             onSortChange(e.target.value);
         });
