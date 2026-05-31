@@ -1,4 +1,4 @@
-// js/render.js (con agrupación para Collection y sort dentro de grupos)
+// js/render.js (con agrupación para Collection)
 import { toggleWatching } from './db.js';
 
 function formatNumber(num) {
@@ -154,19 +154,16 @@ export function renderMovies(container, movies, title, source = 'main', currentS
         bodyHtml = `<div class="movies-grid">${sorted.map(m => generateCard(m)).join('')}</div>`;
     }
 
-    // Mostrar sort selector también en Collection mode (isGrouped true)
-    const showSortSelector = !isCollectionSort && (!isGrouped || source === 'collections');
-    
     container.innerHTML = `
         <div class="history-header">
             <h2>${escapeHtml(title)}</h2>
-            ${showSortSelector ? sortSelectHtml : ''}
+            ${!isCollectionSort && !isGrouped ? sortSelectHtml : ''}
         </div>
         ${bodyHtml}
     `;
 
     const sortSelect = document.getElementById('sortSelect');
-    if (sortSelect && onSortChange) {
+    if (sortSelect && onSortChange && !isCollectionSort && !isGrouped) {
         sortSelect.addEventListener('change', (e) => {
             onSortChange(e.target.value);
         });
