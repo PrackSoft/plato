@@ -1,8 +1,9 @@
+// js/api/youtube.js
 import { API_KEY } from '../config.js';
 
 const MAX_RESULTS_PER_PAGE = 50;
 
-export async function searchYouTube(query, channelId = null, order = 'relevance', duration = 'long', categoryFilter = 'movies') {
+export async function searchYouTube(query, channelId = null, order = 'relevance', duration = 'long', categoryFilter = 'movies', publishedAfter = null, publishedBefore = null) {
     if (!query || query.trim() === "") {
         throw new Error("Search query cannot be empty");
     }
@@ -16,15 +17,19 @@ export async function searchYouTube(query, channelId = null, order = 'relevance'
         url += `&order=${order}`;
     }
     
-    // Corrección: paréntesis alrededor de toda la condición
     if (duration === 'long' || duration === 'medium' || duration === 'short') {
         url += `&videoDuration=${duration}`;
     }
-    // Si duration es 'any', no se añade parámetro
     
-    // Filtrar solo películas (categoryId 30) si está activado
     if (categoryFilter === 'movies') {
         url += `&videoCategoryId=30`;
+    }
+    
+    if (publishedAfter) {
+        url += `&publishedAfter=${encodeURIComponent(publishedAfter)}`;
+    }
+    if (publishedBefore) {
+        url += `&publishedBefore=${encodeURIComponent(publishedBefore)}`;
     }
     
     const searchResponse = await fetch(url);
