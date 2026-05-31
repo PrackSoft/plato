@@ -2004,15 +2004,15 @@ searchBtn.onclick = async () => {
                     selfDeclaredMadeForKids: movie.selfDeclaredMadeForKids
                 });
                 
-                // Extraer año de publishedAt y agregarlo como Year y Search term
+                // Extraer año de publishedAt o usar "Unknown year"
+                let yearValue = "Unknown year";
                 if (movie.publishedAt) {
                     const year = new Date(movie.publishedAt).getFullYear();
                     if (year && !isNaN(year)) {
-                        const yearStr = year.toString();
-                        // Agregar a years (evita duplicados internamente)
-                        await addYear(movie.youtubeId, yearStr);
+                        yearValue = year.toString();
                     }
                 }
+                await addYear(movie.youtubeId, yearValue);
             }
             await refreshAvailableTerms();
             await refreshAvailableYear();
