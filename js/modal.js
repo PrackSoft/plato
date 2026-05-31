@@ -471,17 +471,30 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         };
     }
 
-    // ========== REMOVE SEARCH TERM ==========
+    // ========== REMOVE SEARCH TERM (con eliminación en todos los grupos) ==========
     if (!isInTrash) {
         document.querySelectorAll('.remove-term').forEach(el => {
             el.onclick = async (e) => {
                 e.stopPropagation();
 
                 const term = el.dataset.term;
+                
+                // Verificar si el término existe en algún otro grupo (Director, Actor, Genre, Year, Country, Language)
+                const existsInDirectors = (movie.directors || []).includes(term);
+                const existsInActors = (movie.actors || []).includes(term);
+                const existsInGenres = (movie.genres || []).includes(term);
+                const existsInYears = (movie.years || []).includes(term);
+                const existsInCountries = (movie.countries || []).includes(term);
+                const existsInLanguages = (movie.languages || []).includes(term);
+                
+                const hasGroupMatches = existsInDirectors || existsInActors || existsInGenres || existsInYears || existsInCountries || existsInLanguages;
+                
+                // Filtrar términos restantes
                 const remainingTerms = (movie.searchTerms || [])
                     .filter(t => t.term !== term);
-
-                if (remainingTerms.length === 0) {
+                
+                // Si no quedan términos en Search term y no hay coincidencias en grupos, mover a trash
+                if (remainingTerms.length === 0 && !hasGroupMatches) {
                     if (confirm('Removing the last term will move this movie to Trash. Continue?')) {
                         await moveToTrash(movie.youtubeId);
                         closeModal();
@@ -489,11 +502,120 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                     }
                     return;
                 }
-
+                
+                // Confirmar si hay coincidencias en grupos
+                if (hasGroupMatches) {
+                    let groupNames = [];
+                    if (existsInDirectors) groupNames.push('Director');
+                    if (existsInActors) groupNames.push('Actor');
+                    if (existsInGenres) groupNames.push('Genre');
+                    if (existsInYears) groupNames.push('Year');
+                    if (existsInCountries) groupNames.push('Country');
+                    if (existsInLanguages) groupNames.push('Language');
+                    
+                    const confirmMsg = `The term "${term}" also exists in: ${groupNames.join(', ')}.\n\nRemove it from these groups as well?`;
+                    if (!confirm(confirmMsg)) {
+                        return;
+                    }
+                }
+                
+                // 1. Eliminar de Search term
                 const newTerms = remainingTerms.map(t => t.term);
                 await updateMovieTerms(movie.youtubeId, newTerms);
                 movie.searchTerms = remainingTerms;
-
+                
+                // 2. Eliminar de Directors si existe
+                if (existsInDirectors) {
+                    await removeDirector(movie.youtubeId, term);
+                    movie.directors = (movie.directors || []).filter(d => d !== term);
+                    // Actualizar UI de Directors
+                    const directorsContainer = document.getElementById('directorsList');
+                    if (directorsContainer) {
+                        directorsContainer.innerHTML = movie.directors.map(name => `
+                            <span class="term-chip">
+                                ${escapeHtml(name)}
+                                <span class="remove-director" data-name="${escapeHtml(name)}">✖</span>
+                            </span>
+                        `).join('');
+                    }
+                }
+                
+                // 3. Eliminar de Actors si existe
+                if (existsInActors) {
+                    await removeActor(movie.youtubeId, term);
+                    movie.actors = (movie.actors || []).filter(a => a !== term);
+                    const actorsContainer = document.getElementById('actorsList');
+                    if (actorsContainer) {
+                        actorsContainer.innerHTML = movie.actors.map(name => `
+                            <span class="term-chip">
+                                ${escapeHtml(name)}
+                                <span class="remove-actor" data-name="${escapeHtml(name)}">✖</span>
+                            </span>
+                        `).join('');
+                    }
+                }
+                
+                // 4. Eliminar de Genres si existe
+                if (existsInGenres) {
+                    await removeGenre(movie.youtubeId, term);
+                    movie.genres = (movie.genres || []).filter(g => g !== term);
+                    const genresContainer = document.getElementById('genresList');
+                    if (genresContainer) {
+                        genresContainer.innerHTML = movie.genres.map(name => `
+                            <span class="term-chip">
+                                ${escapeHtml(name)}
+                                <span class="remove-genre" data-name="${escapeHtml(name)}">✖</span>
+                            </span>
+                        `).join('');
+                    }
+                }
+                
+                // 5. Eliminar de Years si existe
+                if (existsInYears) {
+                    await removeYear(movie.youtubeId, term);
+                    movie.years = (movie.years || []).filter(y => y !== term);
+                    const yearsContainer = document.getElementById('yearsList');
+                    if (yearsContainer) {
+                        yearsContainer.innerHTML = movie.years.map(year => `
+                            <span class="term-chip">
+                                ${escapeHtml(year)}
+                                <span class="remove-year" data-name="${escapeHtml(year)}">✖</span>
+                            </span>
+                        `).join('');
+                    }
+                }
+                
+                // 6. Eliminar de Countries si existe
+                if (existsInCountries) {
+                    await removeCountry(movie.youtubeId, term);
+                    movie.countries = (movie.countries || []).filter(c => c !== term);
+                    const countriesContainer = document.getElementById('countriesList');
+                    if (countriesContainer) {
+                        countriesContainer.innerHTML = movie.countries.map(name => `
+                            <span class="term-chip">
+                                ${escapeHtml(name)}
+                                <span class="remove-country" data-name="${escapeHtml(name)}">✖</span>
+                            </span>
+                        `).join('');
+                    }
+                }
+                
+                // 7. Eliminar de Languages si existe
+                if (existsInLanguages) {
+                    await removeLanguage(movie.youtubeId, term);
+                    movie.languages = (movie.languages || []).filter(l => l !== term);
+                    const languagesContainer = document.getElementById('languagesList');
+                    if (languagesContainer) {
+                        languagesContainer.innerHTML = movie.languages.map(name => `
+                            <span class="term-chip">
+                                ${escapeHtml(name)}
+                                <span class="remove-language" data-name="${escapeHtml(name)}">✖</span>
+                            </span>
+                        `).join('');
+                    }
+                }
+                
+                // Actualizar la lista de términos en el modal
                 const termsContainer = document.getElementById('termsList');
                 if (termsContainer) {
                     termsContainer.innerHTML = movie.searchTerms.map(t => `
@@ -504,6 +626,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                     `).join('');
                     attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
                 }
+                
                 if (currentOnUpdate) await currentOnUpdate();
             };
         });
