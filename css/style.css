@@ -137,7 +137,7 @@ body {
     color: var(--text-primary);
 }
 .btn:hover {
-    background: var(--accent);
+    background: var(--accent-dark);
 }
 .btn:focus {
     outline: 2px solid var(--accent-light);
@@ -162,7 +162,7 @@ body {
     color: var(--text-primary);
 }
 .btn-secondary:hover {
-    background: var(--accent);
+    background: var(--accent-dark);
 }
 .btn-sm {
     height: var(--btn-height-sm);
@@ -195,7 +195,7 @@ body {
     font-size: 28px;
 }
 .modal-add-icon:hover {
-    color: var(--accent);
+    color: var(--accent-dark);
 }
 
 .toggle-row {
@@ -208,7 +208,7 @@ body {
     cursor: default;
 }
 .toggle-row .material-symbols-outlined:hover {
-    color: var(--accent);
+    color: var(--accent-dark);
     transition: color 0.2s;
 }
 
@@ -505,7 +505,7 @@ body {
     color: var(--accent-light);
 }
 .term-delete:hover, .director-delete:hover, .actor-delete:hover, .genre-delete:hover, .year-delete:hover, .country-delete:hover, .language-delete:hover {
-    color: var(--accent);
+    color: var(--accent-dark);
 }
 
 /* Eliminación dentro del modal (chips) */
@@ -517,7 +517,7 @@ body {
     margin-left: 4px;
 }
 .remove-term:hover, .remove-director:hover, .remove-actor:hover, .remove-genre:hover, .remove-year:hover, .remove-country:hover, .remove-language:hover {
-    color: var(--accent);
+    color: var(--accent-dark);
 }
 
 .terms-bar {
