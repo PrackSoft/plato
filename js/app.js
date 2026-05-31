@@ -304,7 +304,6 @@ function buildCollectionsDropdown() {
     if (!panel) return;
     
     const options = [
-        { value: 'all', label: 'All', icon: 'all_inclusive' },
         { value: 'directors', label: 'Directors', icon: 'person' },
         { value: 'actors', label: 'Actors', icon: 'group' },
         { value: 'genres', label: 'Genres', icon: 'theater_comedy' },
@@ -328,18 +327,22 @@ function buildCollectionsDropdown() {
             e.stopPropagation();
             const value = label.dataset.value;
             if (value) {
-                const changed = (value !== collectionsSortBy);
+                // Guardar estado actual de Related antes de activar Collections
+                if (!activeCollectionsFilter && !activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
+                    savedRelatedFilter = activeRelatedFilter;
+                }
+                
+                // Salir de otros filtros
+                activeWatchingFilter = false;
+                activeFavoriteFilter = false;
+                activeTrashFilter = false;
+                updateFilterButtonsUI();
+                if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
+                if (termsBar) termsBar.classList.add('hidden');
+                
+                activeCollectionsFilter = true;
                 collectionsSortBy = value;
                 updateCollectionsButtonText();
-                if (!activeCollectionsFilter || changed) {
-                    activeWatchingFilter = false;
-                    activeFavoriteFilter = false;
-                    activeTrashFilter = false;
-                    activeCollectionsFilter = true;
-                    updateFilterButtonsUI();
-                    if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
-                    if (termsBar) termsBar.classList.add('hidden');
-                }
                 loadAndDisplayAll();
             }
             panel.classList.add('hidden');
@@ -348,7 +351,25 @@ function buildCollectionsDropdown() {
     
     filterCollectionsBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        panel.classList.toggle('hidden');
+        
+        // Si Collections está activo, desactivarlo y restaurar Related
+        if (activeCollectionsFilter) {
+            activeCollectionsFilter = false;
+            updateFilterButtonsUI();
+            
+            // Restaurar Related
+            activeRelatedFilter = savedRelatedFilter;
+            updateRelatedButtonText();
+            
+            // Restaurar términos bar si estaba visible
+            if (toggleTermsBtn && termsBar && !termsBar.classList.contains('hidden')) {
+                toggleTermsBtn.classList.add('active');
+            }
+            loadAndDisplayAll();
+        } else {
+            // Si no está activo, abrir panel
+            panel.classList.toggle('hidden');
+        }
     });
     
     document.addEventListener('click', (e) => {
@@ -1452,8 +1473,8 @@ function updateFilterButtonsUI() {
     if (activeCollectionsFilter && filterCollectionsBtn) filterCollectionsBtn.classList.add('active');
     else if (filterCollectionsBtn) filterCollectionsBtn.classList.remove('active');
     
-    // Si Watching, Favorites o Trash están activos, desactivar visualmente el botón Related
-    if (activeWatchingFilter || activeFavoriteFilter || activeTrashFilter) {
+    // Si Watching, Favorites, Trash o Collections están activos, desactivar visualmente el botón Related
+    if (activeWatchingFilter || activeFavoriteFilter || activeTrashFilter || activeCollectionsFilter) {
         if (filterRelatedBtn) {
             filterRelatedBtn.classList.remove('btn-primary');
             filterRelatedBtn.classList.add('btn-secondary');
@@ -1566,8 +1587,51 @@ function toggleTrashFilter() {
     loadAndDisplayAll();
 }
 
+// ---------------------- Toggle Collections filter ----------------------
 function toggleCollectionsFilter() {
-    // Ya no se usa desde el botón, se mantiene por compatibilidad
+    // Limpiar filtros de términos
+    activeTermFilter = null;
+    activeDirectorFilter = null;
+    activeActorFilter = null;
+    activeGenreFilter = null;
+    activeYearFilter = null;
+    activeCountryFilter = null;
+    activeLanguageFilter = null;
+    
+    // Guardar el estado actual de Related antes de activar Collections
+    if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter && !activeCollectionsFilter) {
+        savedRelatedFilter = activeRelatedFilter;
+    }
+    
+    // Si hay otros filtros activos, desactivarlos
+    if (activeWatchingFilter || activeFavoriteFilter || activeTrashFilter) {
+        activeWatchingFilter = false;
+        activeFavoriteFilter = false;
+        activeTrashFilter = false;
+    }
+    
+    // Toggle Collections
+    activeCollectionsFilter = !activeCollectionsFilter;
+    
+    // Si Collections se activa, desactivar Related lógicamente
+    if (activeCollectionsFilter) {
+        activeRelatedFilter = 'exact';
+        updateRelatedButtonText();
+        if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
+        if (termsBar) termsBar.classList.add('hidden');
+    } else {
+        // Si se desactiva Collections, restaurar Related
+        activeRelatedFilter = savedRelatedFilter;
+        updateRelatedButtonText();
+        
+        // Restaurar términos bar si estaba visible
+        if (toggleTermsBtn && termsBar && !termsBar.classList.contains('hidden')) {
+            toggleTermsBtn.classList.add('active');
+        }
+    }
+    
+    updateFilterButtonsUI();
+    loadAndDisplayAll();
 }
 
 if (filterWatchingBtn) filterWatchingBtn.addEventListener('click', toggleWatchingFilter);
