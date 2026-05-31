@@ -157,28 +157,17 @@ export function renderMovies(container, movies, title, source = 'main', currentS
     container.innerHTML = `
         <div class="history-header">
             <h2>${escapeHtml(title)}</h2>
-            ${!isCollectionSort && !isGrouped ? sortSelectHtml : ''}
+            ${source === 'collections' && isGrouped ? sortSelectHtml : (!isCollectionSort && !isGrouped ? sortSelectHtml : '')}
         </div>
         ${bodyHtml}
     `;
 
     const sortSelect = document.getElementById('sortSelect');
-    if (sortSelect && onSortChange && !isCollectionSort && !isGrouped) {
+    if (sortSelect && onSortChange) {
         sortSelect.addEventListener('change', (e) => {
             onSortChange(e.target.value);
         });
     }
-
-    document.querySelectorAll('.video-card').forEach(card => {
-        const movieId = card.dataset.id;
-        const movie = movies.find(m => String(m.youtubeId) === String(movieId));
-        if (movie && window.openMovieModal) {
-            card.onclick = () => {
-                window.openMovieModal(movie, source);
-            };
-        }
-    });
-}
 
 function sortMovies(movies, sortBy) {
     const sorted = [...movies];
