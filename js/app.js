@@ -177,7 +177,6 @@ function buildSearchInPanel() {
 }
 
 // ---------------------- Build Related dropdown ----------------------
-// ---------------------- Build Related dropdown ----------------------
 function buildRelatedDropdown() {
     if (!filterRelatedBtn) return;
     
@@ -204,11 +203,13 @@ function buildRelatedDropdown() {
             e.stopPropagation();
             const value = label.dataset.value;
             if (value && value !== activeRelatedFilter) {
-                if (activeWatchingFilter || activeFavoriteFilter || activeTrashFilter) {
+                if (activeWatchingFilter || activeFavoriteFilter || activeTrashFilter || activeCollectionsFilter) {
                     activeWatchingFilter = false;
                     activeFavoriteFilter = false;
                     activeTrashFilter = false;
+                    activeCollectionsFilter = false;
                     updateFilterButtonsUI();
+                    updateCollectionsButtonText();
                 }
                 activeRelatedFilter = value;
                 savedRelatedFilter = value;
@@ -219,14 +220,12 @@ function buildRelatedDropdown() {
         });
     });
     
-    const originalBtnHtml = filterRelatedBtn.innerHTML;
-    
     filterRelatedBtn.innerHTML = `
-        <span class="related-main" style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+        <span class="related-main">
             <span class="material-symbols-outlined related-icon">${activeRelatedFilter === 'exact' ? 'verified' : 'verified_off'}</span>
             <span class="related-label">${activeRelatedFilter === 'exact' ? 'Exact' : 'Related'}</span>
         </span>
-        <span class="related-arrow" style="display: inline-flex; align-items: center; cursor: pointer;">
+        <span class="related-arrow">
             <span class="material-symbols-outlined">arrow_drop_down</span>
         </span>
     `;
@@ -237,11 +236,13 @@ function buildRelatedDropdown() {
     if (mainPart) {
         mainPart.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (activeWatchingFilter || activeFavoriteFilter || activeTrashFilter) {
+            if (activeWatchingFilter || activeFavoriteFilter || activeTrashFilter || activeCollectionsFilter) {
                 activeWatchingFilter = false;
                 activeFavoriteFilter = false;
                 activeTrashFilter = false;
+                activeCollectionsFilter = false;
                 updateFilterButtonsUI();
+                updateCollectionsButtonText();
                 activeRelatedFilter = savedRelatedFilter;
                 updateRelatedButtonText();
                 loadAndDisplayAll();
@@ -265,6 +266,33 @@ function buildRelatedDropdown() {
     });
     
     updateRelatedButtonText();
+}
+
+function updateRelatedButtonText() {
+    if (!filterRelatedBtn) return;
+    let label = 'Exact';
+    let icon = 'verified';
+    if (activeRelatedFilter === 'related') {
+        label = 'Related';
+        icon = 'verified_off';
+    }
+    const mainPart = filterRelatedBtn.querySelector('.related-main');
+    if (mainPart) {
+        const iconSpan = mainPart.querySelector('.related-icon');
+        const labelSpan = mainPart.querySelector('.related-label');
+        if (iconSpan) iconSpan.textContent = icon;
+        if (labelSpan) labelSpan.textContent = label;
+    } else {
+        filterRelatedBtn.innerHTML = `
+            <span class="related-main">
+                <span class="material-symbols-outlined related-icon">${icon}</span>
+                <span class="related-label">${label}</span>
+            </span>
+            <span class="related-arrow">
+                <span class="material-symbols-outlined">arrow_drop_down</span>
+            </span>
+        `;
+    }
 }
 
 function updateRelatedButtonText() {

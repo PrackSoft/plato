@@ -704,6 +704,7 @@ body {
     font-size: 18px;
 }
 
+.related-main,
 .collections-main {
     display: inline-flex;
     align-items: center;
@@ -711,6 +712,7 @@ body {
     cursor: pointer;
 }
 
+.related-arrow,
 .collections-arrow {
     display: inline-flex;
     align-items: center;
