@@ -1471,6 +1471,8 @@ function renderLanguageBar() {
 
 // ---------------------- Toggle Terms Bar visibility ----------------------
 if (toggleTermsBtn && termsBar) {
+    const termsIcon = toggleTermsBtn.querySelector('.material-symbols-outlined');
+    
     toggleTermsBtn.addEventListener('click', () => {
         if (activeCollectionFilter) {
             activeCollectionFilter = false;
@@ -1479,8 +1481,10 @@ if (toggleTermsBtn && termsBar) {
         const isHidden = termsBar.classList.toggle('hidden');
         if (isHidden) {
             toggleTermsBtn.classList.remove('active');
+            if (termsIcon) termsIcon.textContent = 'filter_list_off';
         } else {
             toggleTermsBtn.classList.add('active');
+            if (termsIcon) termsIcon.textContent = 'filter_list';
         }
         loadAndDisplayAll();
     });
