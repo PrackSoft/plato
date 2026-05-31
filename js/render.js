@@ -168,6 +168,7 @@ export function renderMovies(container, movies, title, source = 'main', currentS
             onSortChange(e.target.value);
         });
     }
+}
 
 function sortMovies(movies, sortBy) {
     const sorted = [...movies];
