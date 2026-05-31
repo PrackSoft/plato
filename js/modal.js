@@ -439,22 +439,23 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
             if (extraInfoPanel.classList.contains('hidden')) {
                 const extra = await getExtraInfo(movie.youtubeId);
                 const fields = [
-                    { label: 'channelId', value: movie.channelId || 'Unknown' },
-                    { label: 'channelTitle', value: movie.channelTitle || 'Unknown' },
-                    { label: 'tags', value: (movie.tags && movie.tags.length) ? movie.tags.join(', ') : 'Unknown' },
-                    { label: 'viewCount', value: movie.viewCount || 'Unknown' },
-                    { label: 'duration', value: movie.duration || 'Unknown' },
-                    { label: 'categoryId', value: extra?.categoryId || 'Unknown' },
-                    { label: 'defaultLanguage', value: extra?.defaultLanguage || 'Unknown' },
-                    { label: 'defaultAudioLanguage', value: extra?.defaultAudioLanguage || 'Unknown' },
-                    { label: 'dimension', value: extra?.dimension || 'Unknown' },
-                    { label: 'definition', value: extra?.definition || 'Unknown' },
-                    { label: 'caption', value: extra?.caption || 'Unknown' },
-                    { label: 'licensedContent', value: extra?.licensedContent !== undefined ? extra.licensedContent : 'Unknown' },
-                    { label: 'projection', value: extra?.projection || 'Unknown' },
-                    { label: 'publicStatsViewable', value: extra?.publicStatsViewable !== undefined ? extra.publicStatsViewable : 'Unknown' },
-                    { label: 'madeForKids', value: extra?.madeForKids !== undefined ? extra.madeForKids : 'Unknown' },
-                    { label: 'selfDeclaredMadeForKids', value: extra?.selfDeclaredMadeForKids !== undefined ? extra.selfDeclaredMadeForKids : 'Unknown' }
+                    { label: 'Published on YouTube', value: formatDisplayDate(movie.publishedAt) },
+                    { label: 'Channel ID', value: movie.channelId || 'Unknown' },
+                    { label: 'Channel Title', value: movie.channelTitle || 'Unknown' },
+                    { label: 'Tags', value: (movie.tags && movie.tags.length) ? movie.tags.join(', ') : 'Unknown' },
+                    { label: 'View Count', value: movie.viewCount || 'Unknown' },
+                    { label: 'Duration', value: movie.duration || 'Unknown' },
+                    { label: 'Category ID', value: extra?.categoryId || 'Unknown' },
+                    { label: 'Default Language', value: extra?.defaultLanguage || 'Unknown' },
+                    { label: 'Default Audio Language', value: extra?.defaultAudioLanguage || 'Unknown' },
+                    { label: 'Dimension', value: extra?.dimension || 'Unknown' },
+                    { label: 'Definition', value: extra?.definition || 'Unknown' },
+                    { label: 'Caption', value: extra?.caption || 'Unknown' },
+                    { label: 'Licensed Content', value: extra?.licensedContent !== undefined ? extra.licensedContent : 'Unknown' },
+                    { label: 'Projection', value: extra?.projection || 'Unknown' },
+                    { label: 'Public Stats Viewable', value: extra?.publicStatsViewable !== undefined ? extra.publicStatsViewable : 'Unknown' },
+                    { label: 'Made for Kids', value: extra?.madeForKids !== undefined ? extra.madeForKids : 'Unknown' },
+                    { label: 'Self Declared Made for Kids', value: extra?.selfDeclaredMadeForKids !== undefined ? extra.selfDeclaredMadeForKids : 'Unknown' }
                 ];
                 extraInfoPanel.innerHTML = fields.map(f => `
                     <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border-light);">
@@ -470,7 +471,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
             }
         };
     }
-
+    
     // ========== REMOVE SEARCH TERM (con eliminación en todos los grupos) ==========
     if (!isInTrash) {
         document.querySelectorAll('.remove-term').forEach(el => {
@@ -1041,7 +1042,19 @@ async function getMovieFromDB(youtubeId) {
     });
 }
 
-// ---------------------- Utilidades ----------------------
+// ----------------------- Funciones auxiliares de formato ------------------------
+function formatDisplayDate(utcDateString) {
+    if (!utcDateString) return 'Unknown';
+    const date = new Date(utcDateString);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (date.toDateString() === today.toDateString()) return 'Today';
+    if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/[&<>]/g, c => c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;');
