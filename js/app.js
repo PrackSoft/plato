@@ -322,54 +322,46 @@ function buildCollectionsDropdown() {
         `).join('')}
     `;
     
+    filterCollectionsBtn.innerHTML = `
+        <span class="collections-main">
+            <span class="material-symbols-outlined collections-icon">join_inner</span>
+            <span class="collections-label">Collections</span>
+        </span>
+        <span class="collections-arrow">
+            <span class="material-symbols-outlined">arrow_drop_down</span>
+        </span>
+    `;
+    
+    const mainPart = filterCollectionsBtn.querySelector('.collections-main');
+    const arrowPart = filterCollectionsBtn.querySelector('.collections-arrow');
+    
+    if (mainPart) {
+        mainPart.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleCollectionsFilter();
+        });
+    }
+    
+    if (arrowPart) {
+        arrowPart.addEventListener('click', (e) => {
+            e.stopPropagation();
+            panel.classList.toggle('hidden');
+        });
+    }
+    
     panel.querySelectorAll('label').forEach(label => {
         label.addEventListener('click', (e) => {
             e.stopPropagation();
             const value = label.dataset.value;
-            if (value) {
-                // Guardar estado actual de Related antes de activar Collections
-                if (!activeCollectionsFilter && !activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
-                    savedRelatedFilter = activeRelatedFilter;
-                }
-                
-                // Salir de otros filtros
-                activeWatchingFilter = false;
-                activeFavoriteFilter = false;
-                activeTrashFilter = false;
-                updateFilterButtonsUI();
-                if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
-                if (termsBar) termsBar.classList.add('hidden');
-                
-                activeCollectionsFilter = true;
+            if (value && value !== collectionsSortBy) {
                 collectionsSortBy = value;
                 updateCollectionsButtonText();
-                loadAndDisplayAll();
+                if (activeCollectionsFilter) {
+                    loadAndDisplayAll();
+                }
             }
             panel.classList.add('hidden');
         });
-    });
-    
-    filterCollectionsBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        
-        // Si Collections está activo, desactivarlo y restaurar Related
-        if (activeCollectionsFilter) {
-            activeCollectionsFilter = false;
-            updateFilterButtonsUI();
-            
-            // Restaurar Related
-            activeRelatedFilter = savedRelatedFilter;
-            updateRelatedButtonText();
-            
-            // Restaurar términos bar si estaba visible
-            if (toggleTermsBtn && termsBar && !termsBar.classList.contains('hidden')) {
-                toggleTermsBtn.classList.add('active');
-            }
-            loadAndDisplayAll();
-        } else {
-            // Si no está activo, abrir panel
-            panel.classList.toggle('hidden');
-        }
     });
     
     document.addEventListener('click', (e) => {
@@ -379,6 +371,48 @@ function buildCollectionsDropdown() {
     });
     
     updateCollectionsButtonText();
+}
+
+function updateCollectionsButtonText() {
+    if (!filterCollectionsBtn) return;
+    
+    const mainPart = filterCollectionsBtn.querySelector('.collections-main');
+    if (!mainPart) return;
+    
+    const iconSpan = mainPart.querySelector('.collections-icon');
+    const labelSpan = mainPart.querySelector('.collections-label');
+    
+    if (!activeCollectionsFilter) {
+        if (iconSpan) iconSpan.textContent = 'join_inner';
+        if (labelSpan) labelSpan.textContent = 'Collections';
+    } else {
+        switch (collectionsSortBy) {
+            case 'directors':
+                if (iconSpan) iconSpan.textContent = 'person';
+                if (labelSpan) labelSpan.textContent = 'Directors';
+                break;
+            case 'actors':
+                if (iconSpan) iconSpan.textContent = 'group';
+                if (labelSpan) labelSpan.textContent = 'Actors';
+                break;
+            case 'genres':
+                if (iconSpan) iconSpan.textContent = 'theater_comedy';
+                if (labelSpan) labelSpan.textContent = 'Genres';
+                break;
+            case 'years':
+                if (iconSpan) iconSpan.textContent = 'calendar_month';
+                if (labelSpan) labelSpan.textContent = 'Years';
+                break;
+            case 'countries':
+                if (iconSpan) iconSpan.textContent = 'flag';
+                if (labelSpan) labelSpan.textContent = 'Countries';
+                break;
+            case 'languages':
+                if (iconSpan) iconSpan.textContent = 'translate';
+                if (labelSpan) labelSpan.textContent = 'Languages';
+                break;
+        }
+    }
 }
 
 function updateCollectionsButtonText() {
@@ -1589,7 +1623,6 @@ function toggleTrashFilter() {
 
 // ---------------------- Toggle Collections filter ----------------------
 function toggleCollectionsFilter() {
-    // Limpiar filtros de términos
     activeTermFilter = null;
     activeDirectorFilter = null;
     activeActorFilter = null;
@@ -1598,38 +1631,32 @@ function toggleCollectionsFilter() {
     activeCountryFilter = null;
     activeLanguageFilter = null;
     
-    // Guardar el estado actual de Related antes de activar Collections
     if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter && !activeCollectionsFilter) {
         savedRelatedFilter = activeRelatedFilter;
     }
     
-    // Si hay otros filtros activos, desactivarlos
     if (activeWatchingFilter || activeFavoriteFilter || activeTrashFilter) {
         activeWatchingFilter = false;
         activeFavoriteFilter = false;
         activeTrashFilter = false;
     }
     
-    // Toggle Collections
     activeCollectionsFilter = !activeCollectionsFilter;
     
-    // Si Collections se activa, desactivar Related lógicamente
     if (activeCollectionsFilter) {
         activeRelatedFilter = 'exact';
         updateRelatedButtonText();
         if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
         if (termsBar) termsBar.classList.add('hidden');
     } else {
-        // Si se desactiva Collections, restaurar Related
         activeRelatedFilter = savedRelatedFilter;
         updateRelatedButtonText();
-        
-        // Restaurar términos bar si estaba visible
         if (toggleTermsBtn && termsBar && !termsBar.classList.contains('hidden')) {
             toggleTermsBtn.classList.add('active');
         }
     }
     
+    updateCollectionsButtonText();
     updateFilterButtonsUI();
     loadAndDisplayAll();
 }

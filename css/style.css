@@ -704,6 +704,19 @@ body {
     font-size: 18px;
 }
 
+.collections-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.collections-arrow {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
 @media (max-width: 768px) {
     .top-controls {
         flex-direction: column;
