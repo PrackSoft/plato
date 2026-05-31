@@ -1,14 +1,17 @@
-// js/modal.js (con actualización dinámica de Search term al agregar datos de Collection)
+// js/modal.js - Modal para editar metadatos de películas
+// Soporta entrada múltiple separada por comas en todos los campos (Search term, Director, Actor, etc.)
+
 import { getExtraInfo, toggleExact, addDirector, removeDirector, addActor, removeActor, addGenre, removeGenre, addYear, removeYear, addCountry, removeCountry, addLanguage, removeLanguage, openDB } from './db.js';
 import { refreshAvailableTerms, loadAndDisplayAll, syncWindowTermFilter, getActiveTermFilter } from './app.js';
 
+// ---------------------- Estado global del modal ----------------------
+let currentMovie = null;           // Película actualmente abierta
+let currentOnUpdate = null;        // Callback para actualizar la UI principal
+let currentMovieSource = null;     // 'main' o 'trash'
+let currentTrashFunctions = null;  // Funciones de papelera
+let extraInfoVisible = false;      // Estado del panel de info extra
 
-let currentMovie = null;
-let currentOnUpdate = null;
-let currentMovieSource = null;
-let currentTrashFunctions = null;
-let extraInfoVisible = false;
-
+// ---------------------- Inicialización ----------------------
 export function initModal(onUpdateCallback) {
     currentOnUpdate = onUpdateCallback;
     const modal = document.getElementById('movieModal');
@@ -22,6 +25,7 @@ export function initModal(onUpdateCallback) {
     window.onclick = (e) => { if (e.target === modal) closeModal(); };
 }
 
+// ---------------------- Abrir modal ----------------------
 export async function openModal(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source = 'main') {
     currentMovie = movie;
     currentMovieSource = source;
@@ -37,6 +41,7 @@ export async function openModal(movie, { updateMovieTerms, toggleWatching, toggl
     attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
 }
 
+// ---------------------- Cerrar modal ----------------------
 function closeModal() {
     const modal = document.getElementById('movieModal');
     if (modal) modal.style.display = 'none';
@@ -46,6 +51,7 @@ function closeModal() {
     extraInfoVisible = false;
 }
 
+// ---------------------- Renderizar contenido del modal ----------------------
 function renderModalContent(movie, source) {
     const isInTrash = (source === 'trash');
     const watchingIconName = movie.watching ? 'visibility' : 'visibility_off';
@@ -81,6 +87,7 @@ function renderModalContent(movie, source) {
         <p><strong>Saved on:</strong> ${new Date(movie.dateSaved).toLocaleString()}</p>
         ${isInTrash ? `<p><strong>Deleted on:</strong> ${movie.deletedAt ? new Date(movie.deletedAt).toLocaleString() : 'Unknown'}</p>` : ''}
         
+        <!-- ========== SEARCH TERM SECTION ========== -->
         <div class="modal-section">
             <strong>Search term:</strong>
             <div id="termsList" class="terms-list">
@@ -93,7 +100,7 @@ function renderModalContent(movie, source) {
             </div>
             ${!isInTrash ? `
             <div class="add-term-row">
-                <input type="text" id="newTermInput" class="modal-input" placeholder="Add new term">
+                <input type="text" id="newTermInput" class="modal-input" placeholder="Add new term (separate multiple with commas)">
                 <span id="addTermBtn" class="modal-add-icon" title="Add term">
                     <span class="material-symbols-outlined">add</span>
                 </span>
@@ -101,7 +108,7 @@ function renderModalContent(movie, source) {
             ` : ''}
         </div>
 
-        <!-- Sección Directores -->
+        <!-- ========== DIRECTOR SECTION ========== -->
         <div class="modal-section">
             <strong>Director:</strong>
             <div id="directorsList" class="terms-list">
@@ -114,7 +121,7 @@ function renderModalContent(movie, source) {
             </div>
             ${!isInTrash ? `
             <div class="add-term-row">
-                <input type="text" id="newDirectorInput" class="modal-input" placeholder="Add director">
+                <input type="text" id="newDirectorInput" class="modal-input" placeholder="Add director (separate multiple with commas)">
                 <span id="addDirectorBtn" class="modal-add-icon" title="Add director">
                     <span class="material-symbols-outlined">add</span>
                 </span>
@@ -122,7 +129,7 @@ function renderModalContent(movie, source) {
             ` : ''}
         </div>
 
-        <!-- Sección Actores -->
+        <!-- ========== ACTOR SECTION ========== -->
         <div class="modal-section">
             <strong>Actor:</strong>
             <div id="actorsList" class="terms-list">
@@ -135,7 +142,7 @@ function renderModalContent(movie, source) {
             </div>
             ${!isInTrash ? `
             <div class="add-term-row">
-                <input type="text" id="newActorInput" class="modal-input" placeholder="Add actor">
+                <input type="text" id="newActorInput" class="modal-input" placeholder="Add actor (separate multiple with commas)">
                 <span id="addActorBtn" class="modal-add-icon" title="Add actor">
                     <span class="material-symbols-outlined">add</span>
                 </span>
@@ -143,7 +150,7 @@ function renderModalContent(movie, source) {
             ` : ''}
         </div>
 
-        <!-- Sección Géneros -->
+        <!-- ========== GENRE SECTION ========== -->
         <div class="modal-section">
             <strong>Genre:</strong>
             <div id="genresList" class="terms-list">
@@ -156,7 +163,7 @@ function renderModalContent(movie, source) {
             </div>
             ${!isInTrash ? `
             <div class="add-term-row">
-                <input type="text" id="newGenreInput" class="modal-input" placeholder="Add genre">
+                <input type="text" id="newGenreInput" class="modal-input" placeholder="Add genre (separate multiple with commas)">
                 <span id="addGenreBtn" class="modal-add-icon" title="Add genre">
                     <span class="material-symbols-outlined">add</span>
                 </span>
@@ -164,7 +171,7 @@ function renderModalContent(movie, source) {
             ` : ''}
         </div>
 
-        <!-- Sección Años -->
+        <!-- ========== YEAR SECTION ========== -->
         <div class="modal-section">
             <strong>Year:</strong>
             <div id="yearsList" class="terms-list">
@@ -177,7 +184,7 @@ function renderModalContent(movie, source) {
             </div>
             ${!isInTrash ? `
             <div class="add-term-row">
-                <input type="text" id="newYearInput" class="modal-input" placeholder="Add year">
+                <input type="text" id="newYearInput" class="modal-input" placeholder="Add year (separate multiple with commas)">
                 <span id="addYearBtn" class="modal-add-icon" title="Add year">
                     <span class="material-symbols-outlined">add</span>
                 </span>
@@ -185,7 +192,7 @@ function renderModalContent(movie, source) {
             ` : ''}
         </div>
 
-        <!-- Sección Países -->
+        <!-- ========== COUNTRY SECTION ========== -->
         <div class="modal-section">
             <strong>Country:</strong>
             <div id="countriesList" class="terms-list">
@@ -198,7 +205,7 @@ function renderModalContent(movie, source) {
             </div>
             ${!isInTrash ? `
             <div class="add-term-row">
-                <input type="text" id="newCountryInput" class="modal-input" placeholder="Add country">
+                <input type="text" id="newCountryInput" class="modal-input" placeholder="Add country (separate multiple with commas)">
                 <span id="addCountryBtn" class="modal-add-icon" title="Add country">
                     <span class="material-symbols-outlined">add</span>
                 </span>
@@ -206,7 +213,7 @@ function renderModalContent(movie, source) {
             ` : ''}
         </div>
 
-        <!-- Sección Idiomas -->
+        <!-- ========== LANGUAGE SECTION ========== -->
         <div class="modal-section">
             <strong>Language:</strong>
             <div id="languagesList" class="terms-list">
@@ -219,7 +226,7 @@ function renderModalContent(movie, source) {
             </div>
             ${!isInTrash ? `
             <div class="add-term-row">
-                <input type="text" id="newLanguageInput" class="modal-input" placeholder="Add language">
+                <input type="text" id="newLanguageInput" class="modal-input" placeholder="Add language (separate multiple with commas)">
                 <span id="addLanguageBtn" class="modal-add-icon" title="Add language">
                     <span class="material-symbols-outlined">add</span>
                 </span>
@@ -227,6 +234,7 @@ function renderModalContent(movie, source) {
             ` : ''}
         </div>
 
+        <!-- ========== TOGGLES: WATCHING / FAVORITE ========== -->
         <div class="modal-section toggle-row ${isInTrash ? 'disabled' : ''}" id="watchingToggleRow">
             <span>Watching:</span>
             <span class="material-symbols-outlined" id="modalWatchingIcon">${watchingIconName}</span>
@@ -237,6 +245,7 @@ function renderModalContent(movie, source) {
             <span class="material-symbols-outlined" id="modalFavoriteIcon">${favoriteIconName}</span>
         </div>
 
+        <!-- ========== TRASH ACTIONS ========== -->
         ${!isInTrash ? `
         <div class="modal-section toggle-row" id="moveToTrashRow">
             <span>Move to Trash:</span>
@@ -255,6 +264,7 @@ function renderModalContent(movie, source) {
         </div>
         `}
 
+        <!-- ========== EXACT/RELATED TOGGLE (solo si hay filtro activo) ========== -->
         ${showExactToggle ? `
         <div class="modal-section toggle-row" id="toggleExactRow">
             <span>${toggleLabel}:</span>
@@ -262,6 +272,7 @@ function renderModalContent(movie, source) {
         </div>
         ` : ''}
 
+        <!-- ========== EXTRA INFO BUTTON ========== -->
         <div class="modal-section">
             <button id="toggleExtraInfoBtn" class="btn btn-secondary btn-sm" style="width: 100%; margin-top: 0;">
                 <span class="material-symbols-outlined">info</span> Extra Info
@@ -271,7 +282,58 @@ function renderModalContent(movie, source) {
     `;
 }
 
-// Función auxiliar para actualizar la lista de términos en el modal
+// ---------------------- Función auxiliar: dividir string por comas y limpiar ----------------------
+// Convierte "Woody Allen, Mia Farrow" en ["Woody Allen", "Mia Farrow"]
+function splitByCommas(input) {
+    if (!input || !input.trim()) return [];
+    return input.split(',').map(s => s.trim()).filter(s => s);
+}
+
+// ---------------------- Función auxiliar: agregar múltiples términos (Search term) ----------------------
+async function addMultipleTerms(movieId, termsString, updateMovieTermsFn) {
+    const terms = splitByCommas(termsString);
+    if (terms.length === 0) return;
+    
+    // Obtener términos existentes
+    const db = await openDB();
+    const transaction = db.transaction(['movies'], 'readonly');
+    const store = transaction.objectStore('movies');
+    const movie = await new Promise((resolve, reject) => {
+        const req = store.get(movieId);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+    
+    if (movie) {
+        const existingTerms = (movie.searchTerms || []).map(t => t.term);
+        const newTermsArray = [...existingTerms];
+        let added = false;
+        
+        for (const term of terms) {
+            if (!newTermsArray.includes(term)) {
+                newTermsArray.push(term);
+                added = true;
+            }
+        }
+        
+        if (added) {
+            await updateMovieTermsFn(movieId, newTermsArray);
+        }
+    }
+}
+
+// ---------------------- Función auxiliar genérica para agregar múltiples valores ----------------------
+// Recibe la función addX (addDirector, addActor, etc.) y el string con valores separados por comas
+async function addMultipleValues(movieId, valuesString, addFunction) {
+    const values = splitByCommas(valuesString);
+    if (values.length === 0) return;
+    
+    for (const value of values) {
+        await addFunction(movieId, value);
+    }
+}
+
+// ---------------------- Actualizar lista de términos en el modal ----------------------
 async function updateTermsListInModal(movie, source, attachModalEventsFn, {
     updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete
 }) {
@@ -283,14 +345,15 @@ async function updateTermsListInModal(movie, source, attachModalEventsFn, {
                 <span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>
             </span>
         `).join('');
-        // Reasignar eventos a los nuevos elementos .remove-term
         attachModalEventsFn(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
     }
 }
 
+// ---------------------- Asignar eventos a todos los elementos del modal ----------------------
 async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source) {
     const isInTrash = (source === 'trash');
 
+    // ========== TRASH ACTIONS ==========
     const moveToTrashRow = document.getElementById('moveToTrashRow');
     if (moveToTrashRow && !isInTrash) {
         moveToTrashRow.onclick = async () => {
@@ -322,6 +385,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         };
     }
 
+    // ========== WATCHING TOGGLE ==========
     const watchingRow = document.getElementById('watchingToggleRow');
     if (watchingRow && !isInTrash) {
         const watchingIcon = document.getElementById('modalWatchingIcon');
@@ -333,6 +397,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         };
     }
 
+    // ========== FAVORITE TOGGLE ==========
     const favoriteRow = document.getElementById('favoriteToggleRow');
     if (favoriteRow && !isInTrash) {
         const favoriteIcon = document.getElementById('modalFavoriteIcon');
@@ -344,6 +409,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         };
     }
 
+    // ========== EXACT/RELATED TOGGLE ==========
     const toggleExactRow = document.getElementById('toggleExactRow');
     if (toggleExactRow && window.activeTermFilter && !isInTrash) {
         toggleExactRow.onclick = async () => {
@@ -365,6 +431,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         };
     }
 
+    // ========== EXTRA INFO ==========
     const toggleExtraInfoBtn = document.getElementById('toggleExtraInfoBtn');
     const extraInfoPanel = document.getElementById('extraInfoPanel');
     if (toggleExtraInfoBtn && extraInfoPanel) {
@@ -404,6 +471,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         };
     }
 
+    // ========== REMOVE SEARCH TERM ==========
     if (!isInTrash) {
         document.querySelectorAll('.remove-term').forEach(el => {
             el.onclick = async (e) => {
@@ -423,13 +491,10 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                 }
 
                 const newTerms = remainingTerms.map(t => t.term);
-
                 await updateMovieTerms(movie.youtubeId, newTerms);
-
                 movie.searchTerms = remainingTerms;
 
                 const termsContainer = document.getElementById('termsList');
-
                 if (termsContainer) {
                     termsContainer.innerHTML = movie.searchTerms.map(t => `
                         <span class="term-chip">
@@ -437,36 +502,35 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                             <span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>
                         </span>
                     `).join('');
-
-                    attachModalEvents(
-                        movie,
-                        {
-                            updateMovieTerms,
-                            toggleWatching,
-                            toggleFavorite,
-                            moveToTrash,
-                            restoreFromTrash,
-                            permanentlyDelete
-                        },
-                        source
-                    );
+                    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
                 }
-
                 if (currentOnUpdate) await currentOnUpdate();
             };
         });
     }
 
+    // ========== ADD SEARCH TERM (con soporte múltiple) ==========
     if (!isInTrash) {
         const addTermBtn = document.getElementById('addTermBtn');
         const newTermInput = document.getElementById('newTermInput');
         if (addTermBtn && newTermInput) {
             addTermBtn.onclick = async () => {
-                const newTerm = newTermInput.value.trim();
-                if (newTerm && !(movie.searchTerms || []).some(t => t.term === newTerm)) {
-                    const newTerms = [...(movie.searchTerms || []).map(t => t.term), newTerm];
-                    await updateMovieTerms(movie.youtubeId, newTerms);
-                    movie.searchTerms.push({ term: newTerm, exact: true });
+                const rawInput = newTermInput.value.trim();
+                if (rawInput) {
+                    await addMultipleTerms(movie.youtubeId, rawInput, updateMovieTerms);
+                    
+                    // Recargar la película actualizada
+                    const updatedMovie = await getMovieFromDB(movie.youtubeId);
+                    if (updatedMovie) {
+                        movie.searchTerms = updatedMovie.searchTerms;
+                        movie.directors = updatedMovie.directors;
+                        movie.actors = updatedMovie.actors;
+                        movie.genres = updatedMovie.genres;
+                        movie.years = updatedMovie.years;
+                        movie.countries = updatedMovie.countries;
+                        movie.languages = updatedMovie.languages;
+                    }
+                    
                     newTermInput.value = '';
                     const termsContainer = document.getElementById('termsList');
                     if (termsContainer) {
@@ -487,22 +551,22 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         }
     }
 
-    // ========== DIRECTORES ==========
+    // ========== DIRECTORES (con soporte múltiple) ==========
     if (!isInTrash) {
         const addDirectorBtn = document.getElementById('addDirectorBtn');
         const newDirectorInput = document.getElementById('newDirectorInput');
         if (addDirectorBtn && newDirectorInput) {
             addDirectorBtn.onclick = async () => {
-                const newDirector = newDirectorInput.value.trim();
-                if (newDirector) {
-                    await addDirector(movie.youtubeId, newDirector);
-                    movie.directors = [...(movie.directors || []), newDirector];
-                    // Actualizar searchTerms localmente después de addDirector (que ya actualizó la DB)
-                    // Necesitamos recargar la película desde DB para obtener los searchTerms actualizados
+                const rawInput = newDirectorInput.value.trim();
+                if (rawInput) {
+                    await addMultipleValues(movie.youtubeId, rawInput, addDirector);
+                    
                     const updatedMovie = await getMovieFromDB(movie.youtubeId);
-                    if (updatedMovie && updatedMovie.searchTerms) {
+                    if (updatedMovie) {
+                        movie.directors = updatedMovie.directors;
                         movie.searchTerms = updatedMovie.searchTerms;
                     }
+                    
                     newDirectorInput.value = '';
                     const directorsContainer = document.getElementById('directorsList');
                     if (directorsContainer) {
@@ -514,7 +578,6 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                         `).join('');
                         attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
                     }
-                    // Actualizar la lista de términos en el modal
                     await updateTermsListInModal(movie, source, attachModalEvents, {
                         updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete
                     });
@@ -547,20 +610,22 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         });
     }
 
-    // ========== ACTORES ==========
+    // ========== ACTORES (con soporte múltiple) ==========
     if (!isInTrash) {
         const addActorBtn = document.getElementById('addActorBtn');
         const newActorInput = document.getElementById('newActorInput');
         if (addActorBtn && newActorInput) {
             addActorBtn.onclick = async () => {
-                const newActor = newActorInput.value.trim();
-                if (newActor) {
-                    await addActor(movie.youtubeId, newActor);
-                    movie.actors = [...(movie.actors || []), newActor];
+                const rawInput = newActorInput.value.trim();
+                if (rawInput) {
+                    await addMultipleValues(movie.youtubeId, rawInput, addActor);
+                    
                     const updatedMovie = await getMovieFromDB(movie.youtubeId);
-                    if (updatedMovie && updatedMovie.searchTerms) {
+                    if (updatedMovie) {
+                        movie.actors = updatedMovie.actors;
                         movie.searchTerms = updatedMovie.searchTerms;
                     }
+                    
                     newActorInput.value = '';
                     const actorsContainer = document.getElementById('actorsList');
                     if (actorsContainer) {
@@ -604,20 +669,22 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         });
     }
 
-    // ========== GÉNEROS ==========
+    // ========== GÉNEROS (con soporte múltiple) ==========
     if (!isInTrash) {
         const addGenreBtn = document.getElementById('addGenreBtn');
         const newGenreInput = document.getElementById('newGenreInput');
         if (addGenreBtn && newGenreInput) {
             addGenreBtn.onclick = async () => {
-                const newGenre = newGenreInput.value.trim();
-                if (newGenre) {
-                    await addGenre(movie.youtubeId, newGenre);
-                    movie.genres = [...(movie.genres || []), newGenre];
+                const rawInput = newGenreInput.value.trim();
+                if (rawInput) {
+                    await addMultipleValues(movie.youtubeId, rawInput, addGenre);
+                    
                     const updatedMovie = await getMovieFromDB(movie.youtubeId);
-                    if (updatedMovie && updatedMovie.searchTerms) {
+                    if (updatedMovie) {
+                        movie.genres = updatedMovie.genres;
                         movie.searchTerms = updatedMovie.searchTerms;
                     }
+                    
                     newGenreInput.value = '';
                     const genresContainer = document.getElementById('genresList');
                     if (genresContainer) {
@@ -661,20 +728,22 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         });
     }
 
-    // ========== AÑOS ==========
+    // ========== AÑOS (con soporte múltiple) ==========
     if (!isInTrash) {
         const addYearBtn = document.getElementById('addYearBtn');
         const newYearInput = document.getElementById('newYearInput');
         if (addYearBtn && newYearInput) {
             addYearBtn.onclick = async () => {
-                const newYear = newYearInput.value.trim();
-                if (newYear) {
-                    await addYear(movie.youtubeId, newYear);
-                    movie.years = [...(movie.years || []), newYear];
+                const rawInput = newYearInput.value.trim();
+                if (rawInput) {
+                    await addMultipleValues(movie.youtubeId, rawInput, addYear);
+                    
                     const updatedMovie = await getMovieFromDB(movie.youtubeId);
-                    if (updatedMovie && updatedMovie.searchTerms) {
+                    if (updatedMovie) {
+                        movie.years = updatedMovie.years;
                         movie.searchTerms = updatedMovie.searchTerms;
                     }
+                    
                     newYearInput.value = '';
                     const yearsContainer = document.getElementById('yearsList');
                     if (yearsContainer) {
@@ -718,20 +787,22 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         });
     }
 
-    // ========== PAÍSES ==========
+    // ========== PAÍSES (con soporte múltiple) ==========
     if (!isInTrash) {
         const addCountryBtn = document.getElementById('addCountryBtn');
         const newCountryInput = document.getElementById('newCountryInput');
         if (addCountryBtn && newCountryInput) {
             addCountryBtn.onclick = async () => {
-                const newCountry = newCountryInput.value.trim();
-                if (newCountry) {
-                    await addCountry(movie.youtubeId, newCountry);
-                    movie.countries = [...(movie.countries || []), newCountry];
+                const rawInput = newCountryInput.value.trim();
+                if (rawInput) {
+                    await addMultipleValues(movie.youtubeId, rawInput, addCountry);
+                    
                     const updatedMovie = await getMovieFromDB(movie.youtubeId);
-                    if (updatedMovie && updatedMovie.searchTerms) {
+                    if (updatedMovie) {
+                        movie.countries = updatedMovie.countries;
                         movie.searchTerms = updatedMovie.searchTerms;
                     }
+                    
                     newCountryInput.value = '';
                     const countriesContainer = document.getElementById('countriesList');
                     if (countriesContainer) {
@@ -775,20 +846,22 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         });
     }
 
-    // ========== IDIOMAS ==========
+    // ========== IDIOMAS (con soporte múltiple) ==========
     if (!isInTrash) {
         const addLanguageBtn = document.getElementById('addLanguageBtn');
         const newLanguageInput = document.getElementById('newLanguageInput');
         if (addLanguageBtn && newLanguageInput) {
             addLanguageBtn.onclick = async () => {
-                const newLanguage = newLanguageInput.value.trim();
-                if (newLanguage) {
-                    await addLanguage(movie.youtubeId, newLanguage);
-                    movie.languages = [...(movie.languages || []), newLanguage];
+                const rawInput = newLanguageInput.value.trim();
+                if (rawInput) {
+                    await addMultipleValues(movie.youtubeId, rawInput, addLanguage);
+                    
                     const updatedMovie = await getMovieFromDB(movie.youtubeId);
-                    if (updatedMovie && updatedMovie.searchTerms) {
+                    if (updatedMovie) {
+                        movie.languages = updatedMovie.languages;
                         movie.searchTerms = updatedMovie.searchTerms;
                     }
+                    
                     newLanguageInput.value = '';
                     const languagesContainer = document.getElementById('languagesList');
                     if (languagesContainer) {
@@ -833,7 +906,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
     }
 }
 
-// Función auxiliar para obtener una película actualizada desde la DB
+// ---------------------- Obtener película actualizada desde DB ----------------------
 async function getMovieFromDB(youtubeId) {
     const db = await openDB();
     const transaction = db.transaction(['movies'], 'readonly');
@@ -845,6 +918,7 @@ async function getMovieFromDB(youtubeId) {
     });
 }
 
+// ---------------------- Utilidades ----------------------
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/[&<>]/g, c => c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;');
@@ -853,8 +927,8 @@ function escapeHtml(str) {
 function formatDuration(duration) {
     if (!duration || duration === 'N/A') return 'Unknown';
     const match = duration.match(/PT(\d+H)?(\d+M)?(\d+S)?/);
-    const hours = (match[1] ? match[1].slice(0,-1) : 0);
-    const minutes = (match[2] ? match[2].slice(0,-1) : 0);
-    const seconds = (match[3] ? match[3].slice(0,-1) : 0);
-    return `${hours ? hours+':' : ''}${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+    const hours = (match[1] ? match[1].slice(0, -1) : 0);
+    const minutes = (match[2] ? match[2].slice(0, -1) : 0);
+    const seconds = (match[3] ? match[3].slice(0, -1) : 0);
+    return `${hours ? hours + ':' : ''}${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
