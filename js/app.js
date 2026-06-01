@@ -1987,15 +1987,19 @@ searchBtn.onclick = async () => {
     activeLanguageFilter = null;
     
     let query = searchInput.value.trim();
+    
+    if (!query) {
+        resultsGrid.innerHTML = '<div class="stats">Enter a search term (title, director, actor, or genre)</div>';
+        return;
+    }
+    
     let effectiveQuery = query;
     let customTermName = null;
-    let currentOrder = searchOrder;
     
-    // Si no hay query, usar "movie" y forzar orden por viewCount
-    if (!query) {
-        effectiveQuery = '';
-        currentOrder = 'viewCount';
+    if (searchOrder === 'viewCount') {
         customTermName = 'Most viewed';
+    } else if (searchOrder === 'rating') {
+        customTermName = 'Most rated';
     }
     
     // Obtener fechas del rango (opcional)
@@ -2021,12 +2025,12 @@ searchBtn.onclick = async () => {
         resultsGrid.innerHTML = '<div class="stats">Searching YouTube Movies...</div>';
         try {
             const channelId = selectedOption.id === 'plato_db' ? null : selectedOption.id;
-            const moviesFromAPI = await searchYouTube(effectiveQuery, channelId, currentOrder, searchDuration, searchCategoryFilter, publishedAfter, publishedBefore);
+            const moviesFromAPI = await searchYouTube(effectiveQuery, channelId, searchOrder, searchDuration, searchCategoryFilter, publishedAfter, publishedBefore);
             if (moviesFromAPI.length === 0) {
                 resultsGrid.innerHTML = '<div class="stats">No results found on YouTube Movies</div>';
                 return;
             }
-            const termToSave = customTermName ? customTermName : (query || effectiveQuery);
+            const termToSave = customTermName ? customTermName : query;
             for (const movie of moviesFromAPI) {
                 const searchTermLower = termToSave.toLowerCase();
                 const titleMatch = movie.title && movie.title.toLowerCase().includes(searchTermLower);
