@@ -431,7 +431,7 @@ function updateCollectionButtonText() {
         switch (collectionsSortBy) {
             case 'all':
                 if (iconSpan) iconSpan.textContent = 'join';
-                if (labelSpan) labelSpan.textContent = 'All';
+                if (labelSpan) labelSpan.textContent = 'All (Exact + Related)';
                 break;
             case 'directors':
                 if (iconSpan) iconSpan.textContent = 'person';
