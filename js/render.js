@@ -68,7 +68,8 @@ export function renderMovies(container, movies, title, source = 'main', currentS
         sorted = sortMovies(movies, currentSort);
     }
 
-    const isDateSort = (currentSort === 'date' && !isGrouped);
+    const isPublishedSort = (currentSort === 'published' && !isGrouped);
+    const isDateSavedSort = (currentSort === 'date' && !isGrouped);
     const isCollectionSort = (currentSort === 'collections');
 
     const sortOptions = [
@@ -121,7 +122,39 @@ export function renderMovies(container, movies, title, source = 'main', currentS
                 </div>
             </div>
         `).join('');
-    } else if (isDateSort && !isCollectionSort) {
+    } else if (isPublishedSort && !isCollectionSort) {
+        // Agrupar por fecha de publicación en YouTube
+        const todayKey = getLocalDateKey(new Date().toISOString());
+        const yesterdayDate = new Date();
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+        const yesterdayKey = getLocalDateKey(yesterdayDate.toISOString());
+        const groupsMap = new Map();
+        sorted.forEach(movie => {
+            if (!movie.publishedAt) return;
+            const key = getLocalDateKey(movie.publishedAt);
+            if (!groupsMap.has(key)) groupsMap.set(key, []);
+            groupsMap.get(key).push(movie);
+        });
+        const sortedGroups = Array.from(groupsMap.entries()).sort((a, b) => new Date(b[0]) - new Date(a[0]));
+        bodyHtml = sortedGroups.map(([dateKey, movieList]) => {
+            let label;
+            if (dateKey === todayKey) label = 'Today';
+            else if (dateKey === yesterdayKey) label = 'Yesterday';
+            else {
+                const [year, month, day] = dateKey.split('-');
+                const dateObj = new Date(year, month - 1, day);
+                label = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            }
+            return `
+                <div class="date-group">
+                    <div class="group-date">${label}</div>
+                    <div class="results-group">
+                        ${movieList.map(m => generateCard(m)).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } else if (isDateSavedSort && !isCollectionSort) {
         const todayKey = getLocalDateKey(new Date().toISOString());
         const yesterdayDate = new Date();
         yesterdayDate.setDate(yesterdayDate.getDate() - 1);

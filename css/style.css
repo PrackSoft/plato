@@ -719,8 +719,44 @@ body {
     cursor: pointer;
 }
 
+/* Search in panel */
+.search-in-container {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 8px;
+}
+
+.search-in-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: 16px;
+    cursor: pointer;
+}
+
+.search-filters-section {
+    padding: 8px 12px;
+}
+
 /* Date range pickers */
-#dateFrom, #dateTo {
+.date-range-container {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.date-input-wrapper {
+    flex: 1;
+}
+
+.date-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.date-input {
     width: 100%;
     padding: 6px 8px;
     background: var(--bg-card);
@@ -732,44 +768,18 @@ body {
     cursor: pointer;
 }
 
-#dateFrom:focus, #dateTo:focus {
+.date-input:focus {
     outline: 2px solid var(--accent-light);
     outline-offset: 2px;
     border-color: transparent;
 }
 
-#dateFrom::-webkit-calendar-picker-indicator,
-#dateTo::-webkit-calendar-picker-indicator {
+.date-input::-webkit-calendar-picker-indicator {
     filter: invert(0.8);
     cursor: pointer;
 }
 
-/* Date range pickers */
-#dateFrom, #dateTo {
-    width: 100%;
-    padding: 6px 8px;
-    background: var(--bg-card);
-    border: 1px solid var(--border-light);
-    color: var(--text-primary);
-    border-radius: 8px;
-    font-family: var(--font-family);
-    font-size: var(--font-size-small);
-    cursor: pointer;
-}
-
-#dateFrom:focus, #dateTo:focus {
-    outline: 2px solid var(--accent-light);
-    outline-offset: 2px;
-    border-color: transparent;
-}
-
-#dateFrom::-webkit-calendar-picker-indicator,
-#dateTo::-webkit-calendar-picker-indicator {
-    filter: invert(0.8);
-    cursor: pointer;
-}
-
-/* Radio buttons color */
+/* Radio buttons accent color */
 .radio-group input[type="radio"],
 #searchInYouTube,
 #searchInPlatoDB {

@@ -88,9 +88,7 @@ function buildSearchInPanel() {
 
     // Radio buttons para seleccionar origen de búsqueda (YouTube o Plato DB)
     const searchInContainer = document.createElement('div');
-    searchInContainer.style.padding = '8px 12px';
-    searchInContainer.style.borderBottom = '1px solid var(--border-color)';
-    searchInContainer.style.marginBottom = '8px';
+    searchInContainer.className = 'search-in-container';
     
     const youtubeRadio = document.createElement('input');
     youtubeRadio.type = 'radio';
@@ -108,11 +106,7 @@ function buildSearchInPanel() {
     
     const youtubeLabel = document.createElement('label');
     youtubeLabel.htmlFor = 'searchInYouTube';
-    youtubeLabel.style.display = 'inline-flex';
-    youtubeLabel.style.alignItems = 'center';
-    youtubeLabel.style.gap = '8px';
-    youtubeLabel.style.marginRight = '16px';
-    youtubeLabel.style.cursor = 'pointer';
+    youtubeLabel.className = 'search-in-label';
     youtubeLabel.appendChild(youtubeRadio);
     youtubeLabel.appendChild(document.createTextNode(' YouTube Free Movies'));
     
@@ -132,10 +126,7 @@ function buildSearchInPanel() {
     
     const platoDbLabel = document.createElement('label');
     platoDbLabel.htmlFor = 'searchInPlatoDB';
-    platoDbLabel.style.display = 'inline-flex';
-    platoDbLabel.style.alignItems = 'center';
-    platoDbLabel.style.gap = '8px';
-    platoDbLabel.style.cursor = 'pointer';
+    platoDbLabel.className = 'search-in-label';
     platoDbLabel.appendChild(platoDbRadio);
     platoDbLabel.appendChild(document.createTextNode(' Plato DB'));
     
@@ -145,43 +136,42 @@ function buildSearchInPanel() {
     
     // Contenido de YouTube Movies (filtros)
     const youtubeSection = document.createElement('div');
+    youtubeSection.className = 'search-filters-section';
     youtubeSection.innerHTML = `
-        <div style="padding: 8px 12px;">
-            <div class="settings-group">
-                <label class="settings-label">Content type:</label>
-                <div class="radio-group">
-                    <label><input type="radio" name="searchCategory" value="movies" ${searchCategoryFilter === 'movies' ? 'checked' : ''}> Include only movies</label>
-                    <label><input type="radio" name="searchCategory" value="all" ${searchCategoryFilter === 'all' ? 'checked' : ''}> Include non‑movies</label>
-                </div>
+        <div class="settings-group">
+            <label class="settings-label">Content type:</label>
+            <div class="radio-group">
+                <label><input type="radio" name="searchCategory" value="movies" ${searchCategoryFilter === 'movies' ? 'checked' : ''}> Include only movies</label>
+                <label><input type="radio" name="searchCategory" value="all" ${searchCategoryFilter === 'all' ? 'checked' : ''}> Include non‑movies</label>
             </div>
-            <div class="settings-group">
-                <label class="settings-label">Order by:</label>
-                <div class="radio-group">
-                    <label><input type="radio" name="searchOrder" value="relevance" ${searchOrder === 'relevance' ? 'checked' : ''}> Best match</label>
-                    <label><input type="radio" name="searchOrder" value="viewCount" ${searchOrder === 'viewCount' ? 'checked' : ''}> Most viewed</label>
-                    <label><input type="radio" name="searchOrder" value="rating" ${searchOrder === 'rating' ? 'checked' : ''}> Most liked</label>
-                </div>
+        </div>
+        <div class="settings-group">
+            <label class="settings-label">Order by:</label>
+            <div class="radio-group">
+                <label><input type="radio" name="searchOrder" value="relevance" ${searchOrder === 'relevance' ? 'checked' : ''}> Best match</label>
+                <label><input type="radio" name="searchOrder" value="viewCount" ${searchOrder === 'viewCount' ? 'checked' : ''}> Most viewed</label>
+                <label><input type="radio" name="searchOrder" value="rating" ${searchOrder === 'rating' ? 'checked' : ''}> Most liked</label>
             </div>
-            <div class="settings-group">
-                <label class="settings-label">Duration:</label>
-                <div class="radio-group">
-                    <label><input type="radio" name="searchDuration" value="long" ${searchDuration === 'long' ? 'checked' : ''}> Long (&gt;20 min)</label>
-                    <label><input type="radio" name="searchDuration" value="medium" ${searchDuration === 'medium' ? 'checked' : ''}> Medium (4-20 min)</label>
-                    <label><input type="radio" name="searchDuration" value="short" ${searchDuration === 'short' ? 'checked' : ''}> Short (&lt;4 min)</label>
-                    <label><input type="radio" name="searchDuration" value="any" ${searchDuration === 'any' ? 'checked' : ''}> Any duration</label>
-                </div>
+        </div>
+        <div class="settings-group">
+            <label class="settings-label">Duration:</label>
+            <div class="radio-group">
+                <label><input type="radio" name="searchDuration" value="long" ${searchDuration === 'long' ? 'checked' : ''}> Long (&gt;20 min)</label>
+                <label><input type="radio" name="searchDuration" value="medium" ${searchDuration === 'medium' ? 'checked' : ''}> Medium (4-20 min)</label>
+                <label><input type="radio" name="searchDuration" value="short" ${searchDuration === 'short' ? 'checked' : ''}> Short (&lt;4 min)</label>
+                <label><input type="radio" name="searchDuration" value="any" ${searchDuration === 'any' ? 'checked' : ''}> Any duration</label>
             </div>
-            <div class="settings-group">
-                <label class="settings-label">Date range (optional):</label>
-                <div style="display: flex; gap: 12px; margin-top: 8px;">
-                    <div style="flex: 1;">
-                        <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px;">From:</label>
-                        <input type="date" id="dateFrom" style="width: 100%; padding: 6px 8px; background: var(--bg-card); border: 1px solid var(--border-light); color: var(--text-primary); border-radius: 8px;">
-                    </div>
-                    <div style="flex: 1;">
-                        <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px;">To:</label>
-                        <input type="date" id="dateTo" style="width: 100%; padding: 6px 8px; background: var(--bg-card); border: 1px solid var(--border-light); color: var(--text-primary); border-radius: 8px;">
-                    </div>
+        </div>
+        <div class="settings-group">
+            <label class="settings-label">Date range (optional):</label>
+            <div class="date-range-container">
+                <div class="date-input-wrapper">
+                    <label class="date-label">From:</label>
+                    <input type="date" id="dateFrom" class="date-input">
+                </div>
+                <div class="date-input-wrapper">
+                    <label class="date-label">To:</label>
+                    <input type="date" id="dateTo" class="date-input">
                 </div>
             </div>
         </div>
