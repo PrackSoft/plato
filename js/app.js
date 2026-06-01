@@ -345,6 +345,7 @@ function buildCollectionDropdown() {
     if (!panel) return;
     
     const options = [
+        { value: 'all', label: 'All', icon: 'join' },
         { value: 'directors', label: 'Director', icon: 'person' },
         { value: 'actors', label: 'Actor', icon: 'group' },
         { value: 'genres', label: 'Genre', icon: 'theater_comedy' },
@@ -428,6 +429,10 @@ function updateCollectionButtonText() {
         if (labelSpan) labelSpan.textContent = 'Collection';
     } else {
         switch (collectionsSortBy) {
+            case 'all':
+                if (iconSpan) iconSpan.textContent = 'join';
+                if (labelSpan) labelSpan.textContent = 'All';
+                break;
             case 'directors':
                 if (iconSpan) iconSpan.textContent = 'person';
                 if (labelSpan) labelSpan.textContent = 'Director';
