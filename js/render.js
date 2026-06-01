@@ -59,6 +59,7 @@ export function renderMovies(container, movies, title, source = 'main', currentS
                     case 'mostCommented': return (parseInt(b.commentCount) || 0) - (parseInt(a.commentCount) || 0);
                     case 'watching': return (b.watching ? 1 : 0) - (a.watching ? 1 : 0);
                     case 'favorite': return (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0);
+                    case 'published': return new Date(b.publishedAt) - new Date(a.publishedAt);
                     default: return new Date(b.dateSaved) - new Date(a.dateSaved);
                 }
             });
@@ -72,6 +73,7 @@ export function renderMovies(container, movies, title, source = 'main', currentS
 
     const sortOptions = [
         { value: 'date', label: 'Date' },
+        { value: 'published', label: 'Premiere on YouTube' },
         { value: 'title', label: 'Title' },
         { value: 'channel', label: 'Channel' },
         { value: 'mostLiked', label: 'Most liked' },
@@ -202,6 +204,9 @@ function sortMovies(movies, sortBy) {
             break;
         case 'favorite':
             sorted.sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0));
+            break;
+        case 'published':
+            sorted.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
             break;
         case 'collections':
             break;
