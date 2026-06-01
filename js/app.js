@@ -2065,14 +2065,15 @@ searchBtn.onclick = async () => {
                     selfDeclaredMadeForKids: movie.selfDeclaredMadeForKids
                 });
                 
-                let yearValue = "Unknown year";
-                if (movie.publishedAt) {
-                    const year = new Date(movie.publishedAt).getFullYear();
-                    if (year && !isNaN(year)) {
-                        yearValue = year.toString();
-                    }
-                }
-                await addYear(movie.youtubeId, yearValue);
+                // ELIMINADO: ya no se llama a addYear() automáticamente
+                // let yearValue = "Unknown year";
+                // if (movie.publishedAt) {
+                //     const year = new Date(movie.publishedAt).getFullYear();
+                //     if (year && !isNaN(year)) {
+                //         yearValue = year.toString();
+                //     }
+                // }
+                // await addYear(movie.youtubeId, yearValue);
             }
             await refreshAvailableTerms();
             await refreshAvailableYear();
