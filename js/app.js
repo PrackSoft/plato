@@ -1989,17 +1989,13 @@ searchBtn.onclick = async () => {
     let query = searchInput.value.trim();
     let effectiveQuery = query;
     let customTermName = null;
+    let currentOrder = searchOrder;
     
-    // Si no hay query, usar "movie" como término por defecto
+    // Si no hay query, usar "movie" y forzar orden por viewCount
     if (!query) {
         effectiveQuery = 'movie';
-        if (searchOrder === 'viewCount') {
-            customTermName = 'Most viewed';
-        } else if (searchOrder === 'rating') {
-            customTermName = 'Most rated';
-        } else {
-            customTermName = 'Movie';
-        }
+        currentOrder = 'viewCount';
+        customTermName = 'Most viewed';
     }
     
     // Obtener fechas del rango (opcional)
@@ -2025,7 +2021,7 @@ searchBtn.onclick = async () => {
         resultsGrid.innerHTML = '<div class="stats">Searching YouTube Movies...</div>';
         try {
             const channelId = selectedOption.id === 'plato_db' ? null : selectedOption.id;
-            const moviesFromAPI = await searchYouTube(effectiveQuery, channelId, searchOrder, searchDuration, searchCategoryFilter, publishedAfter, publishedBefore);
+            const moviesFromAPI = await searchYouTube(effectiveQuery, channelId, currentOrder, searchDuration, searchCategoryFilter, publishedAfter, publishedBefore);
             if (moviesFromAPI.length === 0) {
                 resultsGrid.innerHTML = '<div class="stats">No results found on YouTube Movies</div>';
                 return;
