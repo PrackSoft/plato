@@ -1993,7 +1993,7 @@ searchBtn.onclick = async () => {
     
     // Si no hay query, usar "movie" y forzar orden por viewCount
     if (!query) {
-        effectiveQuery = 'movie';
+        effectiveQuery = '';
         currentOrder = 'viewCount';
         customTermName = 'Most viewed';
     }
