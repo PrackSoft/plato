@@ -1,11 +1,14 @@
+// ==================== CONSTANTES ====================
 const DB_NAME = 'PlatoDB';
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 const STORE_MOVIES = 'movies';
 const STORE_TRASH = 'trash';
 const STORE_EXTRA = 'movie_extra';
+const STORE_GLOBAL_TAGS = 'globalTags';
 
 let dbInstance = null;
 
+// ==================== ABRIR DB ====================
 export async function openDB() {
     if (dbInstance) return dbInstance;
     return new Promise((resolve, reject) => {
@@ -20,6 +23,7 @@ export async function openDB() {
             if (db.objectStoreNames.contains(STORE_MOVIES)) db.deleteObjectStore(STORE_MOVIES);
             if (db.objectStoreNames.contains(STORE_TRASH)) db.deleteObjectStore(STORE_TRASH);
             if (db.objectStoreNames.contains(STORE_EXTRA)) db.deleteObjectStore(STORE_EXTRA);
+            if (db.objectStoreNames.contains(STORE_GLOBAL_TAGS)) db.deleteObjectStore(STORE_GLOBAL_TAGS);
             
             const store = db.createObjectStore(STORE_MOVIES, { keyPath: 'youtubeId' });
             store.createIndex('by_dateSaved', 'dateSaved', { unique: false });
@@ -32,10 +36,12 @@ export async function openDB() {
             trashStore.createIndex('by_channelId', 'channelId', { unique: false });
             
             db.createObjectStore(STORE_EXTRA, { keyPath: 'youtubeId' });
+            db.createObjectStore(STORE_GLOBAL_TAGS, { keyPath: 'tagValue' });
         };
     });
 }
 
+// ==================== FUNCIONES EXISTENTES SIN CAMBIOS ====================
 export async function getAllMovies() {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readonly');
@@ -75,64 +81,6 @@ export async function getTrashMovies() {
             }
         };
         request.onerror = () => reject(request.error);
-    });
-}
-
-export async function saveMovie(movieData, searchTerm, isExact = true) {
-    const db = await openDB();
-    const transaction = db.transaction([STORE_MOVIES], 'readwrite');
-    const store = transaction.objectStore(STORE_MOVIES);
-    return new Promise((resolve, reject) => {
-        const getRequest = store.get(movieData.youtubeId);
-        getRequest.onsuccess = () => {
-            const existing = getRequest.result;
-            if (existing) {
-                let terms = existing.searchTerms || [];
-                const existingIndex = terms.findIndex(t => t.term === searchTerm);
-                if (existingIndex === -1) {
-                    terms.push({ term: searchTerm, exact: isExact });
-                } else {
-                    if (isExact) terms[existingIndex].exact = true;
-                }
-                const updated = {
-                    ...existing,
-                    searchTerms: terms,
-                    directors: existing.directors || [],
-                    actors: existing.actors || [],
-                    genres: existing.genres || [],
-                    years: existing.years || [],
-                    countries: existing.countries || [],
-                    languages: existing.languages || [],
-                    viewCount: movieData.viewCount ?? existing.viewCount,
-                    likeCount: movieData.likeCount ?? existing.likeCount,
-                    commentCount: movieData.commentCount ?? existing.commentCount,
-                    duration: movieData.duration ?? existing.duration,
-                    lastUpdated: new Date().toISOString()
-                };
-                const putRequest = store.put(updated);
-                putRequest.onsuccess = () => resolve(updated);
-                putRequest.onerror = () => reject(putRequest.error);
-            } else {
-                const newMovie = {
-                    ...movieData,
-                    searchTerms: searchTerm ? [{ term: searchTerm, exact: isExact }] : [],
-                    directors: [],
-                    actors: [],
-                    genres: [],
-                    years: [],
-                    countries: [],
-                    languages: [],
-                    watching: false,
-                    favorite: false,
-                    dateSaved: new Date().toISOString(),
-                    lastUpdated: new Date().toISOString()
-                };
-                const addRequest = store.add(newMovie);
-                addRequest.onsuccess = () => resolve(newMovie);
-                addRequest.onerror = () => reject(addRequest.error);
-            }
-        };
-        getRequest.onerror = () => reject(getRequest.error);
     });
 }
 
@@ -298,7 +246,229 @@ export async function toggleExact(youtubeId, term) {
     });
 }
 
-// ========== FUNCIONES PARA DIRECTORES (con sincronización a searchTerms) ==========
+export async function renameDirectorInAllMovies(oldName, newName) {
+    if (oldName === newName) return;
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.directors && movie.directors.includes(oldName)) {
+            movie.directors = movie.directors.map(d => d === oldName ? newName : d);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function renameActorInAllMovies(oldName, newName) {
+    if (oldName === newName) return;
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.actors && movie.actors.includes(oldName)) {
+            movie.actors = movie.actors.map(a => a === oldName ? newName : a);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function renameGenreInAllMovies(oldName, newName) {
+    if (oldName === newName) return;
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.genres && movie.genres.includes(oldName)) {
+            movie.genres = movie.genres.map(g => g === oldName ? newName : g);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function renameYearInAllMovies(oldYear, newYear) {
+    if (oldYear === newYear) return;
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.years && movie.years.includes(oldYear)) {
+            movie.years = movie.years.map(y => y === oldYear ? newYear : y);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function renameCountryInAllMovies(oldName, newName) {
+    if (oldName === newName) return;
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.countries && movie.countries.includes(oldName)) {
+            movie.countries = movie.countries.map(c => c === oldName ? newName : c);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function renameLanguageInAllMovies(oldName, newName) {
+    if (oldName === newName) return;
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.languages && movie.languages.includes(oldName)) {
+            movie.languages = movie.languages.map(l => l === oldName ? newName : l);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function deleteDirectorFromAllMovies(directorName) {
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.directors && movie.directors.includes(directorName)) {
+            movie.directors = movie.directors.filter(d => d !== directorName);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function deleteActorFromAllMovies(actorName) {
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.actors && movie.actors.includes(actorName)) {
+            movie.actors = movie.actors.filter(a => a !== actorName);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function deleteGenreFromAllMovies(genreName) {
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.genres && movie.genres.includes(genreName)) {
+            movie.genres = movie.genres.filter(g => g !== genreName);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function deleteYearFromAllMovies(yearValue) {
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.years && movie.years.includes(yearValue)) {
+            movie.years = movie.years.filter(y => y !== yearValue);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function deleteCountryFromAllMovies(countryName) {
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.countries && movie.countries.includes(countryName)) {
+            movie.countries = movie.countries.filter(c => c !== countryName);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+export async function deleteLanguageFromAllMovies(languageName) {
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.languages && movie.languages.includes(languageName)) {
+            movie.languages = movie.languages.filter(l => l !== languageName);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+}
+
+// ==================== FUNCIONES EXISTENTES DE METADATOS (SIN MODIFICAR AÚN) ====================
 export async function addDirector(youtubeId, directorName) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
@@ -308,13 +478,10 @@ export async function addDirector(youtubeId, directorName) {
         getRequest.onsuccess = () => {
             const movie = getRequest.result;
             if (movie) {
-                // Agregar director
                 if (!movie.directors) movie.directors = [];
                 if (!movie.directors.includes(directorName)) {
                     movie.directors.push(directorName);
                 }
-                
-                // Sincronizar searchTerms: asegurar que exista el término exacto
                 if (!movie.searchTerms) movie.searchTerms = [];
                 const termIndex = movie.searchTerms.findIndex(t => t.term === directorName);
                 if (termIndex === -1) {
@@ -322,7 +489,6 @@ export async function addDirector(youtubeId, directorName) {
                 } else {
                     movie.searchTerms[termIndex].exact = true;
                 }
-                
                 movie.lastUpdated = new Date().toISOString();
                 const putRequest = store.put(movie);
                 putRequest.onsuccess = () => resolve(movie.directors);
@@ -361,7 +527,6 @@ export async function removeDirector(youtubeId, directorName) {
     });
 }
 
-// ========== FUNCIONES PARA ACTORES (con sincronización a searchTerms) ==========
 export async function addActor(youtubeId, actorName) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
@@ -375,7 +540,6 @@ export async function addActor(youtubeId, actorName) {
                 if (!movie.actors.includes(actorName)) {
                     movie.actors.push(actorName);
                 }
-                
                 if (!movie.searchTerms) movie.searchTerms = [];
                 const termIndex = movie.searchTerms.findIndex(t => t.term === actorName);
                 if (termIndex === -1) {
@@ -383,7 +547,6 @@ export async function addActor(youtubeId, actorName) {
                 } else {
                     movie.searchTerms[termIndex].exact = true;
                 }
-                
                 movie.lastUpdated = new Date().toISOString();
                 const putRequest = store.put(movie);
                 putRequest.onsuccess = () => resolve(movie.actors);
@@ -422,7 +585,6 @@ export async function removeActor(youtubeId, actorName) {
     });
 }
 
-// ========== FUNCIONES PARA GÉNEROS (con sincronización a searchTerms) ==========
 export async function addGenre(youtubeId, genreName) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
@@ -436,7 +598,6 @@ export async function addGenre(youtubeId, genreName) {
                 if (!movie.genres.includes(genreName)) {
                     movie.genres.push(genreName);
                 }
-                
                 if (!movie.searchTerms) movie.searchTerms = [];
                 const termIndex = movie.searchTerms.findIndex(t => t.term === genreName);
                 if (termIndex === -1) {
@@ -444,7 +605,6 @@ export async function addGenre(youtubeId, genreName) {
                 } else {
                     movie.searchTerms[termIndex].exact = true;
                 }
-                
                 movie.lastUpdated = new Date().toISOString();
                 const putRequest = store.put(movie);
                 putRequest.onsuccess = () => resolve(movie.genres);
@@ -483,7 +643,6 @@ export async function removeGenre(youtubeId, genreName) {
     });
 }
 
-// ========== FUNCIONES PARA AÑOS (con sincronización a searchTerms) ==========
 export async function addYear(youtubeId, yearValue) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
@@ -497,7 +656,6 @@ export async function addYear(youtubeId, yearValue) {
                 if (!movie.years.includes(yearValue)) {
                     movie.years.push(yearValue);
                 }
-                
                 if (!movie.searchTerms) movie.searchTerms = [];
                 const termIndex = movie.searchTerms.findIndex(t => t.term === yearValue);
                 if (termIndex === -1) {
@@ -505,7 +663,6 @@ export async function addYear(youtubeId, yearValue) {
                 } else {
                     movie.searchTerms[termIndex].exact = true;
                 }
-                
                 movie.lastUpdated = new Date().toISOString();
                 const putRequest = store.put(movie);
                 putRequest.onsuccess = () => resolve(movie.years);
@@ -544,7 +701,6 @@ export async function removeYear(youtubeId, yearValue) {
     });
 }
 
-// ========== FUNCIONES PARA PAÍSES (con sincronización a searchTerms) ==========
 export async function addCountry(youtubeId, countryName) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
@@ -558,7 +714,6 @@ export async function addCountry(youtubeId, countryName) {
                 if (!movie.countries.includes(countryName)) {
                     movie.countries.push(countryName);
                 }
-                
                 if (!movie.searchTerms) movie.searchTerms = [];
                 const termIndex = movie.searchTerms.findIndex(t => t.term === countryName);
                 if (termIndex === -1) {
@@ -566,7 +721,6 @@ export async function addCountry(youtubeId, countryName) {
                 } else {
                     movie.searchTerms[termIndex].exact = true;
                 }
-                
                 movie.lastUpdated = new Date().toISOString();
                 const putRequest = store.put(movie);
                 putRequest.onsuccess = () => resolve(movie.countries);
@@ -605,7 +759,6 @@ export async function removeCountry(youtubeId, countryName) {
     });
 }
 
-// ========== FUNCIONES PARA IDIOMAS (con sincronización a searchTerms) ==========
 export async function addLanguage(youtubeId, languageName) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
@@ -619,7 +772,6 @@ export async function addLanguage(youtubeId, languageName) {
                 if (!movie.languages.includes(languageName)) {
                     movie.languages.push(languageName);
                 }
-                
                 if (!movie.searchTerms) movie.searchTerms = [];
                 const termIndex = movie.searchTerms.findIndex(t => t.term === languageName);
                 if (termIndex === -1) {
@@ -627,7 +779,6 @@ export async function addLanguage(youtubeId, languageName) {
                 } else {
                     movie.searchTerms[termIndex].exact = true;
                 }
-                
                 movie.lastUpdated = new Date().toISOString();
                 const putRequest = store.put(movie);
                 putRequest.onsuccess = () => resolve(movie.languages);
@@ -660,6 +811,181 @@ export async function removeLanguage(youtubeId, languageName) {
                 }
             } else {
                 reject(new Error('Movie not found'));
+            }
+        };
+        getRequest.onerror = () => reject(getRequest.error);
+    });
+}
+
+// ==================== FUNCIONES NUEVAS PARA GLOBAL TAGS ====================
+export async function addToGlobalTag(tagValue, movieId) {
+    if (!tagValue || !movieId) return;
+    const db = await openDB();
+    const transaction = db.transaction([STORE_GLOBAL_TAGS], 'readwrite');
+    const store = transaction.objectStore(STORE_GLOBAL_TAGS);
+    
+    return new Promise((resolve, reject) => {
+        const getRequest = store.get(tagValue);
+        getRequest.onsuccess = () => {
+            const existing = getRequest.result;
+            if (existing) {
+                let ids = existing.movieIds ? existing.movieIds.split(',') : [];
+                if (!ids.includes(movieId)) {
+                    ids.push(movieId);
+                    existing.movieIds = ids.join(',');
+                    existing.updatedAt = new Date().toISOString();
+                    const putRequest = store.put(existing);
+                    putRequest.onsuccess = () => resolve();
+                    putRequest.onerror = () => reject(putRequest.error);
+                } else {
+                    resolve();
+                }
+            } else {
+                const newTag = {
+                    tagValue: tagValue,
+                    movieIds: movieId,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                const addRequest = store.add(newTag);
+                addRequest.onsuccess = () => resolve();
+                addRequest.onerror = () => reject(addRequest.error);
+            }
+        };
+        getRequest.onerror = () => reject(getRequest.error);
+    });
+}
+
+export async function removeFromGlobalTag(tagValue, movieId) {
+    if (!tagValue || !movieId) return;
+    const db = await openDB();
+    const transaction = db.transaction([STORE_GLOBAL_TAGS], 'readwrite');
+    const store = transaction.objectStore(STORE_GLOBAL_TAGS);
+    
+    return new Promise((resolve, reject) => {
+        const getRequest = store.get(tagValue);
+        getRequest.onsuccess = () => {
+            const existing = getRequest.result;
+            if (existing && existing.movieIds) {
+                let ids = existing.movieIds.split(',');
+                ids = ids.filter(id => id !== movieId);
+                if (ids.length === 0) {
+                    const deleteRequest = store.delete(tagValue);
+                    deleteRequest.onsuccess = () => resolve();
+                    deleteRequest.onerror = () => reject(deleteRequest.error);
+                } else {
+                    existing.movieIds = ids.join(',');
+                    existing.updatedAt = new Date().toISOString();
+                    const putRequest = store.put(existing);
+                    putRequest.onsuccess = () => resolve();
+                    putRequest.onerror = () => reject(putRequest.error);
+                }
+            } else {
+                resolve();
+            }
+        };
+        getRequest.onerror = () => reject(getRequest.error);
+    });
+}
+
+export async function getGlobalTags() {
+    const db = await openDB();
+    const transaction = db.transaction([STORE_GLOBAL_TAGS], 'readonly');
+    const store = transaction.objectStore(STORE_GLOBAL_TAGS);
+    
+    return new Promise((resolve, reject) => {
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = () => reject(request.error);
+    });
+}
+
+export async function editGlobalTag(oldTagValue, newTagValue) {
+    if (!oldTagValue || !newTagValue || oldTagValue === newTagValue) return;
+    const db = await openDB();
+    const transaction = db.transaction([STORE_GLOBAL_TAGS], 'readwrite');
+    const store = transaction.objectStore(STORE_GLOBAL_TAGS);
+    
+    return new Promise((resolve, reject) => {
+        const getRequest = store.get(oldTagValue);
+        getRequest.onsuccess = () => {
+            const tag = getRequest.result;
+            if (tag) {
+                tag.tagValue = newTagValue;
+                tag.updatedAt = new Date().toISOString();
+                store.delete(oldTagValue);
+                const addRequest = store.add(tag);
+                addRequest.onsuccess = () => resolve();
+                addRequest.onerror = () => reject(addRequest.error);
+            } else {
+                resolve();
+            }
+        };
+        getRequest.onerror = () => reject(getRequest.error);
+    });
+}
+
+// ==================== saveMovie MODIFICADA ====================
+export async function saveMovie(movieData, searchTerm, isExact = true) {
+    const db = await openDB();
+    const transaction = db.transaction([STORE_MOVIES], 'readwrite');
+    const store = transaction.objectStore(STORE_MOVIES);
+    return new Promise((resolve, reject) => {
+        const getRequest = store.get(movieData.youtubeId);
+        getRequest.onsuccess = async () => {
+            const existing = getRequest.result;
+            if (existing) {
+                let terms = existing.searchTerms || [];
+                const existingIndex = terms.findIndex(t => t.term === searchTerm);
+                if (existingIndex === -1) {
+                    terms.push({ term: searchTerm, exact: isExact });
+                } else {
+                    if (isExact) terms[existingIndex].exact = true;
+                }
+                const updated = {
+                    ...existing,
+                    searchTerms: terms,
+                    directors: existing.directors || [],
+                    actors: existing.actors || [],
+                    genres: existing.genres || [],
+                    years: existing.years || [],
+                    countries: existing.countries || [],
+                    languages: existing.languages || [],
+                    viewCount: movieData.viewCount ?? existing.viewCount,
+                    likeCount: movieData.likeCount ?? existing.likeCount,
+                    commentCount: movieData.commentCount ?? existing.commentCount,
+                    duration: movieData.duration ?? existing.duration,
+                    lastUpdated: new Date().toISOString()
+                };
+                const putRequest = store.put(updated);
+                putRequest.onsuccess = async () => {
+                    await addToGlobalTag(searchTerm, movieData.youtubeId);
+                    resolve(updated);
+                };
+                putRequest.onerror = () => reject(putRequest.error);
+            } else {
+                const newMovie = {
+                    ...movieData,
+                    searchTerms: searchTerm ? [{ term: searchTerm, exact: isExact }] : [],
+                    directors: [],
+                    actors: [],
+                    genres: [],
+                    years: [],
+                    countries: [],
+                    languages: [],
+                    watching: false,
+                    favorite: false,
+                    dateSaved: new Date().toISOString(),
+                    lastUpdated: new Date().toISOString()
+                };
+                const addRequest = store.add(newMovie);
+                addRequest.onsuccess = async () => {
+                    if (searchTerm) {
+                        await addToGlobalTag(searchTerm, movieData.youtubeId);
+                    }
+                    resolve(newMovie);
+                };
+                addRequest.onerror = () => reject(addRequest.error);
             }
         };
         getRequest.onerror = () => reject(getRequest.error);
