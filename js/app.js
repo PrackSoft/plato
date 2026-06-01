@@ -1990,16 +1990,15 @@ searchBtn.onclick = async () => {
     let effectiveQuery = query;
     let customTermName = null;
     
+    // Si no hay query, usar "movie" como término por defecto
     if (!query) {
+        effectiveQuery = 'movie';
         if (searchOrder === 'viewCount') {
-            effectiveQuery = 'movie';
             customTermName = 'Most viewed';
         } else if (searchOrder === 'rating') {
-            effectiveQuery = 'movie';
             customTermName = 'Most rated';
         } else {
-            resultsGrid.innerHTML = '<div class="stats">Enter a search term</div>';
-            return;
+            customTermName = 'Movie';
         }
     }
     
