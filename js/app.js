@@ -560,20 +560,47 @@ function renderGlobalTagsBar() {
 if (toggleGlobalTagsBtn && globalTagsBar) {
     const tagsIcon = toggleGlobalTagsBtn.querySelector('.material-symbols-outlined');
     
+    // Asegurar clase inicial
+    toggleGlobalTagsBtn.classList.add('btn-secondary');
+    
     toggleGlobalTagsBtn.addEventListener('click', async () => {
+        // Si hay otros filtros activos (Watching, Favorites, Trash, Collection), desactivarlos
+        if (activeWatchingFilter || activeFavoriteFilter || activeTrashFilter || activeCollectionFilter) {
+            activeWatchingFilter = false;
+            activeFavoriteFilter = false;
+            activeTrashFilter = false;
+            activeCollectionFilter = false;
+            updateFilterButtonsUI();
+            updateCollectionButtonText();
+            
+            // Restaurar Related si corresponde
+            if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
+                activeRelatedFilter = savedRelatedFilter;
+                updateRelatedButtonText();
+            }
+        }
+        
         globalTagsActive = !globalTagsActive;
         
         if (globalTagsActive) {
             await refreshGlobalTags();
             globalTagsBar.classList.remove('hidden');
-            toggleGlobalTagsBtn.classList.add('active');
+            toggleGlobalTagsBtn.classList.remove('btn-secondary');
+            toggleGlobalTagsBtn.classList.add('btn-primary');
             if (tagsIcon) tagsIcon.textContent = 'sell';
+            // Desactivar términos bar si estaba activo
+            if (termsBar && !termsBar.classList.contains('hidden')) {
+                termsBar.classList.add('hidden');
+                if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
+            }
         } else {
             globalTagsBar.classList.add('hidden');
-            toggleGlobalTagsBtn.classList.remove('active');
+            toggleGlobalTagsBtn.classList.remove('btn-primary');
+            toggleGlobalTagsBtn.classList.add('btn-secondary');
+            if (tagsIcon) tagsIcon.textContent = 'sell';
             activeGlobalTagFilter = null;
-            loadAndDisplayAll();
         }
+        loadAndDisplayAll();
     });
 }
 
