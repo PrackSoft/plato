@@ -20,6 +20,39 @@ function getLocalDateKey(utcDateString) {
     return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
 }
 
+// Función de ordenamiento unificada
+function sortMovies(movies, sortBy) {
+    const sorted = [...movies];
+    switch (sortBy) {
+        case 'title':
+            sorted.sort((a, b) => a.title.localeCompare(b.title));
+            break;
+        case 'channel':
+            sorted.sort((a, b) => a.channelTitle.localeCompare(b.channelTitle));
+            break;
+        case 'mostLiked':
+            sorted.sort((a, b) => (parseInt(b.likeCount) || 0) - (parseInt(a.likeCount) || 0));
+            break;
+        case 'mostCommented':
+            sorted.sort((a, b) => (parseInt(b.commentCount) || 0) - (parseInt(a.commentCount) || 0));
+            break;
+        case 'watching':
+            sorted.sort((a, b) => (b.watching ? 1 : 0) - (a.watching ? 1 : 0));
+            break;
+        case 'favorite':
+            sorted.sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0));
+            break;
+        case 'published':
+            sorted.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+            break;
+        case 'collections':
+            break;
+        default:
+            sorted.sort((a, b) => new Date(b.dateSaved) - new Date(a.dateSaved));
+    }
+    return sorted;
+}
+
 export function renderMovies(container, movies, title, source = 'main', currentSort = 'date', onSortChange = null, groupBy = null) {
     if (!movies.length) {
         container.innerHTML = `<div class="stats">No movies ${source === 'trash' ? 'in trash' : 'saved yet'}.</div>`;
@@ -49,21 +82,20 @@ export function renderMovies(container, movies, title, source = 'main', currentS
         }
         // Ordenar grupos alfabéticamente
         groups = Array.from(groupMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-        // Dentro de cada grupo, ordenar según currentSort
+        // Dentro de cada grupo, ordenar usando la misma función sortMovies
         for (const [key, movieList] of groups) {
-            movieList.sort((a, b) => {
-                switch (currentSort) {
-                    case 'title': return a.title.localeCompare(b.title);
-                    case 'channel': return a.channelTitle.localeCompare(b.channelTitle);
-                    case 'mostLiked': return (parseInt(b.likeCount) || 0) - (parseInt(a.likeCount) || 0);
-                    case 'mostCommented': return (parseInt(b.commentCount) || 0) - (parseInt(a.commentCount) || 0);
-                    case 'watching': return (b.watching ? 1 : 0) - (a.watching ? 1 : 0);
-                    case 'favorite': return (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0);
-                    case 'published': return new Date(b.publishedAt) - new Date(a.publishedAt);
-                    default: return new Date(b.dateSaved) - new Date(a.dateSaved);
-                }
-            });
+            const sortedList = sortMovies(movieList, currentSort);
+            groups = groups.map(([gKey, gList]) => 
+                gKey === key ? [gKey, sortedList] : [gKey, gList]
+            );
         }
+        // Reconstruir groups después del ordenamiento
+        groups = Array.from(groupMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+        for (const [key, movieList] of groups) {
+            const sortedList = sortMovies(movieList, currentSort);
+            groupMap.set(key, sortedList);
+        }
+        groups = Array.from(groupMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
     } else {
         sorted = sortMovies(movies, currentSort);
     }
@@ -215,36 +247,4 @@ export function renderMovies(container, movies, title, source = 'main', currentS
             };
         }
     });
-}
-
-function sortMovies(movies, sortBy) {
-    const sorted = [...movies];
-    switch (sortBy) {
-        case 'title':
-            sorted.sort((a, b) => a.title.localeCompare(b.title));
-            break;
-        case 'channel':
-            sorted.sort((a, b) => a.channelTitle.localeCompare(b.channelTitle));
-            break;
-        case 'mostLiked':
-            sorted.sort((a, b) => (parseInt(b.likeCount) || 0) - (parseInt(a.likeCount) || 0));
-            break;
-        case 'mostCommented':
-            sorted.sort((a, b) => (parseInt(b.commentCount) || 0) - (parseInt(a.commentCount) || 0));
-            break;
-        case 'watching':
-            sorted.sort((a, b) => (b.watching ? 1 : 0) - (a.watching ? 1 : 0));
-            break;
-        case 'favorite':
-            sorted.sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0));
-            break;
-        case 'published':
-            sorted.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
-            break;
-        case 'collections':
-            break;
-        default:
-            sorted.sort((a, b) => new Date(b.dateSaved) - new Date(a.dateSaved));
-    }
-    return sorted;
 }
