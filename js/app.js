@@ -82,11 +82,10 @@ function closePanelWithDelay(panel) {
     setTimeout(() => panel.classList.add('hidden'), 150);
 }
 
-// ---------------------- Build Search In panel (con filtros integrados y búsqueda por rango de fechas) ----------------------
+// ---------------------- Build Search In panel (con filtros integrados y rango de fechas opcional) ----------------------
 function buildSearchInPanel() {
     searchInPanel.innerHTML = '';
 
-    // Opción 1: YouTube Free Movies
     const youtubeSection = document.createElement('div');
     youtubeSection.innerHTML = `
         <div class="dropdown-header">YouTube Free Movies</div>
@@ -115,17 +114,8 @@ function buildSearchInPanel() {
                     <label><input type="radio" name="searchDuration" value="any" ${searchDuration === 'any' ? 'checked' : ''}> Any duration</label>
                 </div>
             </div>
-        </div>
-    `;
-    searchInPanel.appendChild(youtubeSection);
-
-    // Opción 2: Date range search
-    const dateRangeSection = document.createElement('div');
-    dateRangeSection.innerHTML = `
-        <div class="dropdown-header">Date range search</div>
-        <div style="padding: 8px 12px;">
             <div class="settings-group">
-                <label class="settings-label">Published on YouTube between:</label>
+                <label class="settings-label">Date range (optional):</label>
                 <div style="display: flex; gap: 12px; margin-top: 8px;">
                     <div style="flex: 1;">
                         <label style="display: block; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px;">From:</label>
@@ -138,15 +128,16 @@ function buildSearchInPanel() {
                 </div>
             </div>
         </div>
+        <div class="dropdown-header" style="margin-top: 8px;">Plato DB</div>
     `;
-    searchInPanel.appendChild(dateRangeSection);
+    searchInPanel.appendChild(youtubeSection);
 
-    // Opción 3: Plato DB
     const platoDbLabel = document.createElement('label');
     const platoDbRadio = document.createElement('input');
     platoDbRadio.type = 'radio';
     platoDbRadio.name = 'searchIn';
     platoDbRadio.value = 'plato_db';
+    platoDbRadio.checked = (currentSearchOptionId === 'plato_db');
     platoDbRadio.addEventListener('change', () => {
         if (platoDbRadio.checked) {
             currentSearchOptionId = 'plato_db';
@@ -158,11 +149,12 @@ function buildSearchInPanel() {
     platoDbLabel.appendChild(document.createTextNode(' Plato DB'));
     searchInPanel.appendChild(platoDbLabel);
 
-    // Radios para seleccionar YouTube y Date range
+    // Radio para YouTube (si no está seleccionado Plato DB)
     const youtubeRadio = document.createElement('input');
     youtubeRadio.type = 'radio';
     youtubeRadio.name = 'searchIn';
     youtubeRadio.value = 'youtube';
+    youtubeRadio.checked = (currentSearchOptionId !== 'plato_db');
     youtubeRadio.addEventListener('change', () => {
         if (youtubeRadio.checked) {
             currentSearchOptionId = 'UCuVPpxrm2VAgpH3Ktln4HXg';
@@ -171,35 +163,13 @@ function buildSearchInPanel() {
         }
     });
     
-    const dateRangeRadio = document.createElement('input');
-    dateRangeRadio.type = 'radio';
-    dateRangeRadio.name = 'searchIn';
-    dateRangeRadio.value = 'date_range';
-    dateRangeRadio.addEventListener('change', () => {
-        if (dateRangeRadio.checked) {
-            currentSearchOptionId = 'date_range';
-            updateSearchInButtonText();
-            closePanelWithDelay(searchInPanel);
-        }
-    });
-    
-    // Insertar radios al principio del panel
     const youtubeRadioLabel = document.createElement('label');
     youtubeRadioLabel.style.borderBottom = '1px solid var(--border-color)';
     youtubeRadioLabel.style.marginBottom = '8px';
     youtubeRadioLabel.style.paddingBottom = '8px';
     youtubeRadioLabel.appendChild(youtubeRadio);
     youtubeRadioLabel.appendChild(document.createTextNode(' YouTube Free Movies'));
-    
-    const dateRangeRadioLabel = document.createElement('label');
-    dateRangeRadioLabel.style.borderBottom = '1px solid var(--border-color)';
-    dateRangeRadioLabel.style.marginBottom = '8px';
-    dateRangeRadioLabel.style.paddingBottom = '8px';
-    dateRangeRadioLabel.appendChild(dateRangeRadio);
-    dateRangeRadioLabel.appendChild(document.createTextNode(' Date range search'));
-    
-    searchInPanel.insertBefore(dateRangeRadioLabel, searchInPanel.firstChild);
-    searchInPanel.insertBefore(youtubeRadioLabel, dateRangeRadioLabel);
+    searchInPanel.insertBefore(youtubeRadioLabel, searchInPanel.firstChild);
 
     const categoryRadios = searchInPanel.querySelectorAll('input[name="searchCategory"]');
     categoryRadios.forEach(radio => {
@@ -220,26 +190,11 @@ function buildSearchInPanel() {
         });
     });
 
-    // Sincronizar radio seleccionado con currentSearchOptionId
-    if (currentSearchOptionId === 'plato_db') {
-        platoDbRadio.checked = true;
-    } else if (currentSearchOptionId === 'date_range') {
-        dateRangeRadio.checked = true;
-    } else {
-        youtubeRadio.checked = true;
-    }
-
     function updateSearchInButtonText() {
         if (currentSearchOptionId === 'plato_db') {
             searchInBtn.innerHTML = `
                 <span class="material-symbols-outlined">storage</span>
                 Plato DB
-                <span class="material-symbols-outlined">arrow_drop_down</span>
-            `;
-        } else if (currentSearchOptionId === 'date_range') {
-            searchInBtn.innerHTML = `
-                <span class="material-symbols-outlined">date_range</span>
-                Date range
                 <span class="material-symbols-outlined">arrow_drop_down</span>
             `;
         } else {
@@ -2018,7 +1973,6 @@ searchBtn.onclick = async () => {
         activeCollectionFilter = false;
         updateFilterButtonsUI();
         
-        // Restaurar Related al salir de Watching/Favorites/Trash
         if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
             activeRelatedFilter = savedRelatedFilter;
             updateRelatedButtonText();
@@ -2049,79 +2003,20 @@ searchBtn.onclick = async () => {
         }
     }
     
-    // Manejar Date range search
-    if (currentSearchOptionId === 'date_range') {
-        const dateFrom = document.getElementById('dateFrom')?.value;
-        const dateTo = document.getElementById('dateTo')?.value;
-        
-        if (!dateFrom && !dateTo) {
-            resultsGrid.innerHTML = '<div class="stats">Please select at least one date (From or To) for date range search</div>';
-            return;
-        }
-        
-        // Convertir a formato ISO 8601 requerido por YouTube API (UTC)
-        let publishedAfter = null;
-        let publishedBefore = null;
-        
-        if (dateFrom) {
-            publishedAfter = new Date(dateFrom).toISOString();
-        }
-        if (dateTo) {
-            // Para incluir todo el día, sumar 23:59:59
-            const endDate = new Date(dateTo);
-            endDate.setHours(23, 59, 59, 999);
-            publishedBefore = endDate.toISOString();
-        }
-        
-        resultsGrid.innerHTML = '<div class="stats">Searching YouTube by date range...</div>';
-        try {
-            const moviesFromAPI = await searchYouTube(effectiveQuery, null, 'relevance', 'any', 'movies', publishedAfter, publishedBefore);
-            if (moviesFromAPI.length === 0) {
-                resultsGrid.innerHTML = '<div class="stats">No results found in this date range</div>';
-                return;
-            }
-            const termToSave = customTermName ? customTermName : (query || effectiveQuery);
-            for (const movie of moviesFromAPI) {
-                const searchTermLower = termToSave.toLowerCase();
-                const titleMatch = movie.title && movie.title.toLowerCase().includes(searchTermLower);
-                const descMatch = movie.description && movie.description.toLowerCase().includes(searchTermLower);
-                const tagsMatch = movie.tags && Array.isArray(movie.tags) && movie.tags.some(tag => tag.toLowerCase().includes(searchTermLower));
-                const isExact = titleMatch || descMatch || tagsMatch;
-                
-                await saveMovie(movie, termToSave, isExact);
-                await saveExtraInfo(movie.youtubeId, {
-                    categoryId: movie.categoryId,
-                    defaultLanguage: movie.defaultLanguage,
-                    defaultAudioLanguage: movie.defaultAudioLanguage,
-                    dimension: movie.dimension,
-                    definition: movie.definition,
-                    caption: movie.caption,
-                    licensedContent: movie.licensedContent,
-                    projection: movie.projection,
-                    publicStatsViewable: movie.publicStatsViewable,
-                    madeForKids: movie.madeForKids,
-                    selfDeclaredMadeForKids: movie.selfDeclaredMadeForKids
-                });
-                
-                // Extraer año de publishedAt o usar "Unknown year"
-                let yearValue = "Unknown year";
-                if (movie.publishedAt) {
-                    const year = new Date(movie.publishedAt).getFullYear();
-                    if (year && !isNaN(year)) {
-                        yearValue = year.toString();
-                    }
-                }
-                await addYear(movie.youtubeId, yearValue);
-            }
-            await refreshAvailableTerms();
-            await refreshAvailableYear();
-            await loadAndDisplayAll();
-            searchInput.value = '';
-        } catch (err) {
-            console.error(err);
-            resultsGrid.innerHTML = `<div class="stats">Error: ${err.message}</div>`;
-        }
-        return;
+    // Obtener fechas del rango (opcional)
+    const dateFrom = document.getElementById('dateFrom')?.value;
+    const dateTo = document.getElementById('dateTo')?.value;
+    
+    let publishedAfter = null;
+    let publishedBefore = null;
+    
+    if (dateFrom) {
+        publishedAfter = new Date(dateFrom).toISOString();
+    }
+    if (dateTo) {
+        const endDate = new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        publishedBefore = endDate.toISOString();
     }
     
     const selectedOption = SEARCH_OPTIONS.find(opt => opt.id === currentSearchOptionId);
@@ -2131,7 +2026,7 @@ searchBtn.onclick = async () => {
         resultsGrid.innerHTML = '<div class="stats">Searching YouTube Movies...</div>';
         try {
             const channelId = selectedOption.id === 'plato_db' ? null : selectedOption.id;
-            const moviesFromAPI = await searchYouTube(effectiveQuery, channelId, searchOrder, searchDuration, searchCategoryFilter);
+            const moviesFromAPI = await searchYouTube(effectiveQuery, channelId, searchOrder, searchDuration, searchCategoryFilter, publishedAfter, publishedBefore);
             if (moviesFromAPI.length === 0) {
                 resultsGrid.innerHTML = '<div class="stats">No results found on YouTube Movies</div>';
                 return;
@@ -2159,7 +2054,6 @@ searchBtn.onclick = async () => {
                     selfDeclaredMadeForKids: movie.selfDeclaredMadeForKids
                 });
                 
-                // Extraer año de publishedAt o usar "Unknown year"
                 let yearValue = "Unknown year";
                 if (movie.publishedAt) {
                     const year = new Date(movie.publishedAt).getFullYear();
@@ -2179,7 +2073,20 @@ searchBtn.onclick = async () => {
         }
     } else {
         resultsGrid.innerHTML = '<div class="stats">Searching in Plato DB...</div>';
-        const allMovies = await getAllMovies();
+        let allMovies = await getAllMovies();
+        
+        // Filtrar por rango de fechas si está presente
+        if (publishedAfter || publishedBefore) {
+            allMovies = allMovies.filter(movie => {
+                if (!movie.publishedAt) return false;
+                const publishDate = new Date(movie.publishedAt);
+                
+                if (publishedAfter && publishDate < new Date(publishedAfter)) return false;
+                if (publishedBefore && publishDate > new Date(publishedBefore)) return false;
+                return true;
+            });
+        }
+        
         const lowerQuery = effectiveQuery.toLowerCase();
         const filtered = allMovies.filter(movie => {
             const titleMatch = movie.title.toLowerCase().includes(lowerQuery);

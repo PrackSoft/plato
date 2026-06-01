@@ -744,6 +744,31 @@ body {
     cursor: pointer;
 }
 
+/* Date range pickers */
+#dateFrom, #dateTo {
+    width: 100%;
+    padding: 6px 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    color: var(--text-primary);
+    border-radius: 8px;
+    font-family: var(--font-family);
+    font-size: var(--font-size-small);
+    cursor: pointer;
+}
+
+#dateFrom:focus, #dateTo:focus {
+    outline: 2px solid var(--accent-light);
+    outline-offset: 2px;
+    border-color: transparent;
+}
+
+#dateFrom::-webkit-calendar-picker-indicator,
+#dateTo::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
+    cursor: pointer;
+}
+
 @media (max-width: 768px) {
     .top-controls {
         flex-direction: column;
