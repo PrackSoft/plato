@@ -769,6 +769,13 @@ body {
     cursor: pointer;
 }
 
+/* Radio buttons color */
+.radio-group input[type="radio"],
+#searchInYouTube,
+#searchInPlatoDB {
+    accent-color: var(--accent);
+}
+
 @media (max-width: 768px) {
     .top-controls {
         flex-direction: column;

@@ -86,9 +86,66 @@ function closePanelWithDelay(panel) {
 function buildSearchInPanel() {
     searchInPanel.innerHTML = '';
 
+    // Radio buttons para seleccionar origen de búsqueda (YouTube o Plato DB)
+    const searchInContainer = document.createElement('div');
+    searchInContainer.style.padding = '8px 12px';
+    searchInContainer.style.borderBottom = '1px solid var(--border-color)';
+    searchInContainer.style.marginBottom = '8px';
+    
+    const youtubeRadio = document.createElement('input');
+    youtubeRadio.type = 'radio';
+    youtubeRadio.name = 'searchIn';
+    youtubeRadio.value = 'youtube';
+    youtubeRadio.id = 'searchInYouTube';
+    youtubeRadio.checked = (currentSearchOptionId !== 'plato_db');
+    youtubeRadio.addEventListener('change', () => {
+        if (youtubeRadio.checked) {
+            currentSearchOptionId = 'UCuVPpxrm2VAgpH3Ktln4HXg';
+            updateSearchInButtonText();
+            closePanelWithDelay(searchInPanel);
+        }
+    });
+    
+    const youtubeLabel = document.createElement('label');
+    youtubeLabel.htmlFor = 'searchInYouTube';
+    youtubeLabel.style.display = 'inline-flex';
+    youtubeLabel.style.alignItems = 'center';
+    youtubeLabel.style.gap = '8px';
+    youtubeLabel.style.marginRight = '16px';
+    youtubeLabel.style.cursor = 'pointer';
+    youtubeLabel.appendChild(youtubeRadio);
+    youtubeLabel.appendChild(document.createTextNode(' YouTube Free Movies'));
+    
+    const platoDbRadio = document.createElement('input');
+    platoDbRadio.type = 'radio';
+    platoDbRadio.name = 'searchIn';
+    platoDbRadio.value = 'plato_db';
+    platoDbRadio.id = 'searchInPlatoDB';
+    platoDbRadio.checked = (currentSearchOptionId === 'plato_db');
+    platoDbRadio.addEventListener('change', () => {
+        if (platoDbRadio.checked) {
+            currentSearchOptionId = 'plato_db';
+            updateSearchInButtonText();
+            closePanelWithDelay(searchInPanel);
+        }
+    });
+    
+    const platoDbLabel = document.createElement('label');
+    platoDbLabel.htmlFor = 'searchInPlatoDB';
+    platoDbLabel.style.display = 'inline-flex';
+    platoDbLabel.style.alignItems = 'center';
+    platoDbLabel.style.gap = '8px';
+    platoDbLabel.style.cursor = 'pointer';
+    platoDbLabel.appendChild(platoDbRadio);
+    platoDbLabel.appendChild(document.createTextNode(' Plato DB'));
+    
+    searchInContainer.appendChild(youtubeLabel);
+    searchInContainer.appendChild(platoDbLabel);
+    searchInPanel.appendChild(searchInContainer);
+    
+    // Contenido de YouTube Movies (filtros)
     const youtubeSection = document.createElement('div');
     youtubeSection.innerHTML = `
-        <div class="dropdown-header">YouTube Free Movies</div>
         <div style="padding: 8px 12px;">
             <div class="settings-group">
                 <label class="settings-label">Content type:</label>
@@ -128,48 +185,8 @@ function buildSearchInPanel() {
                 </div>
             </div>
         </div>
-        <div class="dropdown-header" style="margin-top: 8px;">Plato DB</div>
     `;
     searchInPanel.appendChild(youtubeSection);
-
-    const platoDbLabel = document.createElement('label');
-    const platoDbRadio = document.createElement('input');
-    platoDbRadio.type = 'radio';
-    platoDbRadio.name = 'searchIn';
-    platoDbRadio.value = 'plato_db';
-    platoDbRadio.checked = (currentSearchOptionId === 'plato_db');
-    platoDbRadio.addEventListener('change', () => {
-        if (platoDbRadio.checked) {
-            currentSearchOptionId = 'plato_db';
-            updateSearchInButtonText();
-            closePanelWithDelay(searchInPanel);
-        }
-    });
-    platoDbLabel.appendChild(platoDbRadio);
-    platoDbLabel.appendChild(document.createTextNode(' Plato DB'));
-    searchInPanel.appendChild(platoDbLabel);
-
-    // Radio para YouTube (si no está seleccionado Plato DB)
-    const youtubeRadio = document.createElement('input');
-    youtubeRadio.type = 'radio';
-    youtubeRadio.name = 'searchIn';
-    youtubeRadio.value = 'youtube';
-    youtubeRadio.checked = (currentSearchOptionId !== 'plato_db');
-    youtubeRadio.addEventListener('change', () => {
-        if (youtubeRadio.checked) {
-            currentSearchOptionId = 'UCuVPpxrm2VAgpH3Ktln4HXg';
-            updateSearchInButtonText();
-            closePanelWithDelay(searchInPanel);
-        }
-    });
-    
-    const youtubeRadioLabel = document.createElement('label');
-    youtubeRadioLabel.style.borderBottom = '1px solid var(--border-color)';
-    youtubeRadioLabel.style.marginBottom = '8px';
-    youtubeRadioLabel.style.paddingBottom = '8px';
-    youtubeRadioLabel.appendChild(youtubeRadio);
-    youtubeRadioLabel.appendChild(document.createTextNode(' YouTube Free Movies'));
-    searchInPanel.insertBefore(youtubeRadioLabel, searchInPanel.firstChild);
 
     const categoryRadios = searchInPanel.querySelectorAll('input[name="searchCategory"]');
     categoryRadios.forEach(radio => {
