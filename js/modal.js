@@ -449,6 +449,40 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
             newTermInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addTermBtn.click(); });
         }
     }
+    
+    if (!isInTrash) {
+        const addTagBtn = document.getElementById('addTagBtn');
+        const newTagInput = document.getElementById('newTagInput');
+        if (addTagBtn && newTagInput) {
+            addTagBtn.onclick = async () => {
+                const rawInput = newTagInput.value.trim();
+                if (rawInput) {
+                    await addMultipleValues(movie.youtubeId, rawInput, addTag);
+                    const updatedMovie = await getMovieFromDB(movie.youtubeId);
+                    if (updatedMovie) movie.tags = updatedMovie.tags;
+                    newTagInput.value = '';
+                    const tagsContainer = document.getElementById('tagsList');
+                    if (tagsContainer) {
+                        tagsContainer.innerHTML = (movie.tags || []).map(name => `<span class="term-chip">${escapeHtml(name)}<span class="remove-tag" data-name="${escapeHtml(name)}">✖</span></span>`).join('');
+                        attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                    }
+                    if (currentOnUpdate) await currentOnUpdate();
+                }
+            };
+            newTagInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addTagBtn.click(); });
+        }
+        document.querySelectorAll('.remove-tag').forEach(el => {
+            el.onclick = async (e) => {
+                e.stopPropagation();
+                const name = el.dataset.name;
+                await removeTag(movie.youtubeId, name);
+                movie.tags = (movie.tags || []).filter(t => t !== name);
+                const tagsContainer = document.getElementById('tagsList');
+                if (tagsContainer) tagsContainer.innerHTML = (movie.tags || []).map(name => `<span class="term-chip">${escapeHtml(name)}<span class="remove-tag" data-name="${escapeHtml(name)}">✖</span></span>`).join('');
+                if (currentOnUpdate) await currentOnUpdate();
+            };
+        });
+    }
 
     if (!isInTrash) {
         const addDirectorBtn = document.getElementById('addDirectorBtn');
@@ -660,39 +694,6 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         });
     }
 
-    if (!isInTrash) {
-        const addTagBtn = document.getElementById('addTagBtn');
-        const newTagInput = document.getElementById('newTagInput');
-        if (addTagBtn && newTagInput) {
-            addTagBtn.onclick = async () => {
-                const rawInput = newTagInput.value.trim();
-                if (rawInput) {
-                    await addMultipleValues(movie.youtubeId, rawInput, addTag);
-                    const updatedMovie = await getMovieFromDB(movie.youtubeId);
-                    if (updatedMovie) movie.tags = updatedMovie.tags;
-                    newTagInput.value = '';
-                    const tagsContainer = document.getElementById('tagsList');
-                    if (tagsContainer) {
-                        tagsContainer.innerHTML = (movie.tags || []).map(name => `<span class="term-chip">${escapeHtml(name)}<span class="remove-tag" data-name="${escapeHtml(name)}">✖</span></span>`).join('');
-                        attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
-                    }
-                    if (currentOnUpdate) await currentOnUpdate();
-                }
-            };
-            newTagInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addTagBtn.click(); });
-        }
-        document.querySelectorAll('.remove-tag').forEach(el => {
-            el.onclick = async (e) => {
-                e.stopPropagation();
-                const name = el.dataset.name;
-                await removeTag(movie.youtubeId, name);
-                movie.tags = (movie.tags || []).filter(t => t !== name);
-                const tagsContainer = document.getElementById('tagsList');
-                if (tagsContainer) tagsContainer.innerHTML = (movie.tags || []).map(name => `<span class="term-chip">${escapeHtml(name)}<span class="remove-tag" data-name="${escapeHtml(name)}">✖</span></span>`).join('');
-                if (currentOnUpdate) await currentOnUpdate();
-            };
-        });
-    }
 }
 
 async function getMovieFromDB(youtubeId) {

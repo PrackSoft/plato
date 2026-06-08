@@ -493,30 +493,30 @@ body {
 }
 
 /* Iconos de edición (lápiz) */
-.term-edit, .director-edit, .actor-edit, .genre-edit, .year-edit, .country-edit, .language-edit {
+.term-edit, .director-edit, .actor-edit, .genre-edit, .year-edit, .country-edit, .language-edit, .tag-edit {
     color: var(--text-secondary);
 }
-.term-edit:hover, .director-edit:hover, .actor-edit:hover, .genre-edit:hover, .year-edit:hover, .country-edit:hover, .language-edit:hover {
+.term-edit:hover, .director-edit:hover, .actor-edit:hover, .genre-edit:hover, .year-edit:hover, .country-edit:hover, .language-edit:hover, .tag-edit:hover {
     color: var(--text-primary);
 }
 
 /* Iconos de eliminación (cruz) */
-.term-delete, .director-delete, .actor-delete, .genre-delete, .year-delete, .country-delete, .language-delete {
+.term-delete, .director-delete, .actor-delete, .genre-delete, .year-delete, .country-delete, .language-delete, .tag-delete {
     color: var(--accent-light);
 }
-.term-delete:hover, .director-delete:hover, .actor-delete:hover, .genre-delete:hover, .year-delete:hover, .country-delete:hover, .language-delete:hover {
+.term-delete:hover, .director-delete:hover, .actor-delete:hover, .genre-delete:hover, .year-delete:hover, .country-delete:hover, .language-delete:hover, .tag-delete:hover {
     color: var(--accent-light);
 }
 
 /* Eliminación dentro del modal (chips) */
-.remove-term, .remove-director, .remove-actor, .remove-genre, .remove-year, .remove-country, .remove-language {
+.remove-term, .remove-director, .remove-actor, .remove-genre, .remove-year, .remove-country, .remove-language, .remove-tag {
     font-size: 14px;
     cursor: pointer;
     color: var(--accent-light);
     transition: color 0.2s;
     margin-left: 4px;
 }
-.remove-term:hover, .remove-director:hover, .remove-actor:hover, .remove-genre:hover, .remove-year:hover, .remove-country:hover, .remove-language:hover {
+.remove-term:hover, .remove-director:hover, .remove-actor:hover, .remove-genre:hover, .remove-year:hover, .remove-country:hover, .remove-language:hover, .remove-tag:hover {
     color: var(--accent-dark);
 }
 
