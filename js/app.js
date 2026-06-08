@@ -530,8 +530,30 @@ function buildSettingsSidebarContent() {
 
 // ---------------------- Global Tags functions ----------------------
 async function refreshGlobalTags() {
-    const tags = await getGlobalTags();
-    globalTagsList = tags.map(t => t.tagValue).sort();
+    const allMovies = await getAllMovies();
+    const tagsSet = new Set();
+    
+    // Agregar categorías fijas
+    tagsSet.add('Director');
+    tagsSet.add('Actor');
+    tagsSet.add('Genre');
+    tagsSet.add('Year');
+    tagsSet.add('Country');
+    tagsSet.add('Language');
+    tagsSet.add('Tags');
+    
+    // Agregar valores dinámicos de metadatos existentes
+    for (const movie of allMovies) {
+        (movie.directors || []).forEach(d => tagsSet.add(d));
+        (movie.actors || []).forEach(a => tagsSet.add(a));
+        (movie.genres || []).forEach(g => tagsSet.add(g));
+        (movie.years || []).forEach(y => tagsSet.add(y));
+        (movie.countries || []).forEach(c => tagsSet.add(c));
+        (movie.languages || []).forEach(l => tagsSet.add(l));
+        (movie.tags || []).forEach(t => tagsSet.add(t));
+    }
+    
+    globalTagsList = Array.from(tagsSet).sort();
     renderGlobalTagsBar();
 }
 
@@ -543,11 +565,23 @@ function renderGlobalTagsBar() {
         return;
     }
     
-    const html = globalTagsList.map(tag => `
-        <button class="btn btn-secondary btn-sm ${activeGlobalTagFilter === tag ? 'active' : ''}" data-tag="${escapeHtml(tag)}">
-            ${escapeHtml(tag)}
-        </button>
-    `).join('');
+    const html = globalTagsList.map(tag => {
+        let icon = 'sell';
+        if (tag === 'Director') icon = 'person';
+        else if (tag === 'Actor') icon = 'group';
+        else if (tag === 'Genre') icon = 'theater_comedy';
+        else if (tag === 'Year') icon = 'calendar_month';
+        else if (tag === 'Country') icon = 'flag';
+        else if (tag === 'Language') icon = 'translate';
+        else if (tag === 'Tags') icon = 'sell';
+        
+        return `
+            <button class="btn btn-secondary btn-sm ${activeGlobalTagFilter === tag ? 'active' : ''}" data-tag="${escapeHtml(tag)}">
+                <span class="material-symbols-outlined">${icon}</span>
+                ${escapeHtml(tag)}
+            </button>
+        `;
+    }).join('');
     
     globalTagsBar.innerHTML = html;
     
