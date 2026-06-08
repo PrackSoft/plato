@@ -1903,19 +1903,40 @@ export async function loadAndDisplayAll() {
     await dbReady;
     let allMovies;
 
-    if (activeCollectionFilter) {
+        if (activeCollectionFilter) {
         allMovies = await getAllMovies();
-        allMovies = allMovies.filter(movie => {
-            const hasDirector = (movie.directors || []).length > 0;
-            const hasActor = (movie.actors || []).length > 0;
-            const hasGenre = (movie.genres || []).length > 0;
-            const hasYear = (movie.years || []).length > 0;
-            const hasCountry = (movie.countries || []).length > 0;
-            const hasLanguage = (movie.languages || []).length > 0;
-            const hasTags = (movie.tags || []).length > 0;
-            return hasDirector || hasActor || hasGenre || hasYear || hasCountry || hasLanguage || hasTags;
-        });
         
+        // Filtrar según el tipo de colección seleccionado
+        if (collectionsSortBy === 'all') {
+            // Mostrar todas las películas que tengan al menos un metadato (comportamiento original)
+            allMovies = allMovies.filter(movie => {
+                const hasDirector = (movie.directors || []).length > 0;
+                const hasActor = (movie.actors || []).length > 0;
+                const hasGenre = (movie.genres || []).length > 0;
+                const hasYear = (movie.years || []).length > 0;
+                const hasCountry = (movie.countries || []).length > 0;
+                const hasLanguage = (movie.languages || []).length > 0;
+                const hasTags = (movie.tags || []).length > 0;
+                return hasDirector || hasActor || hasGenre || hasYear || hasCountry || hasLanguage || hasTags;
+            });
+        } else if (collectionsSortBy === 'tags') {
+            // Mostrar SOLO películas que tienen tags
+            allMovies = allMovies.filter(movie => (movie.tags || []).length > 0);
+        } else if (collectionsSortBy === 'directors') {
+            allMovies = allMovies.filter(movie => (movie.directors || []).length > 0);
+        } else if (collectionsSortBy === 'actors') {
+            allMovies = allMovies.filter(movie => (movie.actors || []).length > 0);
+        } else if (collectionsSortBy === 'genres') {
+            allMovies = allMovies.filter(movie => (movie.genres || []).length > 0);
+        } else if (collectionsSortBy === 'years') {
+            allMovies = allMovies.filter(movie => (movie.years || []).length > 0);
+        } else if (collectionsSortBy === 'countries') {
+            allMovies = allMovies.filter(movie => (movie.countries || []).length > 0);
+        } else if (collectionsSortBy === 'languages') {
+            allMovies = allMovies.filter(movie => (movie.languages || []).length > 0);
+        }
+        
+        // Aplicar filtro activo si existe (Director, Actor, Tag específico, etc.)
         if (collectionsSortBy === 'directors' && activeDirectorFilter) {
             allMovies = allMovies.filter(movie => (movie.directors || []).includes(activeDirectorFilter));
         } else if (collectionsSortBy === 'actors' && activeActorFilter) {
@@ -1929,66 +1950,6 @@ export async function loadAndDisplayAll() {
         } else if (collectionsSortBy === 'languages' && activeLanguageFilter) {
             allMovies = allMovies.filter(movie => (movie.languages || []).includes(activeLanguageFilter));
         } else if (collectionsSortBy === 'tags' && activeTagFilter) {
-            allMovies = allMovies.filter(movie => (movie.tags || []).includes(activeTagFilter));
-        }
-    } else if (activeTrashFilter) {
-        allMovies = await getTrashMovies();
-        if (activeTermFilter) {
-            allMovies = allMovies.filter(movie => {
-                const terms = movie.searchTerms || [];
-                return terms.some(t => t.term === activeTermFilter);
-            });
-        }
-    } else {
-        allMovies = await getAllMovies();
-        
-        if (activeTermFilter) {
-            allMovies = allMovies.filter(movie => {
-                const terms = movie.searchTerms || [];
-                return terms.some(t => t.term === activeTermFilter);
-            });
-        }
-        
-        if (activeWatchingFilter) {
-            allMovies = allMovies.filter(movie => movie.watching === true);
-        }
-        if (activeFavoriteFilter) {
-            allMovies = allMovies.filter(movie => movie.favorite === true);
-        }
-        
-        if (!activeWatchingFilter && !activeFavoriteFilter) {
-            if (activeRelatedFilter === 'exact') {
-                allMovies = allMovies.filter(movie => {
-                    const terms = movie.searchTerms || [];
-                    return terms.some(t => t.exact === true);
-                });
-            } else {
-                allMovies = allMovies.filter(movie => {
-                    const terms = movie.searchTerms || [];
-                    return terms.some(t => t.exact === false);
-                });
-            }
-        }
-        
-        if (activeDirectorFilter) {
-            allMovies = allMovies.filter(movie => (movie.directors || []).includes(activeDirectorFilter));
-        }
-        if (activeActorFilter) {
-            allMovies = allMovies.filter(movie => (movie.actors || []).includes(activeActorFilter));
-        }
-        if (activeGenreFilter) {
-            allMovies = allMovies.filter(movie => (movie.genres || []).includes(activeGenreFilter));
-        }
-        if (activeYearFilter) {
-            allMovies = allMovies.filter(movie => (movie.years || []).includes(activeYearFilter));
-        }
-        if (activeCountryFilter) {
-            allMovies = allMovies.filter(movie => (movie.countries || []).includes(activeCountryFilter));
-        }
-        if (activeLanguageFilter) {
-            allMovies = allMovies.filter(movie => (movie.languages || []).includes(activeLanguageFilter));
-        }
-        if (activeTagFilter) {
             allMovies = allMovies.filter(movie => (movie.tags || []).includes(activeTagFilter));
         }
     }

@@ -70,12 +70,23 @@ export function renderMovies(container, movies, title, source = 'main', currentS
         const groupMap = new Map();
         for (const movie of movies) {
             let groupValue = '';
-            if (groupBy === 'directors') groupValue = movie.directors && movie.directors[0] ? movie.directors[0] : 'Unknown director';
-            else if (groupBy === 'actors') groupValue = movie.actors && movie.actors[0] ? movie.actors[0] : 'Unknown actor';
-            else if (groupBy === 'genres') groupValue = movie.genres && movie.genres[0] ? movie.genres[0] : 'Unknown genre';
-            else if (groupBy === 'years') groupValue = movie.years && movie.years[0] ? movie.years[0] : 'Unknown year';
-            else if (groupBy === 'countries') groupValue = movie.countries && movie.countries[0] ? movie.countries[0] : 'Unknown country';
-            else if (groupBy === 'languages') groupValue = movie.languages && movie.languages[0] ? movie.languages[0] : 'Unknown language';
+            if (groupBy === 'directors') {
+                groupValue = movie.directors && movie.directors[0] ? movie.directors[0] : 'Unknown director';
+            } else if (groupBy === 'actors') {
+                groupValue = movie.actors && movie.actors[0] ? movie.actors[0] : 'Unknown actor';
+            } else if (groupBy === 'genres') {
+                groupValue = movie.genres && movie.genres[0] ? movie.genres[0] : 'Unknown genre';
+            } else if (groupBy === 'years') {
+                groupValue = movie.years && movie.years[0] ? movie.years[0] : 'Unknown year';
+            } else if (groupBy === 'countries') {
+                groupValue = movie.countries && movie.countries[0] ? movie.countries[0] : 'Unknown country';
+            } else if (groupBy === 'languages') {
+                groupValue = movie.languages && movie.languages[0] ? movie.languages[0] : 'Unknown language';
+            } else if (groupBy === 'tags') {
+                // Solo incluir películas que tienen al menos un tag
+                if (!movie.tags || movie.tags.length === 0) continue;
+                groupValue = movie.tags[0];
+            }
             
             if (!groupMap.has(groupValue)) groupMap.set(groupValue, []);
             groupMap.get(groupValue).push(movie);
