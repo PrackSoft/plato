@@ -1901,7 +1901,8 @@ if (filterTrashBtn) filterTrashBtn.addEventListener('click', toggleTrashFilter);
 // ---------------------- Load and display ----------------------
 export async function loadAndDisplayAll() {
     await dbReady;
-    let allMovies;
+    let allMovies = await getAllMovies();  // ← ASIGNACIÓN POR DEFECTO
+
 
         if (activeCollectionFilter) {
         allMovies = await getAllMovies();
