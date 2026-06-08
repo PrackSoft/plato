@@ -800,6 +800,11 @@ body {
     display: none;
 }
 
+.settings-note {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
 @media (max-width: 768px) {
     .top-controls {
         flex-direction: column;

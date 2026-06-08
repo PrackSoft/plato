@@ -468,7 +468,7 @@ export async function deleteLanguageFromAllMovies(languageName) {
     }
 }
 
-// ==================== FUNCIONES EXISTENTES DE METADATOS (SIN MODIFICAR AÚN) ====================
+// ==================== FUNCIONES DE METADATOS Y TAGS ====================
 export async function addDirector(youtubeId, directorName) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
@@ -817,7 +817,59 @@ export async function removeLanguage(youtubeId, languageName) {
     });
 }
 
-// ==================== FUNCIONES NUEVAS PARA GLOBAL TAGS ====================
+// ==================== FUNCIONES PARA TAGS LIBRES ====================
+export async function addTag(youtubeId, tagName) {
+    const db = await openDB();
+    const transaction = db.transaction([STORE_MOVIES], 'readwrite');
+    const store = transaction.objectStore(STORE_MOVIES);
+    return new Promise((resolve, reject) => {
+        const getRequest = store.get(youtubeId);
+        getRequest.onsuccess = () => {
+            const movie = getRequest.result;
+            if (movie) {
+                if (!movie.tags) movie.tags = [];
+                if (!movie.tags.includes(tagName)) {
+                    movie.tags.push(tagName);
+                }
+                movie.lastUpdated = new Date().toISOString();
+                const putRequest = store.put(movie);
+                putRequest.onsuccess = () => resolve(movie.tags);
+                putRequest.onerror = () => reject(putRequest.error);
+            } else {
+                reject(new Error('Movie not found'));
+            }
+        };
+        getRequest.onerror = () => reject(getRequest.error);
+    });
+}
+
+export async function removeTag(youtubeId, tagName) {
+    const db = await openDB();
+    const transaction = db.transaction([STORE_MOVIES], 'readwrite');
+    const store = transaction.objectStore(STORE_MOVIES);
+    return new Promise((resolve, reject) => {
+        const getRequest = store.get(youtubeId);
+        getRequest.onsuccess = () => {
+            const movie = getRequest.result;
+            if (movie) {
+                if (movie.tags) {
+                    movie.tags = movie.tags.filter(t => t !== tagName);
+                    movie.lastUpdated = new Date().toISOString();
+                    const putRequest = store.put(movie);
+                    putRequest.onsuccess = () => resolve(movie.tags);
+                    putRequest.onerror = () => reject(putRequest.error);
+                } else {
+                    resolve([]);
+                }
+            } else {
+                reject(new Error('Movie not found'));
+            }
+        };
+        getRequest.onerror = () => reject(getRequest.error);
+    });
+}
+
+// ==================== FUNCIONES PARA GLOBAL TAGS ====================
 export async function addToGlobalTag(tagValue, movieId) {
     if (!tagValue || !movieId) return;
     const db = await openDB();
@@ -856,38 +908,6 @@ export async function addToGlobalTag(tagValue, movieId) {
     });
 }
 
-export async function removeFromGlobalTag(tagValue, movieId) {
-    if (!tagValue || !movieId) return;
-    const db = await openDB();
-    const transaction = db.transaction([STORE_GLOBAL_TAGS], 'readwrite');
-    const store = transaction.objectStore(STORE_GLOBAL_TAGS);
-    
-    return new Promise((resolve, reject) => {
-        const getRequest = store.get(tagValue);
-        getRequest.onsuccess = () => {
-            const existing = getRequest.result;
-            if (existing && existing.movieIds) {
-                let ids = existing.movieIds.split(',');
-                ids = ids.filter(id => id !== movieId);
-                if (ids.length === 0) {
-                    const deleteRequest = store.delete(tagValue);
-                    deleteRequest.onsuccess = () => resolve();
-                    deleteRequest.onerror = () => reject(deleteRequest.error);
-                } else {
-                    existing.movieIds = ids.join(',');
-                    existing.updatedAt = new Date().toISOString();
-                    const putRequest = store.put(existing);
-                    putRequest.onsuccess = () => resolve();
-                    putRequest.onerror = () => reject(putRequest.error);
-                }
-            } else {
-                resolve();
-            }
-        };
-        getRequest.onerror = () => reject(getRequest.error);
-    });
-}
-
 export async function getGlobalTags() {
     const db = await openDB();
     const transaction = db.transaction([STORE_GLOBAL_TAGS], 'readonly');
@@ -897,31 +917,6 @@ export async function getGlobalTags() {
         const request = store.getAll();
         request.onsuccess = () => resolve(request.result || []);
         request.onerror = () => reject(request.error);
-    });
-}
-
-export async function editGlobalTag(oldTagValue, newTagValue) {
-    if (!oldTagValue || !newTagValue || oldTagValue === newTagValue) return;
-    const db = await openDB();
-    const transaction = db.transaction([STORE_GLOBAL_TAGS], 'readwrite');
-    const store = transaction.objectStore(STORE_GLOBAL_TAGS);
-    
-    return new Promise((resolve, reject) => {
-        const getRequest = store.get(oldTagValue);
-        getRequest.onsuccess = () => {
-            const tag = getRequest.result;
-            if (tag) {
-                tag.tagValue = newTagValue;
-                tag.updatedAt = new Date().toISOString();
-                store.delete(oldTagValue);
-                const addRequest = store.add(tag);
-                addRequest.onsuccess = () => resolve();
-                addRequest.onerror = () => reject(addRequest.error);
-            } else {
-                resolve();
-            }
-        };
-        getRequest.onerror = () => reject(getRequest.error);
     });
 }
 
@@ -951,6 +946,7 @@ export async function saveMovie(movieData, searchTerm, isExact = true) {
                     years: existing.years || [],
                     countries: existing.countries || [],
                     languages: existing.languages || [],
+                    tags: existing.tags || [],
                     viewCount: movieData.viewCount ?? existing.viewCount,
                     likeCount: movieData.likeCount ?? existing.likeCount,
                     commentCount: movieData.commentCount ?? existing.commentCount,
@@ -973,6 +969,7 @@ export async function saveMovie(movieData, searchTerm, isExact = true) {
                     years: [],
                     countries: [],
                     languages: [],
+                    tags: [],
                     watching: false,
                     favorite: false,
                     dateSaved: new Date().toISOString(),

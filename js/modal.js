@@ -1,7 +1,7 @@
 // js/modal.js - Modal para editar metadatos de películas
 // Soporta entrada múltiple separada por comas en todos los campos (Search term, Director, Actor, etc.)
 
-import { getExtraInfo, toggleExact, addDirector, removeDirector, addActor, removeActor, addGenre, removeGenre, addYear, removeYear, addCountry, removeCountry, addLanguage, removeLanguage, openDB } from './db.js';
+import { getExtraInfo, toggleExact, addDirector, removeDirector, addActor, removeActor, addGenre, removeGenre, addYear, removeYear, addCountry, removeCountry, addLanguage, removeLanguage, addTag, removeTag, openDB } from './db.js';
 import { refreshAvailableTerms, loadAndDisplayAll, syncWindowTermFilter, getActiveTermFilter } from './app.js';
 
 // ---------------------- Estado global del modal ----------------------
@@ -228,6 +228,27 @@ function renderModalContent(movie, source) {
             <div class="add-term-row">
                 <input type="text" id="newLanguageInput" class="modal-input" placeholder="Add language (separate multiple with commas)">
                 <span id="addLanguageBtn" class="modal-add-icon" title="Add language">
+                    <span class="material-symbols-outlined">add</span>
+                </span>
+            </div>
+            ` : ''}
+        </div>
+
+        <!-- ========== TAGS SECTION ========== -->
+        <div class="modal-section">
+            <strong>Tags:</strong>
+            <div id="tagsList" class="terms-list">
+                ${(movie.tags || []).map(name => `
+                    <span class="term-chip">
+                        ${escapeHtml(name)}
+                        ${!isInTrash ? `<span class="remove-tag" data-name="${escapeHtml(name)}">✖</span>` : ''}
+                    </span>
+                `).join('')}
+            </div>
+            ${!isInTrash ? `
+            <div class="add-term-row">
+                <input type="text" id="newTagInput" class="modal-input" placeholder="Add tag (separate multiple with commas)">
+                <span id="addTagBtn" class="modal-add-icon" title="Add tag">
                     <span class="material-symbols-outlined">add</span>
                 </span>
             </div>
@@ -480,15 +501,16 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
 
                 const term = el.dataset.term;
                 
-                // Verificar si el término existe en algún otro grupo (Director, Actor, Genre, Year, Country, Language)
+                // Verificar si el término existe en algún otro grupo (Director, Actor, Genre, Year, Country, Language, Tag)
                 const existsInDirectors = (movie.directors || []).includes(term);
                 const existsInActors = (movie.actors || []).includes(term);
                 const existsInGenres = (movie.genres || []).includes(term);
                 const existsInYears = (movie.years || []).includes(term);
                 const existsInCountries = (movie.countries || []).includes(term);
                 const existsInLanguages = (movie.languages || []).includes(term);
+                const existsInTags = (movie.tags || []).includes(term);
                 
-                const hasGroupMatches = existsInDirectors || existsInActors || existsInGenres || existsInYears || existsInCountries || existsInLanguages;
+                const hasGroupMatches = existsInDirectors || existsInActors || existsInGenres || existsInYears || existsInCountries || existsInLanguages || existsInTags;
                 
                 // Filtrar términos restantes
                 const remainingTerms = (movie.searchTerms || [])
@@ -513,6 +535,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                     if (existsInYears) groupNames.push('Year');
                     if (existsInCountries) groupNames.push('Country');
                     if (existsInLanguages) groupNames.push('Language');
+                    if (existsInTags) groupNames.push('Tag');
                     
                     const confirmMsg = `The term "${term}" also exists in: ${groupNames.join(', ')}.\n\nRemove it from these groups as well?`;
                     if (!confirm(confirmMsg)) {
@@ -529,7 +552,6 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                 if (existsInDirectors) {
                     await removeDirector(movie.youtubeId, term);
                     movie.directors = (movie.directors || []).filter(d => d !== term);
-                    // Actualizar UI de Directors
                     const directorsContainer = document.getElementById('directorsList');
                     if (directorsContainer) {
                         directorsContainer.innerHTML = movie.directors.map(name => `
@@ -616,6 +638,21 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                     }
                 }
                 
+                // 8. Eliminar de Tags si existe
+                if (existsInTags) {
+                    await removeTag(movie.youtubeId, term);
+                    movie.tags = (movie.tags || []).filter(t => t !== term);
+                    const tagsContainer = document.getElementById('tagsList');
+                    if (tagsContainer) {
+                        tagsContainer.innerHTML = (movie.tags || []).map(name => `
+                            <span class="term-chip">
+                                ${escapeHtml(name)}
+                                <span class="remove-tag" data-name="${escapeHtml(name)}">✖</span>
+                            </span>
+                        `).join('');
+                    }
+                }
+                
                 // Actualizar la lista de términos en el modal
                 const termsContainer = document.getElementById('termsList');
                 if (termsContainer) {
@@ -653,6 +690,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                         movie.years = updatedMovie.years;
                         movie.countries = updatedMovie.countries;
                         movie.languages = updatedMovie.languages;
+                        movie.tags = updatedMovie.tags;
                     }
                     
                     newTermInput.value = '';
@@ -725,9 +763,10 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                         <span class="term-chip">
                             ${escapeHtml(name)}
                             <span class="remove-director" data-name="${escapeHtml(name)}">✖</span>
-                        </span>
-                    `).join('');
-                    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                            </span>
+                        `).join('');
+                        attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                    }
                 }
                 if (currentOnUpdate) await currentOnUpdate();
             };
@@ -784,9 +823,10 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                         <span class="term-chip">
                             ${escapeHtml(name)}
                             <span class="remove-actor" data-name="${escapeHtml(name)}">✖</span>
-                        </span>
-                    `).join('');
-                    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                            </span>
+                        `).join('');
+                        attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                    }
                 }
                 if (currentOnUpdate) await currentOnUpdate();
             };
@@ -843,9 +883,10 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                         <span class="term-chip">
                             ${escapeHtml(name)}
                             <span class="remove-genre" data-name="${escapeHtml(name)}">✖</span>
-                        </span>
-                    `).join('');
-                    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                            </span>
+                        `).join('');
+                        attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                    }
                 }
                 if (currentOnUpdate) await currentOnUpdate();
             };
@@ -902,9 +943,10 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                         <span class="term-chip">
                             ${escapeHtml(year)}
                             <span class="remove-year" data-name="${escapeHtml(year)}">✖</span>
-                        </span>
-                    `).join('');
-                    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                            </span>
+                        `).join('');
+                        attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                    }
                 }
                 if (currentOnUpdate) await currentOnUpdate();
             };
@@ -961,9 +1003,10 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                         <span class="term-chip">
                             ${escapeHtml(name)}
                             <span class="remove-country" data-name="${escapeHtml(name)}">✖</span>
-                        </span>
-                    `).join('');
-                    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                            </span>
+                        `).join('');
+                        attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                    }
                 }
                 if (currentOnUpdate) await currentOnUpdate();
             };
@@ -1020,9 +1063,66 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                         <span class="term-chip">
                             ${escapeHtml(name)}
                             <span class="remove-language" data-name="${escapeHtml(name)}">✖</span>
-                        </span>
-                    `).join('');
-                    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                            </span>
+                        `).join('');
+                        attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                    }
+                }
+                if (currentOnUpdate) await currentOnUpdate();
+            };
+        });
+    }
+
+    // ========== TAGS (con soporte múltiple) ==========
+    if (!isInTrash) {
+        const addTagBtn = document.getElementById('addTagBtn');
+        const newTagInput = document.getElementById('newTagInput');
+        if (addTagBtn && newTagInput) {
+            addTagBtn.onclick = async () => {
+                const rawInput = newTagInput.value.trim();
+                if (rawInput) {
+                    await addMultipleValues(movie.youtubeId, rawInput, addTag);
+                    
+                    const updatedMovie = await getMovieFromDB(movie.youtubeId);
+                    if (updatedMovie) {
+                        movie.tags = updatedMovie.tags;
+                    }
+                    
+                    newTagInput.value = '';
+                    const tagsContainer = document.getElementById('tagsList');
+                    if (tagsContainer) {
+                        tagsContainer.innerHTML = (movie.tags || []).map(name => `
+                            <span class="term-chip">
+                                ${escapeHtml(name)}
+                                <span class="remove-tag" data-name="${escapeHtml(name)}">✖</span>
+                            </span>
+                        `).join('');
+                        attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                    }
+                    if (currentOnUpdate) await currentOnUpdate();
+                }
+            };
+            newTagInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') addTagBtn.click();
+            });
+        }
+
+        document.querySelectorAll('.remove-tag').forEach(el => {
+            el.onclick = async (e) => {
+                e.stopPropagation();
+                const name = el.dataset.name;
+                await removeTag(movie.youtubeId, name);
+                movie.tags = (movie.tags || []).filter(t => t !== name);
+                const tagsContainer = document.getElementById('tagsList');
+                if (tagsContainer) {
+                    tagsContainer.innerHTML = (movie.tags || []).map(name => `
+                        <span class="term-chip">
+                            ${escapeHtml(name)}
+                            <span class="remove-tag" data-name="${escapeHtml(name)}">✖</span>
+                            </span>
+                        `).join('');
+                        attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+                    }
                 }
                 if (currentOnUpdate) await currentOnUpdate();
             };

@@ -1,5 +1,5 @@
-// js/app.js - Plato App (con Global Tags)
-import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo, addYear, addToGlobalTag, removeFromGlobalTag, getGlobalTags, editGlobalTag } from './db.js';
+// js/app.js - Plato App (con Global Tags y Tags en Collection)
+import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo, addYear, addToGlobalTag, getGlobalTags } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
 import { SEARCH_OPTIONS } from './channels.js';
@@ -25,6 +25,7 @@ const genresBar = document.getElementById('genresBar');
 const yearsBar = document.getElementById('yearsBar');
 const countriesBar = document.getElementById('countriesBar');
 const languagesBar = document.getElementById('languagesBar');
+const tagsBar = document.getElementById('tagsBar');
 const toggleTermsBtn = document.getElementById('toggleTermsBtn');
 const settingsBtn = document.getElementById('settingsBtn');
 const settingsSidebar = document.getElementById('settingsSidebar');
@@ -48,6 +49,7 @@ let activeGenreFilter = null;
 let activeYearFilter = null;
 let activeCountryFilter = null;
 let activeLanguageFilter = null;
+let activeTagFilter = null;
 let activeGlobalTagFilter = null;
 let globalTagsActive = false;
 let globalTagsList = [];
@@ -59,6 +61,7 @@ let availableGenre = [];
 let availableYear = [];
 let availableCountry = [];
 let availableLanguage = [];
+let availableTags = [];
 let currentSort = 'date';
 let collectionsSortBy = 'directors';
 
@@ -350,6 +353,7 @@ function buildCollectionDropdown() {
     
     const options = [
         { value: 'all', label: 'All', icon: 'join' },
+        { value: 'tags', label: 'Tags', icon: 'sell' },
         { value: 'directors', label: 'Director', icon: 'person' },
         { value: 'actors', label: 'Actor', icon: 'group' },
         { value: 'genres', label: 'Genre', icon: 'theater_comedy' },
@@ -437,6 +441,10 @@ function updateCollectionButtonText() {
                 if (iconSpan) iconSpan.textContent = 'join';
                 if (labelSpan) labelSpan.textContent = 'All';
                 break;
+            case 'tags':
+                if (iconSpan) iconSpan.textContent = 'sell';
+                if (labelSpan) labelSpan.textContent = 'Tags';
+                break;
             case 'directors':
                 if (iconSpan) iconSpan.textContent = 'person';
                 if (labelSpan) labelSpan.textContent = 'Director';
@@ -515,7 +523,7 @@ function buildSettingsSidebarContent() {
     sidebarContent.innerHTML = `
         <div class="sidebar-section">
             <h3>General Settings</h3>
-            <p style="color: #aaa; font-size: 0.875rem;">Future options: API key, default channel, theme, etc.</p>
+            <p class="settings-note">Future options: API key, default channel, theme, etc.</p>
         </div>
     `;
 }
@@ -544,8 +552,8 @@ function renderGlobalTagsBar() {
     globalTagsBar.innerHTML = html;
     
     document.querySelectorAll('#globalTagsBar .btn').forEach(btn => {
+        const tag = btn.dataset.tag;
         btn.addEventListener('click', () => {
-            const tag = btn.dataset.tag;
             if (activeGlobalTagFilter === tag) {
                 activeGlobalTagFilter = null;
             } else {
@@ -560,11 +568,9 @@ function renderGlobalTagsBar() {
 if (toggleGlobalTagsBtn && globalTagsBar) {
     const tagsIcon = toggleGlobalTagsBtn.querySelector('.material-symbols-outlined');
     
-    // Asegurar clase inicial
     toggleGlobalTagsBtn.classList.add('btn-secondary');
     
     toggleGlobalTagsBtn.addEventListener('click', async () => {
-        // Si hay otros filtros activos (Watching, Favorites, Trash, Collection), desactivarlos
         if (activeWatchingFilter || activeFavoriteFilter || activeTrashFilter || activeCollectionFilter) {
             activeWatchingFilter = false;
             activeFavoriteFilter = false;
@@ -573,7 +579,6 @@ if (toggleGlobalTagsBtn && globalTagsBar) {
             updateFilterButtonsUI();
             updateCollectionButtonText();
             
-            // Restaurar Related si corresponde
             if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
                 activeRelatedFilter = savedRelatedFilter;
                 updateRelatedButtonText();
@@ -588,7 +593,6 @@ if (toggleGlobalTagsBtn && globalTagsBar) {
             toggleGlobalTagsBtn.classList.remove('btn-secondary');
             toggleGlobalTagsBtn.classList.add('btn-primary');
             if (tagsIcon) tagsIcon.textContent = 'sell';
-            // Desactivar términos bar si estaba activo
             if (termsBar && !termsBar.classList.contains('hidden')) {
                 termsBar.classList.add('hidden');
                 if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
@@ -604,7 +608,109 @@ if (toggleGlobalTagsBtn && globalTagsBar) {
     });
 }
 
-// ---------------------- Funciones globales para renombrar/eliminar (sin cambios) ----------------------
+// ---------------------- Tags Bar functions ----------------------
+export async function refreshAvailableTags() {
+    const allMovies = await getAllMovies();
+    const tagsSet = new Set();
+    for (const movie of allMovies) {
+        (movie.tags || []).forEach(t => tagsSet.add(t));
+    }
+    availableTags = Array.from(tagsSet).sort();
+}
+
+function renderTagsBar() {
+    if (!tagsBar) return;
+    if (availableTags.length === 0) {
+        tagsBar.innerHTML = '<div class="terms-placeholder">No tags yet.</div>';
+        tagsBar.classList.remove('hidden');
+        return;
+    }
+    tagsBar.classList.remove('hidden');
+    const html = availableTags.map(name => `
+        <button class="btn btn-secondary btn-sm ${activeTagFilter === name ? 'active' : ''}" data-tag="${escapeHtml(name)}">
+            ${escapeHtml(name)}
+            <span class="tag-edit material-symbols-outlined" data-tag="${escapeHtml(name)}" title="Edit tag globally.">edit</span>
+            <span class="tag-delete" data-tag="${escapeHtml(name)}" title="Delete tag from all movies.">✖</span>
+        </button>
+    `).join('');
+    tagsBar.innerHTML = html;
+
+    document.querySelectorAll('#tagsBar .btn').forEach(btn => {
+        const name = btn.dataset.tag;
+        btn.addEventListener('click', (e) => {
+            if (e.target.classList.contains('tag-edit') || e.target.classList.contains('tag-delete')) return;
+            if (activeTagFilter === name) activeTagFilter = null;
+            else activeTagFilter = name;
+            loadAndDisplayAll();
+        });
+    });
+
+    document.querySelectorAll('.tag-edit').forEach(editSpan => {
+        editSpan.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const oldName = editSpan.dataset.tag;
+            const newName = prompt(`Edit tag "${oldName}":`, oldName);
+            if (newName && newName !== oldName) {
+                await renameTagInAllMovies(oldName, newName);
+            }
+        });
+    });
+
+    document.querySelectorAll('.tag-delete').forEach(deleteSpan => {
+        deleteSpan.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const name = deleteSpan.dataset.tag;
+            if (confirm(`Delete tag "${name}" from all movies?`)) {
+                await deleteTagFromAllMovies(name);
+            }
+        });
+    });
+}
+
+export async function renameTagInAllMovies(oldName, newName) {
+    if (oldName === newName) return;
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.tags && movie.tags.includes(oldName)) {
+            movie.tags = movie.tags.map(t => t === oldName ? newName : t);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+    await refreshAvailableTags();
+    if (activeTagFilter === oldName) activeTagFilter = newName;
+    loadAndDisplayAll();
+}
+
+export async function deleteTagFromAllMovies(tagName) {
+    const db = await openDB();
+    const allMovies = await getAllMovies();
+    const transaction = db.transaction(['movies'], 'readwrite');
+    const store = transaction.objectStore('movies');
+    for (const movie of allMovies) {
+        if (movie.tags && movie.tags.includes(tagName)) {
+            movie.tags = movie.tags.filter(t => t !== tagName);
+            movie.lastUpdated = new Date().toISOString();
+            await new Promise((resolve, reject) => {
+                const req = store.put(movie);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        }
+    }
+    await refreshAvailableTags();
+    if (activeTagFilter === tagName) activeTagFilter = null;
+    loadAndDisplayAll();
+}
+
+// ---------------------- Funciones globales para renombrar/eliminar ----------------------
 export async function renameDirectorInAllMovies(oldName, newName) {
     if (oldName === newName) return;
     const db = await openDB();
@@ -827,7 +933,7 @@ export async function deleteLanguageFromAllMovies(languageName) {
     }
 }
 
-// ---------------------- Search terms Bar (sin cambios significativos) ----------------------
+// ---------------------- Search terms Bar ----------------------
 export async function refreshAvailableTerms() {
     const allMovies = await getAllMovies();
     const termsSet = new Set();
@@ -1658,6 +1764,7 @@ function toggleWatchingFilter() {
     activeYearFilter = null;
     activeCountryFilter = null;
     activeLanguageFilter = null;
+    activeTagFilter = null;
     activeCollectionFilter = false;
     activeGlobalTagFilter = null;
     
@@ -1690,6 +1797,7 @@ function toggleFavoriteFilter() {
     activeYearFilter = null;
     activeCountryFilter = null;
     activeLanguageFilter = null;
+    activeTagFilter = null;
     activeCollectionFilter = false;
     activeGlobalTagFilter = null;
     
@@ -1722,6 +1830,7 @@ function toggleTrashFilter() {
     activeYearFilter = null;
     activeCountryFilter = null;
     activeLanguageFilter = null;
+    activeTagFilter = null;
     activeCollectionFilter = false;
     activeGlobalTagFilter = null;
     
@@ -1752,6 +1861,7 @@ function toggleCollectionFilter() {
     activeYearFilter = null;
     activeCountryFilter = null;
     activeLanguageFilter = null;
+    activeTagFilter = null;
     activeGlobalTagFilter = null;
     
     if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter && !activeCollectionFilter) {
@@ -1802,7 +1912,8 @@ export async function loadAndDisplayAll() {
             const hasYear = (movie.years || []).length > 0;
             const hasCountry = (movie.countries || []).length > 0;
             const hasLanguage = (movie.languages || []).length > 0;
-            return hasDirector || hasActor || hasGenre || hasYear || hasCountry || hasLanguage;
+            const hasTags = (movie.tags || []).length > 0;
+            return hasDirector || hasActor || hasGenre || hasYear || hasCountry || hasLanguage || hasTags;
         });
         
         if (collectionsSortBy === 'directors' && activeDirectorFilter) {
@@ -1817,6 +1928,8 @@ export async function loadAndDisplayAll() {
             allMovies = allMovies.filter(movie => (movie.countries || []).includes(activeCountryFilter));
         } else if (collectionsSortBy === 'languages' && activeLanguageFilter) {
             allMovies = allMovies.filter(movie => (movie.languages || []).includes(activeLanguageFilter));
+        } else if (collectionsSortBy === 'tags' && activeTagFilter) {
+            allMovies = allMovies.filter(movie => (movie.tags || []).includes(activeTagFilter));
         }
     } else if (activeTrashFilter) {
         allMovies = await getTrashMovies();
@@ -1875,6 +1988,9 @@ export async function loadAndDisplayAll() {
         if (activeLanguageFilter) {
             allMovies = allMovies.filter(movie => (movie.languages || []).includes(activeLanguageFilter));
         }
+        if (activeTagFilter) {
+            allMovies = allMovies.filter(movie => (movie.tags || []).includes(activeTagFilter));
+        }
     }
     
     // Filtrar por Global Tag si está activo
@@ -1895,6 +2011,7 @@ export async function loadAndDisplayAll() {
     if (activeCollectionFilter) {
         let sortLabel = '';
         if (collectionsSortBy === 'all') sortLabel = 'All';
+        else if (collectionsSortBy === 'tags') sortLabel = 'Tags';
         else if (collectionsSortBy === 'directors') sortLabel = 'Director';
         else if (collectionsSortBy === 'actors') sortLabel = 'Actor';
         else if (collectionsSortBy === 'genres') sortLabel = 'Genre';
@@ -1910,6 +2027,7 @@ export async function loadAndDisplayAll() {
             else if (collectionsSortBy === 'years' && activeYearFilter) filterName = `: ${activeYearFilter}`;
             else if (collectionsSortBy === 'countries' && activeCountryFilter) filterName = `: ${activeCountryFilter}`;
             else if (collectionsSortBy === 'languages' && activeLanguageFilter) filterName = `: ${activeLanguageFilter}`;
+            else if (collectionsSortBy === 'tags' && activeTagFilter) filterName = `: ${activeTagFilter}`;
         }
         
         title = `${sortLabel}${filterName} (${allMovies.length})`;
@@ -1935,6 +2053,8 @@ export async function loadAndDisplayAll() {
         title = `Country: ${activeCountryFilter} (${allMovies.length})`;
     } else if (activeLanguageFilter) {
         title = `Language: ${activeLanguageFilter} (${allMovies.length})`;
+    } else if (activeTagFilter) {
+        title = `Tag: "${activeTagFilter}" (${allMovies.length})`;
     } else if (activeGlobalTagFilter) {
         title = `Global tag: "${activeGlobalTagFilter}" (${allMovies.length})`;
     } else if (activeRelatedFilter === 'exact') {
@@ -1996,14 +2116,15 @@ export async function loadAndDisplayAll() {
         if (yearsBar) yearsBar.classList.add('hidden');
         if (countriesBar) countriesBar.classList.add('hidden');
         if (languagesBar) languagesBar.classList.add('hidden');
+        if (tagsBar) tagsBar.classList.add('hidden');
     } else if (!activeCollectionFilter && globalTagsActive) {
-        // No renderizar las barras individuales cuando Global Tags está activo
         if (directorsBar) directorsBar.classList.add('hidden');
         if (actorsBar) actorsBar.classList.add('hidden');
         if (genresBar) genresBar.classList.add('hidden');
         if (yearsBar) yearsBar.classList.add('hidden');
         if (countriesBar) countriesBar.classList.add('hidden');
         if (languagesBar) languagesBar.classList.add('hidden');
+        if (tagsBar) tagsBar.classList.add('hidden');
         return;
     } else {
         if (directorsBar) directorsBar.classList.add('hidden');
@@ -2012,6 +2133,7 @@ export async function loadAndDisplayAll() {
         if (yearsBar) yearsBar.classList.add('hidden');
         if (countriesBar) countriesBar.classList.add('hidden');
         if (languagesBar) languagesBar.classList.add('hidden');
+        if (tagsBar) tagsBar.classList.add('hidden');
         return;
     }
     
@@ -2021,6 +2143,8 @@ export async function loadAndDisplayAll() {
     await refreshAvailableYear();
     await refreshAvailableCountry();
     await refreshAvailableLanguage();
+    await refreshAvailableTags();
+    renderTagsBar();
 }
 
 // ---------------------- Modal helpers ----------------------
@@ -2102,6 +2226,7 @@ searchBtn.onclick = async () => {
     activeYearFilter = null;
     activeCountryFilter = null;
     activeLanguageFilter = null;
+    activeTagFilter = null;
     
     let query = searchInput.value.trim();
     
