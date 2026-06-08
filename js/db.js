@@ -920,15 +920,18 @@ export async function getGlobalTags() {
     });
 }
 
-// ==================== saveMovie MODIFICADA ====================
+// ==================== saveMovie MODIFICADA (sin async dentro de onsuccess) ====================
 export async function saveMovie(movieData, searchTerm, isExact = true) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
     const store = transaction.objectStore(STORE_MOVIES);
+    
     return new Promise((resolve, reject) => {
         const getRequest = store.get(movieData.youtubeId);
-        getRequest.onsuccess = async () => {
+        
+        getRequest.onsuccess = function() {
             const existing = getRequest.result;
+            
             if (existing) {
                 let terms = existing.searchTerms || [];
                 const existingIndex = terms.findIndex(t => t.term === searchTerm);
@@ -937,6 +940,7 @@ export async function saveMovie(movieData, searchTerm, isExact = true) {
                 } else {
                     if (isExact) terms[existingIndex].exact = true;
                 }
+                
                 const updated = {
                     ...existing,
                     searchTerms: terms,
@@ -953,12 +957,19 @@ export async function saveMovie(movieData, searchTerm, isExact = true) {
                     duration: movieData.duration ?? existing.duration,
                     lastUpdated: new Date().toISOString()
                 };
+                
                 const putRequest = store.put(updated);
-                putRequest.onsuccess = async () => {
-                    await addToGlobalTag(searchTerm, movieData.youtubeId);
-                    resolve(updated);
+                putRequest.onsuccess = function() {
+                    // Llamar a addToGlobalTag sin await dentro del callback
+                    addToGlobalTag(searchTerm, movieData.youtubeId).then(() => {
+                        resolve(updated);
+                    }).catch(() => {
+                        resolve(updated);
+                    });
                 };
-                putRequest.onerror = () => reject(putRequest.error);
+                putRequest.onerror = function() {
+                    reject(putRequest.error);
+                };
             } else {
                 const newMovie = {
                     ...movieData,
@@ -975,16 +986,27 @@ export async function saveMovie(movieData, searchTerm, isExact = true) {
                     dateSaved: new Date().toISOString(),
                     lastUpdated: new Date().toISOString()
                 };
+                
                 const addRequest = store.add(newMovie);
-                addRequest.onsuccess = async () => {
+                addRequest.onsuccess = function() {
                     if (searchTerm) {
-                        await addToGlobalTag(searchTerm, movieData.youtubeId);
+                        addToGlobalTag(searchTerm, movieData.youtubeId).then(() => {
+                            resolve(newMovie);
+                        }).catch(() => {
+                            resolve(newMovie);
+                        });
+                    } else {
+                        resolve(newMovie);
                     }
-                    resolve(newMovie);
                 };
-                addRequest.onerror = () => reject(addRequest.error);
+                addRequest.onerror = function() {
+                    reject(addRequest.error);
+                };
             }
         };
-        getRequest.onerror = () => reject(getRequest.error);
+        
+        getRequest.onerror = function() {
+            reject(getRequest.error);
+        };
     });
 }
