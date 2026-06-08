@@ -468,7 +468,7 @@ export async function deleteLanguageFromAllMovies(languageName) {
     }
 }
 
-// ==================== FUNCIONES DE METADATOS Y TAGS ====================
+// ==================== FUNCIONES DE METADATOS Y TAGS (agregan a tags, NO a searchTerms) ====================
 export async function addDirector(youtubeId, directorName) {
     const db = await openDB();
     const transaction = db.transaction([STORE_MOVIES], 'readwrite');
@@ -482,12 +482,9 @@ export async function addDirector(youtubeId, directorName) {
                 if (!movie.directors.includes(directorName)) {
                     movie.directors.push(directorName);
                 }
-                if (!movie.searchTerms) movie.searchTerms = [];
-                const termIndex = movie.searchTerms.findIndex(t => t.term === directorName);
-                if (termIndex === -1) {
-                    movie.searchTerms.push({ term: directorName, exact: true });
-                } else {
-                    movie.searchTerms[termIndex].exact = true;
+                if (!movie.tags) movie.tags = [];
+                if (!movie.tags.includes(directorName)) {
+                    movie.tags.push(directorName);
                 }
                 movie.lastUpdated = new Date().toISOString();
                 const putRequest = store.put(movie);
@@ -540,12 +537,9 @@ export async function addActor(youtubeId, actorName) {
                 if (!movie.actors.includes(actorName)) {
                     movie.actors.push(actorName);
                 }
-                if (!movie.searchTerms) movie.searchTerms = [];
-                const termIndex = movie.searchTerms.findIndex(t => t.term === actorName);
-                if (termIndex === -1) {
-                    movie.searchTerms.push({ term: actorName, exact: true });
-                } else {
-                    movie.searchTerms[termIndex].exact = true;
+                if (!movie.tags) movie.tags = [];
+                if (!movie.tags.includes(actorName)) {
+                    movie.tags.push(actorName);
                 }
                 movie.lastUpdated = new Date().toISOString();
                 const putRequest = store.put(movie);
@@ -598,12 +592,9 @@ export async function addGenre(youtubeId, genreName) {
                 if (!movie.genres.includes(genreName)) {
                     movie.genres.push(genreName);
                 }
-                if (!movie.searchTerms) movie.searchTerms = [];
-                const termIndex = movie.searchTerms.findIndex(t => t.term === genreName);
-                if (termIndex === -1) {
-                    movie.searchTerms.push({ term: genreName, exact: true });
-                } else {
-                    movie.searchTerms[termIndex].exact = true;
+                if (!movie.tags) movie.tags = [];
+                if (!movie.tags.includes(genreName)) {
+                    movie.tags.push(genreName);
                 }
                 movie.lastUpdated = new Date().toISOString();
                 const putRequest = store.put(movie);
@@ -656,12 +647,9 @@ export async function addYear(youtubeId, yearValue) {
                 if (!movie.years.includes(yearValue)) {
                     movie.years.push(yearValue);
                 }
-                if (!movie.searchTerms) movie.searchTerms = [];
-                const termIndex = movie.searchTerms.findIndex(t => t.term === yearValue);
-                if (termIndex === -1) {
-                    movie.searchTerms.push({ term: yearValue, exact: true });
-                } else {
-                    movie.searchTerms[termIndex].exact = true;
+                if (!movie.tags) movie.tags = [];
+                if (!movie.tags.includes(yearValue)) {
+                    movie.tags.push(yearValue);
                 }
                 movie.lastUpdated = new Date().toISOString();
                 const putRequest = store.put(movie);
@@ -714,12 +702,9 @@ export async function addCountry(youtubeId, countryName) {
                 if (!movie.countries.includes(countryName)) {
                     movie.countries.push(countryName);
                 }
-                if (!movie.searchTerms) movie.searchTerms = [];
-                const termIndex = movie.searchTerms.findIndex(t => t.term === countryName);
-                if (termIndex === -1) {
-                    movie.searchTerms.push({ term: countryName, exact: true });
-                } else {
-                    movie.searchTerms[termIndex].exact = true;
+                if (!movie.tags) movie.tags = [];
+                if (!movie.tags.includes(countryName)) {
+                    movie.tags.push(countryName);
                 }
                 movie.lastUpdated = new Date().toISOString();
                 const putRequest = store.put(movie);
@@ -772,12 +757,9 @@ export async function addLanguage(youtubeId, languageName) {
                 if (!movie.languages.includes(languageName)) {
                     movie.languages.push(languageName);
                 }
-                if (!movie.searchTerms) movie.searchTerms = [];
-                const termIndex = movie.searchTerms.findIndex(t => t.term === languageName);
-                if (termIndex === -1) {
-                    movie.searchTerms.push({ term: languageName, exact: true });
-                } else {
-                    movie.searchTerms[termIndex].exact = true;
+                if (!movie.tags) movie.tags = [];
+                if (!movie.tags.includes(languageName)) {
+                    movie.tags.push(languageName);
                 }
                 movie.lastUpdated = new Date().toISOString();
                 const putRequest = store.put(movie);

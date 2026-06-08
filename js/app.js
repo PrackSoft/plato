@@ -634,7 +634,20 @@ export async function refreshAvailableTags() {
     const allMovies = await getAllMovies();
     const tagsSet = new Set();
     for (const movie of allMovies) {
+        // Tags libres
         (movie.tags || []).forEach(t => tagsSet.add(t));
+        // Directores
+        (movie.directors || []).forEach(d => tagsSet.add(d));
+        // Actores
+        (movie.actors || []).forEach(a => tagsSet.add(a));
+        // Géneros
+        (movie.genres || []).forEach(g => tagsSet.add(g));
+        // Años
+        (movie.years || []).forEach(y => tagsSet.add(y));
+        // Países
+        (movie.countries || []).forEach(c => tagsSet.add(c));
+        // Idiomas
+        (movie.languages || []).forEach(l => tagsSet.add(l));
     }
     availableTags = Array.from(tagsSet).sort();
 }
@@ -2001,7 +2014,22 @@ export async function loadAndDisplayAll() {
         }
     }
     
-    // Filtrar por Global Tag si está activo (solo si no es una categoría, sino valores sueltos)
+    // Filtrar por Tag activo (busca en todos los arrays: directors, actors, genres, years, countries, languages, tags, searchTerms)
+    if (activeTagFilter && !activeCollectionFilter && !globalTagsActive) {
+        allMovies = allMovies.filter(movie => {
+            const inDirectors = (movie.directors || []).includes(activeTagFilter);
+            const inActors = (movie.actors || []).includes(activeTagFilter);
+            const inGenres = (movie.genres || []).includes(activeTagFilter);
+            const inYears = (movie.years || []).includes(activeTagFilter);
+            const inCountries = (movie.countries || []).includes(activeTagFilter);
+            const inLanguages = (movie.languages || []).includes(activeTagFilter);
+            const inTags = (movie.tags || []).includes(activeTagFilter);
+            const inSearchTerms = (movie.searchTerms || []).some(t => t.term === activeTagFilter);
+            return inDirectors || inActors || inGenres || inYears || inCountries || inLanguages || inTags || inSearchTerms;
+        });
+    }
+    
+    // Filtrar por Global Tag si está activo (valores sueltos, no categorías)
     if (activeGlobalTagFilter && !globalTagsActive) {
         allMovies = allMovies.filter(movie => {
             const inSearchTerms = (movie.searchTerms || []).some(t => t.term === activeGlobalTagFilter);
@@ -2011,7 +2039,8 @@ export async function loadAndDisplayAll() {
             const inYears = (movie.years || []).includes(activeGlobalTagFilter);
             const inCountries = (movie.countries || []).includes(activeGlobalTagFilter);
             const inLanguages = (movie.languages || []).includes(activeGlobalTagFilter);
-            return inSearchTerms || inDirectors || inActors || inGenres || inYears || inCountries || inLanguages;
+            const inTags = (movie.tags || []).includes(activeGlobalTagFilter);
+            return inSearchTerms || inDirectors || inActors || inGenres || inYears || inCountries || inLanguages || inTags;
         });
     }
 
