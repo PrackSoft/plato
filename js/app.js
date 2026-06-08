@@ -1920,8 +1920,8 @@ export async function loadAndDisplayAll() {
                 return hasDirector || hasActor || hasGenre || hasYear || hasCountry || hasLanguage || hasTags;
             });
         } else if (collectionsSortBy === 'tags') {
-            // Mostrar SOLO películas que tienen tags
-            allMovies = allMovies.filter(movie => (movie.tags || []).length > 0);
+            // Mostrar SOLO películas que tienen tags; handle undefined tags in Collection Tags filter
+            allMovies = allMovies.filter(movie => movie.tags && movie.tags.length > 0);
         } else if (collectionsSortBy === 'directors') {
             allMovies = allMovies.filter(movie => (movie.directors || []).length > 0);
         } else if (collectionsSortBy === 'actors') {
