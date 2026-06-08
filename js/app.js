@@ -530,10 +530,8 @@ function buildSettingsSidebarContent() {
 
 // ---------------------- Global Tags functions ----------------------
 async function refreshGlobalTags() {
-    const allMovies = await getAllMovies();
     const tagsSet = new Set();
     
-    // Agregar categorías fijas
     tagsSet.add('Director');
     tagsSet.add('Actor');
     tagsSet.add('Genre');
@@ -541,17 +539,6 @@ async function refreshGlobalTags() {
     tagsSet.add('Country');
     tagsSet.add('Language');
     tagsSet.add('Tags');
-    
-    // Agregar valores dinámicos de metadatos existentes
-    for (const movie of allMovies) {
-        (movie.directors || []).forEach(d => tagsSet.add(d));
-        (movie.actors || []).forEach(a => tagsSet.add(a));
-        (movie.genres || []).forEach(g => tagsSet.add(g));
-        (movie.years || []).forEach(y => tagsSet.add(y));
-        (movie.countries || []).forEach(c => tagsSet.add(c));
-        (movie.languages || []).forEach(l => tagsSet.add(l));
-        (movie.tags || []).forEach(t => tagsSet.add(t));
-    }
     
     globalTagsList = Array.from(tagsSet).sort();
     renderGlobalTagsBar();
@@ -1935,10 +1922,35 @@ if (filterTrashBtn) filterTrashBtn.addEventListener('click', toggleTrashFilter);
 // ---------------------- Load and display ----------------------
 export async function loadAndDisplayAll() {
     await dbReady;
-    let allMovies = await getAllMovies();  // ← ASIGNACIÓN POR DEFECTO
+    let allMovies = await getAllMovies();
 
+    // Si Global Tags está activo con una categoría, filtrar y renderizar
+    if (globalTagsActive && activeGlobalTagFilter) {
+        let filteredMovies = [...allMovies];
+        
+        if (activeGlobalTagFilter === 'Director') {
+            filteredMovies = filteredMovies.filter(movie => (movie.directors || []).length > 0);
+        } else if (activeGlobalTagFilter === 'Actor') {
+            filteredMovies = filteredMovies.filter(movie => (movie.actors || []).length > 0);
+        } else if (activeGlobalTagFilter === 'Genre') {
+            filteredMovies = filteredMovies.filter(movie => (movie.genres || []).length > 0);
+        } else if (activeGlobalTagFilter === 'Year') {
+            filteredMovies = filteredMovies.filter(movie => (movie.years || []).length > 0);
+        } else if (activeGlobalTagFilter === 'Country') {
+            filteredMovies = filteredMovies.filter(movie => (movie.countries || []).length > 0);
+        } else if (activeGlobalTagFilter === 'Language') {
+            filteredMovies = filteredMovies.filter(movie => (movie.languages || []).length > 0);
+        } else if (activeGlobalTagFilter === 'Tags') {
+            filteredMovies = filteredMovies.filter(movie => (movie.tags || []).length > 0);
+        }
+        
+        const groupBy = activeGlobalTagFilter.toLowerCase();
+        const title = `${activeGlobalTagFilter} (${filteredMovies.length})`;
+        renderMovies(resultsGrid, filteredMovies, title, 'globalTags', currentSort, null, groupBy);
+        return;
+    }
 
-        if (activeCollectionFilter) {
+    if (activeCollectionFilter) {
         allMovies = await getAllMovies();
         
         // Filtrar según el tipo de colección seleccionado
@@ -1989,8 +2001,8 @@ export async function loadAndDisplayAll() {
         }
     }
     
-    // Filtrar por Global Tag si está activo
-    if (activeGlobalTagFilter) {
+    // Filtrar por Global Tag si está activo (solo si no es una categoría, sino valores sueltos)
+    if (activeGlobalTagFilter && !globalTagsActive) {
         allMovies = allMovies.filter(movie => {
             const inSearchTerms = (movie.searchTerms || []).some(t => t.term === activeGlobalTagFilter);
             const inDirectors = (movie.directors || []).includes(activeGlobalTagFilter);
