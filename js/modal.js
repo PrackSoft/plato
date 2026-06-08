@@ -73,13 +73,14 @@ function renderModalContent(movie, source) {
         <p><strong>Duration:</strong> ${formatDuration(movie.duration)}</p>
         <p><strong>Saved on:</strong> ${new Date(movie.dateSaved).toLocaleString()}</p>
         ${isInTrash ? `<p><strong>Deleted on:</strong> ${movie.deletedAt ? new Date(movie.deletedAt).toLocaleString() : 'Unknown date'}</p>` : ''}
+        
         <div class="modal-section">
             <strong>Search term:</strong>
             <div id="termsList" class="terms-list">
                 ${(movie.searchTerms || []).map(t => `<span class="term-chip">${escapeHtml(t.term)}${!isInTrash ? `<span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>` : ''}</span>`).join('')}
             </div>
-            ${!isInTrash ? `<div class="add-term-row"><input type="text" id="newTermInput" class="modal-input" placeholder="Add new term (separate multiple with commas)"><span id="addTermBtn" class="modal-add-icon" title="Add term"><span class="material-symbols-outlined">add</span></span></div>` : ''}
         </div>
+
         <div class="modal-section">
             <strong>Director:</strong>
             <div id="directorsList" class="terms-list">
