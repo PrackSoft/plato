@@ -1908,6 +1908,17 @@ export async function loadAndDisplayAll() {
         });
     }
     
+    // Filtrar por search term específico (chip)
+    if (activeTermFilter) {
+        allMovies = allMovies.filter(movie => {
+            const terms = movie.searchTerms || [];
+            if (activeRelatedFilter === 'exact') {
+                return terms.some(t => t.term === activeTermFilter && t.exact === true);
+            } else {
+                return terms.some(t => t.term === activeTermFilter && t.exact === false);
+            }
+        });
+    }
 
     let title;
     if (activeCollectionFilter) {
