@@ -1,5 +1,5 @@
 // js/app.js - Plato App (con Global Tags y Tags en Collection)
-import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo, addYear, addToGlobalTag, getGlobalTags } from './db.js';
+import { openDB, getAllMovies, getTrashMovies, saveMovie, toggleWatching, moveMovieToTrash, restoreMovieFromTrash, permanentlyDeleteMovie, renameTermInAllMovies, saveExtraInfo, addYear } from './db.js';
 import { searchYouTube } from './api/youtube.js';
 import { renderMovies } from './render.js';
 import { SEARCH_OPTIONS } from './channels.js';
