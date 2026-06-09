@@ -68,19 +68,22 @@ function renderModalContent(movie, source) {
         </div>
         <img class="modal-image" src="${movie.imageUrl}" alt="${movie.title}">
         <p><strong>Year:</strong> ${movie.publishedAt ? new Date(movie.publishedAt).toLocaleDateString() : 'Unknown year'}</p>
-        <div class="modal-description">${escapeHtml(movie.description || 'No Description')}</div>
-        ${tagsHtml}
         <p><strong>Duration:</strong> ${formatDuration(movie.duration)}</p>
         <p><strong>Saved on:</strong> ${new Date(movie.dateSaved).toLocaleString()}</p>
         ${isInTrash ? `<p><strong>Deleted on:</strong> ${movie.deletedAt ? new Date(movie.deletedAt).toLocaleString() : 'Unknown date'}</p>` : ''}
-        
         <div class="modal-section">
             <strong>Search term:</strong>
             <div id="termsList" class="terms-list">
                 ${(movie.searchTerms || []).map(t => `<span class="term-chip">${escapeHtml(t.term)}${!isInTrash ? `<span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>` : ''}</span>`).join('')}
             </div>
         </div>
-
+        <div class="modal-section">
+            <strong>Tags:</strong>
+            <div id="tagsList" class="terms-list">
+                ${(movie.tags || []).map(name => `<span class="term-chip">${escapeHtml(name)}${!isInTrash ? `<span class="remove-tag" data-name="${escapeHtml(name)}">✖</span>` : ''}</span>`).join('')}
+            </div>
+            ${!isInTrash ? `<div class="add-term-row"><input type="text" id="newTagInput" class="modal-input" placeholder="Add tag (separate multiple with commas)"><span id="addTagBtn" class="modal-add-icon" title="Add tag"><span class="material-symbols-outlined">add</span></span></div>` : ''}
+        </div>
         <div class="modal-section">
             <strong>Director:</strong>
             <div id="directorsList" class="terms-list">
@@ -122,13 +125,6 @@ function renderModalContent(movie, source) {
                 ${languages.map(name => `<span class="term-chip">${escapeHtml(name)}${!isInTrash ? `<span class="remove-language" data-name="${escapeHtml(name)}">✖</span>` : ''}</span>`).join('')}
             </div>
             ${!isInTrash ? `<div class="add-term-row"><input type="text" id="newLanguageInput" class="modal-input" placeholder="Add language (separate multiple with commas)"><span id="addLanguageBtn" class="modal-add-icon" title="Add language"><span class="material-symbols-outlined">add</span></span></div>` : ''}
-        </div>
-        <div class="modal-section">
-            <strong>Tags:</strong>
-            <div id="tagsList" class="terms-list">
-                ${(movie.tags || []).map(name => `<span class="term-chip">${escapeHtml(name)}${!isInTrash ? `<span class="remove-tag" data-name="${escapeHtml(name)}">✖</span>` : ''}</span>`).join('')}
-            </div>
-            ${!isInTrash ? `<div class="add-term-row"><input type="text" id="newTagInput" class="modal-input" placeholder="Add tag (separate multiple with commas)"><span id="addTagBtn" class="modal-add-icon" title="Add tag"><span class="material-symbols-outlined">add</span></span></div>` : ''}
         </div>
         <div class="modal-section toggle-row ${isInTrash ? 'disabled' : ''}" id="watchingToggleRow">
             <span>Watching:</span>
