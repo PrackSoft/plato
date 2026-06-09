@@ -1827,6 +1827,21 @@ export async function loadAndDisplayAll() {
     await dbReady;
     let allMovies = await getAllMovies();
 
+    // Filtrar por Exact/Related
+    if (!activeCollectionFilter && !activeTrashFilter && !activeWatchingFilter && !activeFavoriteFilter && !activeTermFilter) {
+        if (activeRelatedFilter === 'exact') {
+            allMovies = allMovies.filter(movie => {
+                const terms = movie.searchTerms || [];
+                return terms.some(t => t.exact === true);
+            });
+        } else if (activeRelatedFilter === 'related') {
+            allMovies = allMovies.filter(movie => {
+                const terms = movie.searchTerms || [];
+                return terms.some(t => t.exact === false);
+            });
+        }
+    }
+
     if (activeCollectionFilter) {
         allMovies = await getAllMovies();
         
