@@ -1045,12 +1045,11 @@ async function deleteMoviesWithTermFromCurrentView(term) {
         }
         if (activeWatchingFilter) moviesToProcess = moviesToProcess.filter(movie => movie.watching === true);
         if (activeFavoriteFilter) moviesToProcess = moviesToProcess.filter(movie => movie.favorite === true);
-        // Filtrar por activeTermFilter (cuando se selecciona un chip)
-        if (activeTermFilter) {
-            const isExactMode = (activeRelatedFilter === 'exact');
-            allMovies = allMovies.filter(movie => {
+        if (activeRelatedFilter === 'related') {
+            onlyRelated = true;
+            moviesToProcess = moviesToProcess.filter(movie => {
                 const terms = movie.searchTerms || [];
-                return terms.some(t => t.term === activeTermFilter && t.exact === isExactMode);
+                return terms.some(t => t.exact === false);
             });
         }
     }
