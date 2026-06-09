@@ -1801,8 +1801,7 @@ function toggleCollectionFilter() {
     activeCollectionFilter = !activeCollectionFilter;
     
     if (activeCollectionFilter) {
-        activeRelatedFilter = 'exact';
-        updateRelatedButtonText();
+        // No cambiar activeRelatedFilter ni el texto del botón
         if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
         if (termsBar) termsBar.classList.add('hidden');
     } else {
@@ -1826,6 +1825,18 @@ if (filterTrashBtn) filterTrashBtn.addEventListener('click', toggleTrashFilter);
 export async function loadAndDisplayAll() {
     await dbReady;
     let allMovies = await getAllMovies();
+
+    // Filtrar por search term específico (chip)
+    if (activeTermFilter) {
+        allMovies = allMovies.filter(movie => {
+            const terms = movie.searchTerms || [];
+            if (activeRelatedFilter === 'exact') {
+                return terms.some(t => t.term === activeTermFilter && t.exact === true);
+            } else {
+                return terms.some(t => t.term === activeTermFilter && t.exact === false);
+            }
+        });
+    }
 
     // Filtrar por Exact/Related
     if (!activeCollectionFilter && !activeTrashFilter && !activeWatchingFilter && !activeFavoriteFilter && !activeTermFilter) {
@@ -1905,18 +1916,6 @@ export async function loadAndDisplayAll() {
             const inTags = (movie.tags || []).includes(activeTagFilter);
             const inSearchTerms = (movie.searchTerms || []).some(t => t.term === activeTagFilter);
             return inDirectors || inActors || inGenres || inYears || inCountries || inLanguages || inTags || inSearchTerms;
-        });
-    }
-    
-    // Filtrar por search term específico (chip)
-    if (activeTermFilter) {
-        allMovies = allMovies.filter(movie => {
-            const terms = movie.searchTerms || [];
-            if (activeRelatedFilter === 'exact') {
-                return terms.some(t => t.term === activeTermFilter && t.exact === true);
-            } else {
-                return terms.some(t => t.term === activeTermFilter && t.exact === false);
-            }
         });
     }
 
