@@ -16,8 +16,6 @@ const filterFavoriteBtn = document.getElementById('filterFavoriteBtn');
 const filterTrashBtn = document.getElementById('filterTrashBtn');
 const filterCollectionBtn = document.getElementById('filterCollectionBtn');
 const filterRelatedBtn = document.getElementById('filterRelatedBtn');
-const toggleGlobalTagsBtn = document.getElementById('toggleGlobalTagsBtn');
-const globalTagsBar = document.getElementById('globalTagsBar');
 const termsBar = document.getElementById('termsBar');
 const directorsBar = document.getElementById('directorsBar');
 const actorsBar = document.getElementById('actorsBar');
@@ -50,9 +48,6 @@ let activeYearFilter = null;
 let activeCountryFilter = null;
 let activeLanguageFilter = null;
 let activeTagFilter = null;
-let activeGlobalTagFilter = null;
-let globalTagsActive = false;
-let globalTagsList = [];
 
 let availableTerms = [];
 let availableDirector = [];
@@ -526,107 +521,6 @@ function buildSettingsSidebarContent() {
             <p class="settings-note">Future options: API key, default channel, theme, etc.</p>
         </div>
     `;
-}
-
-// ---------------------- Global Tags functions ----------------------
-async function refreshGlobalTags() {
-    const tagsSet = new Set();
-    
-    tagsSet.add('Director');
-    tagsSet.add('Actor');
-    tagsSet.add('Genre');
-    tagsSet.add('Year');
-    tagsSet.add('Country');
-    tagsSet.add('Language');
-    tagsSet.add('Tags');
-    
-    globalTagsList = Array.from(tagsSet).sort();
-    renderGlobalTagsBar();
-}
-
-function renderGlobalTagsBar() {
-    if (!globalTagsBar) return;
-    
-    if (globalTagsList.length === 0) {
-        globalTagsBar.innerHTML = '<div class="terms-placeholder">No global tags yet.</div>';
-        return;
-    }
-    
-    const html = globalTagsList.map(tag => {
-        let icon = 'sell';
-        if (tag === 'Director') icon = 'person';
-        else if (tag === 'Actor') icon = 'group';
-        else if (tag === 'Genre') icon = 'theater_comedy';
-        else if (tag === 'Year') icon = 'calendar_month';
-        else if (tag === 'Country') icon = 'flag';
-        else if (tag === 'Language') icon = 'translate';
-        else if (tag === 'Tags') icon = 'sell';
-        
-        return `
-            <button class="btn btn-secondary btn-sm ${activeGlobalTagFilter === tag ? 'active' : ''}" data-tag="${escapeHtml(tag)}">
-                <span class="material-symbols-outlined">${icon}</span>
-                ${escapeHtml(tag)}
-            </button>
-        `;
-    }).join('');
-    
-    globalTagsBar.innerHTML = html;
-    
-    document.querySelectorAll('#globalTagsBar .btn').forEach(btn => {
-        const tag = btn.dataset.tag;
-        btn.addEventListener('click', () => {
-            if (activeGlobalTagFilter === tag) {
-                activeGlobalTagFilter = null;
-            } else {
-                activeGlobalTagFilter = tag;
-            }
-            loadAndDisplayAll();
-        });
-    });
-}
-
-// ---------------------- Toggle Global Tags ----------------------
-if (toggleGlobalTagsBtn && globalTagsBar) {
-    const tagsIcon = toggleGlobalTagsBtn.querySelector('.material-symbols-outlined');
-    
-    toggleGlobalTagsBtn.classList.add('btn-secondary');
-    
-    toggleGlobalTagsBtn.addEventListener('click', async () => {
-        if (activeWatchingFilter || activeFavoriteFilter || activeTrashFilter || activeCollectionFilter) {
-            activeWatchingFilter = false;
-            activeFavoriteFilter = false;
-            activeTrashFilter = false;
-            activeCollectionFilter = false;
-            updateFilterButtonsUI();
-            updateCollectionButtonText();
-            
-            if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
-                activeRelatedFilter = savedRelatedFilter;
-                updateRelatedButtonText();
-            }
-        }
-        
-        globalTagsActive = !globalTagsActive;
-        
-        if (globalTagsActive) {
-            await refreshGlobalTags();
-            globalTagsBar.classList.remove('hidden');
-            toggleGlobalTagsBtn.classList.remove('btn-secondary');
-            toggleGlobalTagsBtn.classList.add('btn-primary');
-            if (tagsIcon) tagsIcon.textContent = 'sell';
-            if (termsBar && !termsBar.classList.contains('hidden')) {
-                termsBar.classList.add('hidden');
-                if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
-            }
-        } else {
-            globalTagsBar.classList.add('hidden');
-            toggleGlobalTagsBtn.classList.remove('btn-primary');
-            toggleGlobalTagsBtn.classList.add('btn-secondary');
-            if (tagsIcon) tagsIcon.textContent = 'sell';
-            activeGlobalTagFilter = null;
-        }
-        loadAndDisplayAll();
-    });
 }
 
 // ---------------------- Tags Bar functions ----------------------
@@ -1800,7 +1694,6 @@ function toggleWatchingFilter() {
     activeLanguageFilter = null;
     activeTagFilter = null;
     activeCollectionFilter = false;
-    activeGlobalTagFilter = null;
     
     if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
         savedRelatedFilter = activeRelatedFilter;
@@ -1833,7 +1726,6 @@ function toggleFavoriteFilter() {
     activeLanguageFilter = null;
     activeTagFilter = null;
     activeCollectionFilter = false;
-    activeGlobalTagFilter = null;
     
     if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
         savedRelatedFilter = activeRelatedFilter;
@@ -1866,7 +1758,6 @@ function toggleTrashFilter() {
     activeLanguageFilter = null;
     activeTagFilter = null;
     activeCollectionFilter = false;
-    activeGlobalTagFilter = null;
     
     if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
         savedRelatedFilter = activeRelatedFilter;
@@ -1896,7 +1787,6 @@ function toggleCollectionFilter() {
     activeCountryFilter = null;
     activeLanguageFilter = null;
     activeTagFilter = null;
-    activeGlobalTagFilter = null;
     
     if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter && !activeCollectionFilter) {
         savedRelatedFilter = activeRelatedFilter;
@@ -1936,32 +1826,6 @@ if (filterTrashBtn) filterTrashBtn.addEventListener('click', toggleTrashFilter);
 export async function loadAndDisplayAll() {
     await dbReady;
     let allMovies = await getAllMovies();
-
-    // Si Global Tags está activo con una categoría, filtrar y renderizar
-    if (globalTagsActive && activeGlobalTagFilter) {
-        let filteredMovies = [...allMovies];
-        
-        if (activeGlobalTagFilter === 'Director') {
-            filteredMovies = filteredMovies.filter(movie => (movie.directors || []).length > 0);
-        } else if (activeGlobalTagFilter === 'Actor') {
-            filteredMovies = filteredMovies.filter(movie => (movie.actors || []).length > 0);
-        } else if (activeGlobalTagFilter === 'Genre') {
-            filteredMovies = filteredMovies.filter(movie => (movie.genres || []).length > 0);
-        } else if (activeGlobalTagFilter === 'Year') {
-            filteredMovies = filteredMovies.filter(movie => (movie.years || []).length > 0);
-        } else if (activeGlobalTagFilter === 'Country') {
-            filteredMovies = filteredMovies.filter(movie => (movie.countries || []).length > 0);
-        } else if (activeGlobalTagFilter === 'Language') {
-            filteredMovies = filteredMovies.filter(movie => (movie.languages || []).length > 0);
-        } else if (activeGlobalTagFilter === 'Tags') {
-            filteredMovies = filteredMovies.filter(movie => (movie.tags || []).length > 0);
-        }
-        
-        const groupBy = activeGlobalTagFilter.toLowerCase();
-        const title = `${activeGlobalTagFilter} (${filteredMovies.length})`;
-        renderMovies(resultsGrid, filteredMovies, title, 'globalTags', currentSort, null, groupBy);
-        return;
-    }
 
     if (activeCollectionFilter) {
         allMovies = await getAllMovies();
@@ -2029,20 +1893,6 @@ export async function loadAndDisplayAll() {
         });
     }
     
-    // Filtrar por Global Tag si está activo (valores sueltos, no categorías)
-    if (activeGlobalTagFilter && !globalTagsActive) {
-        allMovies = allMovies.filter(movie => {
-            const inSearchTerms = (movie.searchTerms || []).some(t => t.term === activeGlobalTagFilter);
-            const inDirectors = (movie.directors || []).includes(activeGlobalTagFilter);
-            const inActors = (movie.actors || []).includes(activeGlobalTagFilter);
-            const inGenres = (movie.genres || []).includes(activeGlobalTagFilter);
-            const inYears = (movie.years || []).includes(activeGlobalTagFilter);
-            const inCountries = (movie.countries || []).includes(activeGlobalTagFilter);
-            const inLanguages = (movie.languages || []).includes(activeGlobalTagFilter);
-            const inTags = (movie.tags || []).includes(activeGlobalTagFilter);
-            return inSearchTerms || inDirectors || inActors || inGenres || inYears || inCountries || inLanguages || inTags;
-        });
-    }
 
     let title;
     if (activeCollectionFilter) {
@@ -2092,8 +1942,6 @@ export async function loadAndDisplayAll() {
         title = `Language: ${activeLanguageFilter} (${allMovies.length})`;
     } else if (activeTagFilter) {
         title = `Tag: "${activeTagFilter}" (${allMovies.length})`;
-    } else if (activeGlobalTagFilter) {
-        title = `Global tag: "${activeGlobalTagFilter}" (${allMovies.length})`;
     } else if (activeRelatedFilter === 'exact') {
         title = `Exact results (${allMovies.length})`;
     } else {
@@ -2386,18 +2234,6 @@ async function init() {
     buildCollectionDropdown();
     buildRelatedDropdown();
     buildSettingsSidebarContent();
-    
-    if (globalTagsBar) globalTagsBar.classList.add('hidden');
-    
-    searchInBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        searchInPanel.classList.toggle('hidden');
-    });
-    document.addEventListener('click', (e) => {
-        if (!searchInBtn.contains(e.target) && !searchInPanel.contains(e.target)) {
-            searchInPanel.classList.add('hidden');
-        }
-    });
     
     initModal(async () => {
         await refreshAvailableTerms();

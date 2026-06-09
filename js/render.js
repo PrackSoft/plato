@@ -64,7 +64,7 @@ export function renderMovies(container, movies, title, source = 'main', currentS
     let groups = null;
 
     // Si estamos en Collection con un grupo específico (no 'all')
-    if ((source === 'collections' || source === 'globalTags') && groupBy && groupBy !== 'all') {
+    if ((source === 'collections') && groupBy && groupBy !== 'all') {
         isGrouped = true;
         // Agrupar por el primer valor del campo correspondiente
         const groupMap = new Map();
@@ -232,7 +232,7 @@ export function renderMovies(container, movies, title, source = 'main', currentS
     }
 
     // Mostrar sort selector en Collection mode (cuando está agrupado)
-    const showSortSelector = (!isCollectionSort && !isGrouped) || (source === 'collections' && isGrouped) || (source === 'globalTags' && isGrouped);
+    const showSortSelector = (!isCollectionSort && !isGrouped) || (source === 'collections' && isGrouped);
     
     container.innerHTML = `
         <div class="history-header">

@@ -786,20 +786,6 @@ body {
     accent-color: var(--accent);
 }
 
-#globalTagsBar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--gap-sm);
-    margin: var(--gap-md) 0;
-    padding: var(--gap-sm) 0;
-    border-top: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
-}
-
-#globalTagsBar.hidden {
-    display: none;
-}
-
 .settings-note {
     color: var(--text-secondary);
     font-size: 0.875rem;

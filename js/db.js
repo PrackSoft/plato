@@ -4,7 +4,6 @@ const DB_VERSION = 8;
 const STORE_MOVIES = 'movies';
 const STORE_TRASH = 'trash';
 const STORE_EXTRA = 'movie_extra';
-const STORE_GLOBAL_TAGS = 'globalTags';
 
 let dbInstance = null;
 
