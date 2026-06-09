@@ -1879,7 +1879,7 @@ export async function loadAndDisplayAll() {
     }
     
     // Filtrar por Tag activo (busca en todos los arrays: directors, actors, genres, years, countries, languages, tags, searchTerms)
-    if (activeTagFilter && !activeCollectionFilter && !globalTagsActive) {
+    if (activeTagFilter && !activeCollectionFilter) {
         allMovies = allMovies.filter(movie => {
             const inDirectors = (movie.directors || []).includes(activeTagFilter);
             const inActors = (movie.actors || []).includes(activeTagFilter);
@@ -1967,7 +1967,7 @@ export async function loadAndDisplayAll() {
 
     let termsToShow;
 
-    if (!activeCollectionFilter && !globalTagsActive) {
+    if (!activeCollectionFilter) {
         if (activeTermFilter) {
             const stillExists = await termHasChildren(activeTermFilter);
             if (!stillExists) {
@@ -2002,7 +2002,7 @@ export async function loadAndDisplayAll() {
         if (countriesBar) countriesBar.classList.add('hidden');
         if (languagesBar) languagesBar.classList.add('hidden');
         if (tagsBar) tagsBar.classList.add('hidden');
-    } else if (!activeCollectionFilter && globalTagsActive) {
+    } else if (!activeCollectionFilter) {
         if (directorsBar) directorsBar.classList.add('hidden');
         if (actorsBar) actorsBar.classList.add('hidden');
         if (genresBar) genresBar.classList.add('hidden');
