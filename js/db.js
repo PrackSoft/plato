@@ -22,7 +22,6 @@ export async function openDB() {
             if (db.objectStoreNames.contains(STORE_MOVIES)) db.deleteObjectStore(STORE_MOVIES);
             if (db.objectStoreNames.contains(STORE_TRASH)) db.deleteObjectStore(STORE_TRASH);
             if (db.objectStoreNames.contains(STORE_EXTRA)) db.deleteObjectStore(STORE_EXTRA);
-            if (db.objectStoreNames.contains(STORE_GLOBAL_TAGS)) db.deleteObjectStore(STORE_GLOBAL_TAGS);
             
             const store = db.createObjectStore(STORE_MOVIES, { keyPath: 'youtubeId' });
             store.createIndex('by_dateSaved', 'dateSaved', { unique: false });
@@ -35,7 +34,6 @@ export async function openDB() {
             trashStore.createIndex('by_channelId', 'channelId', { unique: false });
             
             db.createObjectStore(STORE_EXTRA, { keyPath: 'youtubeId' });
-            db.createObjectStore(STORE_GLOBAL_TAGS, { keyPath: 'tagValue' });
         };
     });
 }
@@ -850,57 +848,6 @@ export async function removeTag(youtubeId, tagName) {
     });
 }
 
-// ==================== FUNCIONES PARA GLOBAL TAGS ====================
-export async function addToGlobalTag(tagValue, movieId) {
-    if (!tagValue || !movieId) return;
-    const db = await openDB();
-    const transaction = db.transaction([STORE_GLOBAL_TAGS], 'readwrite');
-    const store = transaction.objectStore(STORE_GLOBAL_TAGS);
-    
-    return new Promise((resolve, reject) => {
-        const getRequest = store.get(tagValue);
-        getRequest.onsuccess = () => {
-            const existing = getRequest.result;
-            if (existing) {
-                let ids = existing.movieIds ? existing.movieIds.split(',') : [];
-                if (!ids.includes(movieId)) {
-                    ids.push(movieId);
-                    existing.movieIds = ids.join(',');
-                    existing.updatedAt = new Date().toISOString();
-                    const putRequest = store.put(existing);
-                    putRequest.onsuccess = () => resolve();
-                    putRequest.onerror = () => reject(putRequest.error);
-                } else {
-                    resolve();
-                }
-            } else {
-                const newTag = {
-                    tagValue: tagValue,
-                    movieIds: movieId,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                };
-                const addRequest = store.add(newTag);
-                addRequest.onsuccess = () => resolve();
-                addRequest.onerror = () => reject(addRequest.error);
-            }
-        };
-        getRequest.onerror = () => reject(getRequest.error);
-    });
-}
-
-export async function getGlobalTags() {
-    const db = await openDB();
-    const transaction = db.transaction([STORE_GLOBAL_TAGS], 'readonly');
-    const store = transaction.objectStore(STORE_GLOBAL_TAGS);
-    
-    return new Promise((resolve, reject) => {
-        const request = store.getAll();
-        request.onsuccess = () => resolve(request.result || []);
-        request.onerror = () => reject(request.error);
-    });
-}
-
 // ==================== saveMovie MODIFICADA (sin async dentro de onsuccess) ====================
 export async function saveMovie(movieData, searchTerm, isExact = true) {
     const db = await openDB();
@@ -941,12 +888,7 @@ export async function saveMovie(movieData, searchTerm, isExact = true) {
                 
                 const putRequest = store.put(updated);
                 putRequest.onsuccess = function() {
-                    // Llamar a addToGlobalTag sin await dentro del callback
-                    addToGlobalTag(searchTerm, movieData.youtubeId).then(() => {
-                        resolve(updated);
-                    }).catch(() => {
-                        resolve(updated);
-                    });
+                    resolve(updated);
                 };
                 putRequest.onerror = function() {
                     reject(putRequest.error);
@@ -970,15 +912,7 @@ export async function saveMovie(movieData, searchTerm, isExact = true) {
                 
                 const addRequest = store.add(newMovie);
                 addRequest.onsuccess = function() {
-                    if (searchTerm) {
-                        addToGlobalTag(searchTerm, movieData.youtubeId).then(() => {
-                            resolve(newMovie);
-                        }).catch(() => {
-                            resolve(newMovie);
-                        });
-                    } else {
-                        resolve(newMovie);
-                    }
+                    resolve(newMovie);
                 };
                 addRequest.onerror = function() {
                     reject(addRequest.error);
