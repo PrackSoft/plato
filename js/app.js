@@ -1980,12 +1980,10 @@ export async function loadAndDisplayAll() {
         title = `${sortLabel}${filterName} (${allMovies.length})`;
     } else if (activeTrashFilter) {
         title = `Trash (${allMovies.length})`;
-    } else if (activeWatchingFilter && activeFavoriteFilter) {
-        title = `Watching & Favorites (${allMovies.length})`;
-    } else if (activeWatchingFilter) {
-        title = `Watching (${allMovies.length})`;
-    } else if (activeFavoriteFilter) {
-        title = `Favorites (${allMovies.length})`;
+    } else if (activeWatchingFilter || activeFavoriteFilter) {
+        const primaryLabel = (activeRelatedFilter === 'exact') ? 'Exact Results' : 'Related Results';
+        const icon = activeWatchingFilter ? 'visibility' : 'star';
+        title = `${icon} ${primaryLabel} (${allMovies.length})`;
     } else if (activeTermFilter) {
         title = `Search term: "${activeTermFilter}" (${allMovies.length})`;
     } else if (activeDirectorFilter) {
@@ -2003,9 +2001,9 @@ export async function loadAndDisplayAll() {
     } else if (activeTagFilter) {
         title = `Tag: "${activeTagFilter}" (${allMovies.length})`;
     } else if (activeRelatedFilter === 'exact') {
-        title = `Exact results (${allMovies.length})`;
+        title = `Exact Results (${allMovies.length})`;
     } else {
-        title = `Related results (${allMovies.length})`;
+        title = `Related Results (${allMovies.length})`;
     }
 
     const onSortChange = (newSort) => {
