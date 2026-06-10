@@ -347,7 +347,7 @@ function buildCollectionDropdown() {
     if (!panel) return;
     
     const options = [
-        { value: 'all', label: 'Collection', icon: 'join' },
+        { value: 'all', label: 'Collection', icon: 'join_inner' },
         { value: 'tags', label: 'Tags', icon: 'sell' },
         { value: 'directors', label: 'Director', icon: 'person' },
         { value: 'actors', label: 'Actor', icon: 'group' },
@@ -428,12 +428,13 @@ function updateCollectionButtonText() {
     const labelSpan = mainPart.querySelector('.collections-label');
     
     if (!activeCollectionFilter) {
+    // Mantener el texto del último grupo seleccionado, pero sin estilo activo
         if (iconSpan) iconSpan.textContent = 'join_inner';
-        if (labelSpan) labelSpan.textContent = 'Collection';
+        // No cambiar labelSpan, mantener el texto actual (ej. "Tags")
     } else {
         switch (collectionsSortBy) {
             case 'all':
-                if (iconSpan) iconSpan.textContent = 'join';
+                if (iconSpan) iconSpan.textContent = 'join_inner';
                 if (labelSpan) labelSpan.textContent = 'Collection';
                 break;
             case 'tags':
@@ -1888,7 +1889,7 @@ export async function loadAndDisplayAll() {
     let title;
     if (activeCollectionFilter) {
         let sortLabel = '';
-        if (collectionsSortBy === 'all') sortLabel = 'All';
+        if (collectionsSortBy === 'all') sortLabel = 'Collection';
         else if (collectionsSortBy === 'tags') sortLabel = 'Tags';
         else if (collectionsSortBy === 'directors') sortLabel = 'Director';
         else if (collectionsSortBy === 'actors') sortLabel = 'Actor';
