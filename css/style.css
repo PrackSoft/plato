@@ -791,6 +791,13 @@ body {
     font-size: 0.875rem;
 }
 
+/* Texto deshabilitado para Watching y Favorites, dentro del Trash */
+.btn-disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 @media (max-width: 768px) {
     .top-controls {
         flex-direction: column;

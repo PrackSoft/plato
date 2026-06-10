@@ -1725,6 +1725,15 @@ function updateFilterButtonsUI() {
     if (activeCollectionFilter && filterCollectionBtn) filterCollectionBtn.classList.add('active');
     else if (filterCollectionBtn) filterCollectionBtn.classList.remove('active');
     
+    // Deshabilitar botones Watching y Favorite en Trash
+    if (activeTrashFilter) {
+        if (filterWatchingBtn) filterWatchingBtn.classList.add('btn-disabled');
+        if (filterFavoriteBtn) filterFavoriteBtn.classList.add('btn-disabled');
+    } else {
+        if (filterWatchingBtn) filterWatchingBtn.classList.remove('btn-disabled');
+        if (filterFavoriteBtn) filterFavoriteBtn.classList.remove('btn-disabled');
+    }
+    
     // Exact/Related button: change style when Trash or Collection is active
     if (activeTrashFilter || activeCollectionFilter) {
         if (filterRelatedBtn) {
@@ -1741,6 +1750,8 @@ function updateFilterButtonsUI() {
 
 // ---------------------- Toggle functions ----------------------
 function toggleWatchingFilter() {
+    if (activeTrashFilter) return;
+
     activeWatchingFilter = !activeWatchingFilter;
     if (activeWatchingFilter && activeFavoriteFilter) {
         activeFavoriteFilter = false;
@@ -1750,6 +1761,8 @@ function toggleWatchingFilter() {
 }
 
 function toggleFavoriteFilter() {
+    if (activeTrashFilter) return;
+
     activeFavoriteFilter = !activeFavoriteFilter;
     if (activeFavoriteFilter && activeWatchingFilter) {
         activeWatchingFilter = false;
