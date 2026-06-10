@@ -1980,10 +1980,6 @@ export async function loadAndDisplayAll() {
         title = `${sortLabel}${filterName} (${allMovies.length})`;
     } else if (activeTrashFilter) {
         title = `Trash (${allMovies.length})`;
-    } else if (activeWatchingFilter || activeFavoriteFilter) {
-        const primaryLabel = (activeRelatedFilter === 'exact') ? 'Exact Results' : 'Related Results';
-        const icon = activeWatchingFilter ? 'visibility' : 'star';
-        title = `${icon} ${primaryLabel} (${allMovies.length})`;
     } else if (activeTermFilter) {
         title = `Search term: "${activeTermFilter}" (${allMovies.length})`;
     } else if (activeDirectorFilter) {
@@ -2000,10 +1996,16 @@ export async function loadAndDisplayAll() {
         title = `Language: ${activeLanguageFilter} (${allMovies.length})`;
     } else if (activeTagFilter) {
         title = `Tag: "${activeTagFilter}" (${allMovies.length})`;
+    } else if (activeWatchingFilter && activeFavoriteFilter) {
+        title = `<span class="material-symbols-outlined">visibility</span> <span class="material-symbols-outlined">star_shine</span> ${activeRelatedFilter === 'exact' ? 'Exact results' : 'Related results'} (${allMovies.length})`;
+    } else if (activeWatchingFilter) {
+        title = `<span class="material-symbols-outlined">visibility</span> ${activeRelatedFilter === 'exact' ? 'Exact results' : 'Related results'} (${allMovies.length})`;
+    } else if (activeFavoriteFilter) {
+        title = `<span class="material-symbols-outlined">star_shine</span> ${activeRelatedFilter === 'exact' ? 'Exact results' : 'Related results'} (${allMovies.length})`;
     } else if (activeRelatedFilter === 'exact') {
-        title = `Exact Results (${allMovies.length})`;
+        title = `Exact results (${allMovies.length})`;
     } else {
-        title = `Related Results (${allMovies.length})`;
+        title = `Related results (${allMovies.length})`;
     }
 
     const onSortChange = (newSort) => {

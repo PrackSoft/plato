@@ -798,6 +798,12 @@ body {
     pointer-events: none;
 }
 
+/* Alinear iconos de Watching y favorites con el título de filtro primario */
+.history-header h2 .material-symbols-outlined {
+    font-size: 24px;
+    vertical-align: middle;
+}
+
 @media (max-width: 768px) {
     .top-controls {
         flex-direction: column;
