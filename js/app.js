@@ -86,7 +86,6 @@ function closePanelWithDelay(panel) {
     setTimeout(() => panel.classList.add('hidden'), 150);
 }
 
-// ---------------------- Build Search In panel ----------------------
 function buildSearchInPanel() {
     searchInPanel.innerHTML = '';
 
@@ -103,7 +102,7 @@ function buildSearchInPanel() {
         if (youtubeRadio.checked) {
             currentSearchOptionId = 'UCuVPpxrm2VAgpH3Ktln4HXg';
             updateSearchInButtonText();
-            closePanelWithDelay(searchInPanel);
+            searchInPanel.classList.add('hidden');
         }
     });
     
@@ -123,7 +122,7 @@ function buildSearchInPanel() {
         if (platoDbRadio.checked) {
             currentSearchOptionId = 'plato_db';
             updateSearchInButtonText();
-            closePanelWithDelay(searchInPanel);
+            searchInPanel.classList.add('hidden');
         }
     });
     
@@ -217,10 +216,16 @@ function buildSearchInPanel() {
         }
     }
 
+    // SOLUCION: toggle del panel al hacer clic en el botón
     if (searchInBtn) {
         searchInBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            closeAllPanels();
+            // Cerrar otros paneles
+            const collectionsPanel = document.getElementById('collectionsPanel');
+            if (collectionsPanel) collectionsPanel.classList.add('hidden');
+            const relatedPanel = document.getElementById('relatedPanel');
+            if (relatedPanel) relatedPanel.classList.add('hidden');
+            // Toggle solo este panel
             searchInPanel.classList.toggle('hidden');
         });
     }
