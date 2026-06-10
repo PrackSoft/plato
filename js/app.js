@@ -1685,65 +1685,19 @@ function updateFilterButtonsUI() {
 
 // ---------------------- Toggle functions ----------------------
 function toggleWatchingFilter() {
-    activeTermFilter = null;
-    activeDirectorFilter = null;
-    activeActorFilter = null;
-    activeGenreFilter = null;
-    activeYearFilter = null;
-    activeCountryFilter = null;
-    activeLanguageFilter = null;
-    activeTagFilter = null;
-    activeCollectionFilter = false;
-    
-    if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
-        savedRelatedFilter = activeRelatedFilter;
-    }
-    
-    if (activeTrashFilter) {
-        activeTrashFilter = false;
-    }
     activeWatchingFilter = !activeWatchingFilter;
-    if (activeWatchingFilter) {
+    if (activeWatchingFilter && activeFavoriteFilter) {
         activeFavoriteFilter = false;
     }
-    
-    if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
-        activeRelatedFilter = savedRelatedFilter;
-        updateRelatedButtonText();
-    }
-    
     updateFilterButtonsUI();
     loadAndDisplayAll();
 }
 
 function toggleFavoriteFilter() {
-    activeTermFilter = null;
-    activeDirectorFilter = null;
-    activeActorFilter = null;
-    activeGenreFilter = null;
-    activeYearFilter = null;
-    activeCountryFilter = null;
-    activeLanguageFilter = null;
-    activeTagFilter = null;
-    activeCollectionFilter = false;
-    
-    if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
-        savedRelatedFilter = activeRelatedFilter;
-    }
-    
-    if (activeTrashFilter) {
-        activeTrashFilter = false;
-    }
     activeFavoriteFilter = !activeFavoriteFilter;
-    if (activeFavoriteFilter) {
+    if (activeFavoriteFilter && activeWatchingFilter) {
         activeWatchingFilter = false;
     }
-    
-    if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
-        activeRelatedFilter = savedRelatedFilter;
-        updateRelatedButtonText();
-    }
-    
     updateFilterButtonsUI();
     loadAndDisplayAll();
 }
@@ -1838,7 +1792,7 @@ export async function loadAndDisplayAll() {
         });
     }
 
-    // Filtrar por Exact/Related
+    // Filtrar por Exact/Related (primario)
     if (!activeCollectionFilter && !activeTrashFilter && !activeWatchingFilter && !activeFavoriteFilter && !activeTermFilter) {
         if (activeRelatedFilter === 'exact') {
             allMovies = allMovies.filter(movie => {
@@ -1853,12 +1807,11 @@ export async function loadAndDisplayAll() {
         }
     }
 
+    // Filtrar por Collection
     if (activeCollectionFilter) {
         allMovies = await getAllMovies();
         
-        // Filtrar según el tipo de colección seleccionado
         if (collectionsSortBy === 'all') {
-            // Mostrar todas las películas que tengan al menos un metadato (comportamiento original)
             allMovies = allMovies.filter(movie => {
                 const hasDirector = (movie.directors || []).length > 0;
                 const hasActor = (movie.actors || []).length > 0;
@@ -1870,7 +1823,6 @@ export async function loadAndDisplayAll() {
                 return hasDirector || hasActor || hasGenre || hasYear || hasCountry || hasLanguage || hasTags;
             });
         } else if (collectionsSortBy === 'tags') {
-            // Mostrar SOLO películas que tienen tags; handle undefined tags in Collection Tags filter
             allMovies = allMovies.filter(movie => (movie.tags || []).length > 0);
         } else if (collectionsSortBy === 'directors') {
             allMovies = allMovies.filter(movie => (movie.directors || []).length > 0);
@@ -1886,7 +1838,6 @@ export async function loadAndDisplayAll() {
             allMovies = allMovies.filter(movie => (movie.languages || []).length > 0);
         }
         
-        // Aplicar filtro activo si existe (Director, Actor, Tag específico, etc.)
         if (collectionsSortBy === 'directors' && activeDirectorFilter) {
             allMovies = allMovies.filter(movie => (movie.directors || []).includes(activeDirectorFilter));
         } else if (collectionsSortBy === 'actors' && activeActorFilter) {
@@ -1904,7 +1855,7 @@ export async function loadAndDisplayAll() {
         }
     }
     
-    // Filtrar por Tag activo (busca en todos los arrays: directors, actors, genres, years, countries, languages, tags, searchTerms)
+    // Filtrar por Tag activo
     if (activeTagFilter && !activeCollectionFilter) {
         allMovies = allMovies.filter(movie => {
             const inDirectors = (movie.directors || []).includes(activeTagFilter);
@@ -1917,6 +1868,21 @@ export async function loadAndDisplayAll() {
             const inSearchTerms = (movie.searchTerms || []).some(t => t.term === activeTagFilter);
             return inDirectors || inActors || inGenres || inYears || inCountries || inLanguages || inTags || inSearchTerms;
         });
+    }
+
+    // Filtrar por Watching (secundario)
+    if (activeWatchingFilter) {
+        allMovies = allMovies.filter(movie => movie.watching === true);
+    }
+
+    // Filtrar por Favorite (secundario)
+    if (activeFavoriteFilter) {
+        allMovies = allMovies.filter(movie => movie.favorite === true);
+    }
+
+    // Trash filter
+    if (activeTrashFilter) {
+        allMovies = await getTrashMovies();
     }
 
     let title;
@@ -2027,15 +1993,6 @@ export async function loadAndDisplayAll() {
         if (countriesBar) countriesBar.classList.add('hidden');
         if (languagesBar) languagesBar.classList.add('hidden');
         if (tagsBar) tagsBar.classList.add('hidden');
-    } else if (!activeCollectionFilter) {
-        if (directorsBar) directorsBar.classList.add('hidden');
-        if (actorsBar) actorsBar.classList.add('hidden');
-        if (genresBar) genresBar.classList.add('hidden');
-        if (yearsBar) yearsBar.classList.add('hidden');
-        if (countriesBar) countriesBar.classList.add('hidden');
-        if (languagesBar) languagesBar.classList.add('hidden');
-        if (tagsBar) tagsBar.classList.add('hidden');
-        return;
     } else {
         if (directorsBar) directorsBar.classList.add('hidden');
         if (actorsBar) actorsBar.classList.add('hidden');
