@@ -401,9 +401,17 @@ function buildCollectionDropdown() {
             if (value && value !== collectionsSortBy) {
                 collectionsSortBy = value;
                 updateCollectionButtonText();
-                if (activeCollectionFilter) {
-                    loadAndDisplayAll();
+                
+                // Activar Collection filter si no está activo
+                if (!activeCollectionFilter) {
+                    activeCollectionFilter = true;
+                    updateFilterButtonsUI();
+                    // Ocultar terms bar si estaba visible
+                    if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
+                    if (termsBar) termsBar.classList.add('hidden');
                 }
+                
+                loadAndDisplayAll();
             }
             panel.classList.add('hidden');
         });
