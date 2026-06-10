@@ -1669,7 +1669,8 @@ function updateFilterButtonsUI() {
     if (activeCollectionFilter && filterCollectionBtn) filterCollectionBtn.classList.add('active');
     else if (filterCollectionBtn) filterCollectionBtn.classList.remove('active');
     
-    if (activeWatchingFilter || activeFavoriteFilter || activeTrashFilter || activeCollectionFilter) {
+    // Exact/Related button: only change style when Trash is active
+    if (activeTrashFilter) {
         if (filterRelatedBtn) {
             filterRelatedBtn.classList.remove('btn-primary');
             filterRelatedBtn.classList.add('btn-secondary');
@@ -1678,7 +1679,6 @@ function updateFilterButtonsUI() {
         if (filterRelatedBtn) {
             filterRelatedBtn.classList.remove('btn-secondary');
             filterRelatedBtn.classList.add('btn-primary');
-            filterRelatedBtn.style.opacity = '1';
         }
     }
 }
