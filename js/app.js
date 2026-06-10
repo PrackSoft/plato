@@ -58,7 +58,7 @@ let availableCountry = [];
 let availableLanguage = [];
 let availableTags = [];
 let currentSort = 'date';
-let collectionsSortBy = 'directors';
+let collectionsSortBy = 'all';
 
 let searchOrder = 'relevance';
 let searchDuration = 'long';
@@ -347,7 +347,7 @@ function buildCollectionDropdown() {
     if (!panel) return;
     
     const options = [
-        { value: 'all', label: 'All', icon: 'join' },
+        { value: 'all', label: 'Collection', icon: 'join' },
         { value: 'tags', label: 'Tags', icon: 'sell' },
         { value: 'directors', label: 'Director', icon: 'person' },
         { value: 'actors', label: 'Actor', icon: 'group' },
@@ -434,7 +434,7 @@ function updateCollectionButtonText() {
         switch (collectionsSortBy) {
             case 'all':
                 if (iconSpan) iconSpan.textContent = 'join';
-                if (labelSpan) labelSpan.textContent = 'All';
+                if (labelSpan) labelSpan.textContent = 'Collection';
                 break;
             case 'tags':
                 if (iconSpan) iconSpan.textContent = 'sell';
