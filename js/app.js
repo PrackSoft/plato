@@ -1977,7 +1977,15 @@ export async function loadAndDisplayAll() {
             else if (collectionsSortBy === 'tags' && activeTagFilter) filterName = `: ${activeTagFilter}`;
         }
         
-        title = `${sortLabel}${filterName} (${allMovies.length})`;
+        if (activeWatchingFilter && activeFavoriteFilter) {
+            title = `<span class="material-symbols-outlined">visibility</span> <span class="material-symbols-outlined">star_shine</span> ${sortLabel}${filterName} (${allMovies.length})`;
+        } else if (activeWatchingFilter) {
+            title = `<span class="material-symbols-outlined">visibility</span> ${sortLabel}${filterName} (${allMovies.length})`;
+        } else if (activeFavoriteFilter) {
+            title = `<span class="material-symbols-outlined">star_shine</span> ${sortLabel}${filterName} (${allMovies.length})`;
+        } else {
+            title = `${sortLabel}${filterName} (${allMovies.length})`;
+        }
     } else if (activeTrashFilter) {
         title = `Trash (${allMovies.length})`;
     } else if (activeTermFilter) {
@@ -2007,7 +2015,7 @@ export async function loadAndDisplayAll() {
     } else {
         title = `Related results (${allMovies.length})`;
     }
-
+    
     const onSortChange = (newSort) => {
         if (activeCollectionFilter) {
             currentSort = newSort;
