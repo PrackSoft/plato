@@ -217,6 +217,20 @@ function buildSearchInPanel() {
         }
     }
 
+    if (searchInBtn) {
+        searchInBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeAllPanels();
+            searchInPanel.classList.toggle('hidden');
+        });
+    }
+
+    document.addEventListener('click', (e) => {
+        if (searchInBtn && searchInPanel && !searchInBtn.contains(e.target) && !searchInPanel.contains(e.target)) {
+            searchInPanel.classList.add('hidden');
+        }
+    });
+
     updateSearchInButtonText();
 }
 
