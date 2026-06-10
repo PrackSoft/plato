@@ -236,7 +236,7 @@ export function renderMovies(container, movies, title, source = 'main', currentS
     
     container.innerHTML = `
         <div class="history-header">
-            <h2>${escapeHtml(title)}</h2>
+            <h2>${title}</h2>
             ${showSortSelector ? sortSelectHtml : ''}
         </div>
         ${bodyHtml}
