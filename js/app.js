@@ -459,7 +459,33 @@ function updateCollectionButtonText() {
     
     // Luego, ajustar el icono y estilo según si está activo o no
     if (!activeCollectionFilter) {
-        if (iconSpan) iconSpan.textContent = 'join_inner';
+        // Mantener el icono del último grupo seleccionado
+        switch (collectionsSortBy) {
+            case 'all':
+                if (iconSpan) iconSpan.textContent = 'join_inner';
+                break;
+            case 'tags':
+                if (iconSpan) iconSpan.textContent = 'sell';
+                break;
+            case 'directors':
+                if (iconSpan) iconSpan.textContent = 'person';
+                break;
+            case 'actors':
+                if (iconSpan) iconSpan.textContent = 'group';
+                break;
+            case 'genres':
+                if (iconSpan) iconSpan.textContent = 'theater_comedy';
+                break;
+            case 'years':
+                if (iconSpan) iconSpan.textContent = 'calendar_month';
+                break;
+            case 'countries':
+                if (iconSpan) iconSpan.textContent = 'flag';
+                break;
+            case 'languages':
+                if (iconSpan) iconSpan.textContent = 'translate';
+                break;
+        }
     } else {
         switch (collectionsSortBy) {
             case 'all':
