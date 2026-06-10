@@ -427,43 +427,64 @@ function updateCollectionButtonText() {
     const iconSpan = mainPart.querySelector('.collections-icon');
     const labelSpan = mainPart.querySelector('.collections-label');
     
+    // Primero, actualizar el texto según collectionsSortBy (siempre)
+    if (labelSpan) {
+        switch (collectionsSortBy) {
+            case 'all':
+                labelSpan.textContent = 'Collection';
+                break;
+            case 'tags':
+                labelSpan.textContent = 'Tags';
+                break;
+            case 'directors':
+                labelSpan.textContent = 'Director';
+                break;
+            case 'actors':
+                labelSpan.textContent = 'Actor';
+                break;
+            case 'genres':
+                labelSpan.textContent = 'Genre';
+                break;
+            case 'years':
+                labelSpan.textContent = 'Year';
+                break;
+            case 'countries':
+                labelSpan.textContent = 'Country';
+                break;
+            case 'languages':
+                labelSpan.textContent = 'Language';
+                break;
+        }
+    }
+    
+    // Luego, ajustar el icono y estilo según si está activo o no
     if (!activeCollectionFilter) {
-    // Mantener el texto del último grupo seleccionado, pero sin estilo activo
         if (iconSpan) iconSpan.textContent = 'join_inner';
-        // No cambiar labelSpan, mantener el texto actual (ej. "Tags")
     } else {
         switch (collectionsSortBy) {
             case 'all':
                 if (iconSpan) iconSpan.textContent = 'join_inner';
-                if (labelSpan) labelSpan.textContent = 'Collection';
                 break;
             case 'tags':
                 if (iconSpan) iconSpan.textContent = 'sell';
-                if (labelSpan) labelSpan.textContent = 'Tags';
                 break;
             case 'directors':
                 if (iconSpan) iconSpan.textContent = 'person';
-                if (labelSpan) labelSpan.textContent = 'Director';
                 break;
             case 'actors':
                 if (iconSpan) iconSpan.textContent = 'group';
-                if (labelSpan) labelSpan.textContent = 'Actor';
                 break;
             case 'genres':
                 if (iconSpan) iconSpan.textContent = 'theater_comedy';
-                if (labelSpan) labelSpan.textContent = 'Genre';
                 break;
             case 'years':
                 if (iconSpan) iconSpan.textContent = 'calendar_month';
-                if (labelSpan) labelSpan.textContent = 'Year';
                 break;
             case 'countries':
                 if (iconSpan) iconSpan.textContent = 'flag';
-                if (labelSpan) labelSpan.textContent = 'Country';
                 break;
             case 'languages':
                 if (iconSpan) iconSpan.textContent = 'translate';
-                if (labelSpan) labelSpan.textContent = 'Language';
                 break;
         }
     }
