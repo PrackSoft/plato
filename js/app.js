@@ -1669,8 +1669,8 @@ function updateFilterButtonsUI() {
     if (activeCollectionFilter && filterCollectionBtn) filterCollectionBtn.classList.add('active');
     else if (filterCollectionBtn) filterCollectionBtn.classList.remove('active');
     
-    // Exact/Related button: only change style when Trash is active
-    if (activeTrashFilter) {
+    // Exact/Related button: change style when Trash or Collection is active
+    if (activeTrashFilter || activeCollectionFilter) {
         if (filterRelatedBtn) {
             filterRelatedBtn.classList.remove('btn-primary');
             filterRelatedBtn.classList.add('btn-secondary');
