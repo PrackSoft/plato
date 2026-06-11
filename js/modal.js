@@ -48,10 +48,12 @@ function renderModalContent(movie, source) {
     const isInTrash = (source === 'trash');
     const watchingIconName = movie.watching ? 'visibility' : 'visibility_off';
     const favoriteIconName = movie.favorite ? 'star_shine' : 'star';
-    const showExactToggle = window.activeTermFilter && !isInTrash;
-    const exactForCurrentTerm = showExactToggle && movie.searchTerms?.some(t => t.term === window.activeTermFilter && t.exact === true);
-    const toggleIcon = exactForCurrentTerm ? 'graph_4' : 'subscriptions';
-    const toggleLabel = exactForCurrentTerm ? 'Move to Related' : 'Move to Exact';
+    const hasAnyTerm = (movie.searchTerms || []).length > 0;
+    const showExactToggle = !isInTrash && hasAnyTerm;
+    const firstTerm = (movie.searchTerms || [])[0];
+    const isFirstTermExact = firstTerm ? firstTerm.exact === true : true;
+    const toggleIcon = isFirstTermExact ? 'graph_4' : 'subscriptions';
+    const toggleLabel = isFirstTermExact ? 'Move to Related' : 'Move to Exact';
     const tagsHtml = movie.tags && Array.isArray(movie.tags) && movie.tags.length > 0 ? `<p><strong>Tags:</strong> ${escapeHtml(movie.tags.join(', '))}</p>` : '';
     const directors = movie.directors || [];
     const actors = movie.actors || [];
@@ -272,59 +274,35 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         };
     }
 
+    // BLOQUE MODIFICADO - Solo esto cambia
     const toggleExactRow = document.getElementById('toggleExactRow');
-    if (toggleExactRow && window.activeTermFilter && !isInTrash) {
+    if (toggleExactRow && !isInTrash && (movie.searchTerms || []).length > 0) {
+        const firstTermObj = (movie.searchTerms || [])[0];
+        const isCurrentlyExact = firstTermObj ? firstTermObj.exact === true : true;
+        
+        const textSpan = toggleExactRow.querySelector('span:first-child');
+        const iconSpan = toggleExactRow.querySelector('.material-symbols-outlined');
+        if (textSpan && iconSpan) {
+            if (isCurrentlyExact) {
+                textSpan.innerHTML = 'Move to Related:';
+                iconSpan.textContent = 'graph_4';
+            } else {
+                textSpan.innerHTML = 'Move to Exact:';
+                iconSpan.textContent = 'subscriptions';
+            }
+        }
+        
         toggleExactRow.onclick = async () => {
-            const term = window.activeTermFilter;
-            await toggleExact(movie.youtubeId, term);
+            const termToToggle = firstTermObj.term;
+            await toggleExact(movie.youtubeId, termToToggle);
             await refreshAvailableTerms();
             await loadAndDisplayAll();
-            const stillExists = window.availableTerms ? window.availableTerms.includes(term) : false;
-            if (!stillExists && getActiveTermFilter() === term) {
-                window.activeTermFilter = null;
-                if (syncWindowTermFilter) syncWindowTermFilter();
-                await loadAndDisplayAll();
-            }
             closeModal();
             if (currentOnUpdate) await currentOnUpdate();
         };
     }
+    // FIN DEL BLOQUE MODIFICADO
 
-    const toggleExtraInfoBtn = document.getElementById('toggleExtraInfoBtn');
-    const extraInfoPanel = document.getElementById('extraInfoPanel');
-    if (toggleExtraInfoBtn && extraInfoPanel) {
-        toggleExtraInfoBtn.onclick = async () => {
-            if (extraInfoPanel.classList.contains('hidden')) {
-                const extra = await getExtraInfo(movie.youtubeId);
-                const fields = [
-                    { label: 'Published on YouTube', value: formatDisplayDate(movie.publishedAt) },
-                    { label: 'Channel ID', value: movie.channelId || 'Unknown' },
-                    { label: 'Channel Title', value: movie.channelTitle || 'Unknown' },
-                    { label: 'Tags', value: (movie.tags && movie.tags.length) ? movie.tags.join(', ') : 'Unknown' },
-                    { label: 'View Count', value: movie.viewCount || 'Unknown' },
-                    { label: 'Duration', value: movie.duration || 'Unknown' },
-                    { label: 'Category ID', value: extra?.categoryId || 'Unknown' },
-                    { label: 'Default Language', value: extra?.defaultLanguage || 'Unknown' },
-                    { label: 'Default Audio Language', value: extra?.defaultAudioLanguage || 'Unknown' },
-                    { label: 'Dimension', value: extra?.dimension || 'Unknown' },
-                    { label: 'Definition', value: extra?.definition || 'Unknown' },
-                    { label: 'Caption', value: extra?.caption || 'Unknown' },
-                    { label: 'Licensed Content', value: extra?.licensedContent !== undefined ? extra.licensedContent : 'Unknown' },
-                    { label: 'Projection', value: extra?.projection || 'Unknown' },
-                    { label: 'Public Stats Viewable', value: extra?.publicStatsViewable !== undefined ? extra.publicStatsViewable : 'Unknown' },
-                    { label: 'Made for Kids', value: extra?.madeForKids !== undefined ? extra.madeForKids : 'Unknown' },
-                    { label: 'Self Declared Made for Kids', value: extra?.selfDeclaredMadeForKids !== undefined ? extra.selfDeclaredMadeForKids : 'Unknown' }
-                ];
-                extraInfoPanel.innerHTML = fields.map(f => `<div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border-light);"><strong>${escapeHtml(f.label)}</strong><span>${escapeHtml(String(f.value))}</span></div>`).join('');
-                extraInfoPanel.classList.remove('hidden');
-                toggleExtraInfoBtn.innerHTML = '<span class="material-symbols-outlined">info</span> Hide Extra Info';
-            } else {
-                extraInfoPanel.classList.add('hidden');
-                toggleExtraInfoBtn.innerHTML = '<span class="material-symbols-outlined">info</span> Extra Info';
-            }
-        };
-    }
-    
     if (!isInTrash) {
         document.querySelectorAll('.remove-term').forEach(el => {
             el.onclick = async (e) => {
@@ -691,6 +669,40 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         });
     }
 
+    const toggleExtraInfoBtn = document.getElementById('toggleExtraInfoBtn');
+    const extraInfoPanel = document.getElementById('extraInfoPanel');
+    if (toggleExtraInfoBtn && extraInfoPanel) {
+        toggleExtraInfoBtn.onclick = async () => {
+            if (extraInfoPanel.classList.contains('hidden')) {
+                const extra = await getExtraInfo(movie.youtubeId);
+                const fields = [
+                    { label: 'Published on YouTube', value: formatDisplayDate(movie.publishedAt) },
+                    { label: 'Channel ID', value: movie.channelId || 'Unknown' },
+                    { label: 'Channel Title', value: movie.channelTitle || 'Unknown' },
+                    { label: 'Tags', value: (movie.tags && movie.tags.length) ? movie.tags.join(', ') : 'Unknown' },
+                    { label: 'View Count', value: movie.viewCount || 'Unknown' },
+                    { label: 'Duration', value: movie.duration || 'Unknown' },
+                    { label: 'Category ID', value: extra?.categoryId || 'Unknown' },
+                    { label: 'Default Language', value: extra?.defaultLanguage || 'Unknown' },
+                    { label: 'Default Audio Language', value: extra?.defaultAudioLanguage || 'Unknown' },
+                    { label: 'Dimension', value: extra?.dimension || 'Unknown' },
+                    { label: 'Definition', value: extra?.definition || 'Unknown' },
+                    { label: 'Caption', value: extra?.caption || 'Unknown' },
+                    { label: 'Licensed Content', value: extra?.licensedContent !== undefined ? extra.licensedContent : 'Unknown' },
+                    { label: 'Projection', value: extra?.projection || 'Unknown' },
+                    { label: 'Public Stats Viewable', value: extra?.publicStatsViewable !== undefined ? extra.publicStatsViewable : 'Unknown' },
+                    { label: 'Made for Kids', value: extra?.madeForKids !== undefined ? extra.madeForKids : 'Unknown' },
+                    { label: 'Self Declared Made for Kids', value: extra?.selfDeclaredMadeForKids !== undefined ? extra.selfDeclaredMadeForKids : 'Unknown' }
+                ];
+                extraInfoPanel.innerHTML = fields.map(f => `<div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border-light);"><strong>${escapeHtml(f.label)}</strong><span>${escapeHtml(String(f.value))}</span></div>`).join('');
+                extraInfoPanel.classList.remove('hidden');
+                toggleExtraInfoBtn.innerHTML = '<span class="material-symbols-outlined">info</span> Hide Extra Info';
+            } else {
+                extraInfoPanel.classList.add('hidden');
+                toggleExtraInfoBtn.innerHTML = '<span class="material-symbols-outlined">info</span> Extra Info';
+            }
+        };
+    }
 }
 
 async function getMovieFromDB(youtubeId) {
