@@ -72,6 +72,7 @@ function renderModalContent(movie, source) {
         <p><strong>Year:</strong> ${movie.publishedAt ? new Date(movie.publishedAt).toLocaleDateString() : 'Unknown year'}</p>
         <p><strong>Duration:</strong> ${formatDuration(movie.duration)}</p>
         <p><strong>Saved on:</strong> ${new Date(movie.dateSaved).toLocaleString()}</p>
+        <p><strong>YouTube ID:</strong> ${escapeHtml(movie.youtubeId)}</p>
         ${isInTrash ? `<p><strong>Deleted on:</strong> ${movie.deletedAt ? new Date(movie.deletedAt).toLocaleString() : 'Unknown date'}</p>` : ''}
         <div class="modal-section">
             <strong>Search term:</strong>
