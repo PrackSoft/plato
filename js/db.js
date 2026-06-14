@@ -925,3 +925,5 @@ export async function saveMovie(movieData, searchTerm, isExact = true) {
         };
     });
 }
+
+export { STORE_MOVIES };
