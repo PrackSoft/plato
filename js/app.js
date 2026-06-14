@@ -73,6 +73,18 @@ export function getActiveTermFilter() {
     return activeTermFilter;
 }
 
+// ---------------------- Helper: ----------------------
+async function getMovieFromDB(youtubeId) {
+    const db = await openDB();
+    const transaction = db.transaction([STORE_MOVIES], 'readonly');
+    const store = transaction.objectStore(STORE_MOVIES);
+    return new Promise((resolve, reject) => {
+        const req = store.get(youtubeId);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
 // ---------------------- Helper: close panels ----------------------
 function closeAllPanels() {
     searchInPanel.classList.add('hidden');
@@ -2235,6 +2247,8 @@ searchBtn.onclick = async () => {
                 return;
             }
             const termToSave = customTermName ? customTermName : query;
+            let newMoviesCount = 0;
+            
             for (const movie of moviesFromAPI) {
                 const searchTermLower = termToSave.toLowerCase();
                 const titleMatch = movie.title && movie.title.toLowerCase().includes(searchTermLower);
@@ -2242,6 +2256,7 @@ searchBtn.onclick = async () => {
                 const tagsMatch = movie.tags && Array.isArray(movie.tags) && movie.tags.some(tag => tag.toLowerCase().includes(searchTermLower));
                 const isExact = titleMatch || descMatch || tagsMatch;
                 
+                const existingMovie = await getMovieFromDB(movie.youtubeId);
                 await saveMovie(movie, termToSave, isExact);
                 await saveExtraInfo(movie.youtubeId, {
                     categoryId: movie.categoryId,
@@ -2256,10 +2271,19 @@ searchBtn.onclick = async () => {
                     madeForKids: movie.madeForKids,
                     selfDeclaredMadeForKids: movie.selfDeclaredMadeForKids
                 });
+                
+                if (!existingMovie) newMoviesCount++;
             }
+            
             await refreshAvailableTerms();
             await refreshAvailableYear();
-            await loadAndDisplayAll();
+            
+            if (newMoviesCount > 0) {
+                await loadAndDisplayAll();
+            } else {
+                resultsGrid.innerHTML = '<div class="stats">All movies already exist. Stats updated.</div>';
+                setTimeout(() => loadAndDisplayAll(), 1500);
+            }
             searchInput.value = '';
         } catch (err) {
             console.error(err);
