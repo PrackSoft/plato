@@ -98,7 +98,10 @@ body {
     justify-content: center;
     transition: all 0.2s ease;
 }
-
+.glyph {
+    display: inline-block;
+    transform: translateY(-3px); /* ajuste el valor para subir el glifo */
+}
 /* El texto sin fondo */
 .logo-text {
     align-self: flex-start;
