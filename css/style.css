@@ -87,23 +87,28 @@ body {
     height: auto;              /* que se ajuste al contenido */
 }
 
-.logo span {
+/* Solo el ícono con fondo rojo */
+.logo .material-symbols-outlined {
+    font-size: 28px;
+    background: var(--accent);
+    border-radius: var(--border-radius-sm);
+    width: 28px;
+    height: 28px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: var(--accent);
-    border-radius: var(--border-radius-sm);
-    height: 28px;
-    width: 28px;
     transition: all 0.2s ease;
 }
 
-.material-symbols-outlined {
-    font-size: 28px;
-}
+/* El texto sin fondo */
 .logo-text {
     align-self: flex-start;
     line-height: 1;
+    /* elimina cualquier fondo heredado */
+    background: none;
+    display: inline;
+    width: auto;
+    height: auto;
 }
 
 .search-box {
