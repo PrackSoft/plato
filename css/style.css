@@ -88,7 +88,7 @@ body {
 
 /* Solo el ícono con fondo rojo */
 .logo .material-symbols-outlined {
-    font-size: calc(var(--font-size-xl) - 2px);
+    font-size: calc(var(--font-size-xl) - 8px);
     background: var(--accent);
     border-radius: var(--border-radius-sm);
     width: var(--btn-height);
