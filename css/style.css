@@ -97,10 +97,6 @@ body {
     transition: all 0.2s ease;
 }
 
-#logoIcon {
-    transform: translate(-2px, -12px); /* x e y */
-}
-
 /* El texto sin fondo */
 .logo-text {
     align-self: flex-start;
