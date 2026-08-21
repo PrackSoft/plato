@@ -602,12 +602,42 @@ function buildSettingsSidebarContent() {
         sidebarContent.className = 'sidebar-content';
         settingsSidebar.appendChild(sidebarContent);
     }
+    
+    const compactMode = localStorage.getItem('plato_compactMode') === 'true';
+    
     sidebarContent.innerHTML = `
+        <div class="sidebar-section">
+            <h3>Display</h3>
+            <div class="settings-group">
+                <label class="settings-label">Compact mode</label>
+                <div class="toggle-wrapper">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="compactModeToggle" ${compactMode ? 'checked' : ''}>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="toggle-label">${compactMode ? 'On' : 'Off'}</span>
+                </div>
+                <p class="settings-note">Hide title bar and sorting menu for a cleaner interface.</p>
+            </div>
+        </div>
         <div class="sidebar-section">
             <h3>General Settings</h3>
             <p class="settings-note">Future options: API key, default channel, theme, etc.</p>
         </div>
     `;
+    
+    document.body.classList.toggle('compact-mode', compactMode);
+    
+    const toggle = document.getElementById('compactModeToggle');
+    const label = toggle?.parentElement?.nextElementSibling;
+    if (toggle) {
+        toggle.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            localStorage.setItem('plato_compactMode', isChecked);
+            document.body.classList.toggle('compact-mode', isChecked);
+            if (label) label.textContent = isChecked ? 'On' : 'Off';
+        });
+    }
 }
 
 // ---------------------- Tags Bar functions ----------------------
