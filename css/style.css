@@ -78,14 +78,14 @@ body {
     font-weight: 400;
     color: var(--text-primary);
     display: flex;
-    align-items: center;
+    align-items: top;
     gap: var(--gap-sm);
     letter-spacing: 2px;
 }
 
 .logo span {
     display: inline-flex;
-    align-items: center;
+    align-items: top;
     justify-content: center;
     background: var(--accent);
     border-radius: var(--border-radius-sm);
