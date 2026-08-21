@@ -2328,6 +2328,13 @@ searchBtn.onclick = async () => {
     }
 };
 
+document.getElementById('searchInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        searchBtn.click(); // reutiliza la lógica existente
+    }
+});
+
 // ---------------------- Initialization ----------------------
 async function init() {
     await dbReady;
