@@ -68,7 +68,7 @@ body {
     display: flex;
     height: auto;
     justify-content: space-between;
-    align-items: top;
+    align-items: flex-start;
     margin: 0;
     padding: 0;
     border: 1px solid yellowgreen;
@@ -80,14 +80,14 @@ body {
     font-weight: 400;
     color: var(--text-primary);
     display: flex;
-    align-items: top;
+    align-items: flex-start;
     gap: 0 var(--gap-sm);
     letter-spacing: 2px;
 }
 
 .logo span {
     display: inline-flex;
-    align-items: top;
+    align-items: center;
     justify-content: center;
     background: var(--accent);
     border-radius: var(--border-radius-sm);
