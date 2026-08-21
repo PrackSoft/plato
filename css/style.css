@@ -66,6 +66,7 @@ body {
 
 .navbar {
     display: flex;
+    height: auto;
     justify-content: space-between;
     align-items: top;
     margin: 0;
