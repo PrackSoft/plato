@@ -81,6 +81,7 @@ body {
     color: var(--text-primary);
     display: flex;
     align-items: flex-start;
+    align-self: flex-start;
     gap: 0 var(--gap-sm);
     letter-spacing: 2px;
 }
