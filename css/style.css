@@ -292,7 +292,7 @@ body {
 .movies-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: var(--gap-lg);
+    gap: var(--gap-sm);
 }
 .video-card {
     background: var(--bg-card);
