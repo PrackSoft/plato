@@ -67,7 +67,7 @@ body {
     height: auto;
     justify-content: space-between;
     align-items: flex-start;
-    margin: 0 0 var(--gap-md) 0;
+    margin: var(--gap-lg) 0;
     padding: 0;
 }
 
