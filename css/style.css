@@ -24,7 +24,7 @@
     --btn-padding-x: 16px;
     --btn-height-sm: 32px;
     --btn-padding-x-sm: 12px;
-    --border-radius-sm: 8px;
+    --border-radius-sm: 0;
     --border-radius-md: 12px;
     --border-radius-lg: 999px;
     --gap-sm: 8px;
@@ -296,7 +296,7 @@ body {
 }
 .video-card {
     background: var(--bg-card);
-    border-radius: var(--border-radius-md);
+    border-radius: var(--border-radius-sm);
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
