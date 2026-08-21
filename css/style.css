@@ -91,8 +91,8 @@ body {
     font-size: calc(var(--font-size-xl) - 8px);
     background: var(--accent);
     border-radius: var(--border-radius-sm);
-    width: var(--btn-height);
-    height: var(--btn-height);
+    width: calc(var(--font-size-xl) - 6px); /* 2rem - 6px ≈ 26px */
+    height: calc(var(--font-size-xl) - 6px);
     display: inline-flex;
     align-items: center;
     justify-content: center;
