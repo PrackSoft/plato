@@ -102,6 +102,7 @@ body {
     align-self: flex-start;
     line-height: 1;
     /* elimina cualquier fondo heredado */
+    transform: translateY(-2px);
     background: none;
     display: inline;
     width: auto;
