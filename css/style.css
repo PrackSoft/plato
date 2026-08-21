@@ -59,7 +59,7 @@ body {
 
 .container {
     max-width: 1400px;
-    margin: var(--gap-xl) auto;
+    margin: 0 var(--gap-xl);
     padding: 0 var(--gap-lg) ;
     border: 1px solid yellow;
 }
