@@ -100,6 +100,10 @@ body {
 .material-symbols-outlined {
     font-size: 28px;
 }
+.logo-text {
+    align-self: flex-start;
+    line-height: 1;
+}
 
 .search-box {
     display: flex;
