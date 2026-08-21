@@ -309,6 +309,8 @@ body {
     width: 100%;
     aspect-ratio: 16 / 9;
     object-fit: cover;
+    display: block; /* elimina espacio extra */
+    border-radius: 0; /* sin borde propio */
 }
 .info {
     padding: var(--gap-md);
