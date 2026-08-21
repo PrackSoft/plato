@@ -596,40 +596,34 @@ function loadSearchPreferences() {
 }
 
 function buildSettingsSidebarContent() {
-    let sidebarContent = document.querySelector('.sidebar-content');
-    if (!sidebarContent) {
-        sidebarContent = document.createElement('div');
-        sidebarContent.className = 'sidebar-content';
-        settingsSidebar.appendChild(sidebarContent);
-    }
+    // Buscar el div .sidebar-section existente
+    const section = document.querySelector('.sidebar-section');
+    if (!section) return;
     
     const compactMode = localStorage.getItem('plato_compactMode') === 'true';
     
-    sidebarContent.innerHTML = `
-        <div class="sidebar-section">
-            <h3>Display</h3>
-            <div class="settings-group">
-                <label class="settings-label">Compact mode</label>
-                <div class="toggle-wrapper">
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="compactModeToggle" ${compactMode ? 'checked' : ''}>
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <span class="toggle-label">${compactMode ? 'On' : 'Off'}</span>
-                </div>
-                <p class="settings-note">Hide title bar and sorting menu for a cleaner interface.</p>
+    section.innerHTML = `
+        <h3>Display</h3>
+        <div class="settings-group">
+            <label class="settings-label">Compact mode</label>
+            <div class="toggle-wrapper">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="compactModeToggle" ${compactMode ? 'checked' : ''}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">${compactMode ? 'On' : 'Off'}</span>
             </div>
+            <p class="settings-note">Hide title bar and sorting menu for a cleaner interface.</p>
         </div>
-        <div class="sidebar-section">
-            <h3>General Settings</h3>
-            <p class="settings-note">Future options: API key, default channel, theme, etc.</p>
-        </div>
+        <hr style="border-color: var(--border-color); margin: 20px 0;">
+        <h3>General Settings</h3>
+        <p class="settings-note">Future options: API key, default channel, theme, etc.</p>
     `;
     
     document.body.classList.toggle('compact-mode', compactMode);
     
     const toggle = document.getElementById('compactModeToggle');
-    const label = toggle?.parentElement?.nextElementSibling;
+    const label = toggle?.parentElement?.parentElement?.querySelector('.toggle-label');
     if (toggle) {
         toggle.addEventListener('change', (e) => {
             const isChecked = e.target.checked;
