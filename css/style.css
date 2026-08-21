@@ -100,8 +100,9 @@ body {
 }
 .glyph {
     display: inline-block;
-    transform: translateY(-8px); /* ajuste el valor para subir el glifo */
-    transform: translateX(-2px);
+    transform: translateY(-.75rem); /* ajuste el valor para subir el glifo */
+    transform: translateX(-.15rem);
+}
 /* El texto sin fondo */
 .logo-text {
     align-self: flex-start;
