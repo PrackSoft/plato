@@ -92,8 +92,8 @@ body {
     font-size: 28px;
     background: var(--accent);
     border-radius: var(--border-radius-sm);
-    width: 28px;
-    height: 28px;
+    width: 30px;
+    height: 30px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
