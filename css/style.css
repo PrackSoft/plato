@@ -58,7 +58,7 @@ body {
 
 .container {
     max-width: 1400px;
-    margin: 0 var(--gap-xl);
+    margin: 0;
     padding: 0;
 }
 
@@ -67,9 +67,8 @@ body {
     height: auto;
     justify-content: space-between;
     align-items: flex-start;
-    margin: 0;
+    margin: 0 var(--gap-xl);
     padding: 0;
-    border: 1px solid yellowgreen;
 }
 
 .logo {
