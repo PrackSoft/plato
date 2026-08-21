@@ -60,6 +60,7 @@ body {
     max-width: 1400px;
     margin: 0 auto;
     padding: 0 var(--gap-lg);
+    border: 1px solid yellow;
 }
 
 .navbar {
