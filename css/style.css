@@ -80,10 +80,11 @@ body {
     font-weight: 400;
     color: var(--text-primary);
     display: flex;
-    align-items: flex-start;
-    align-self: flex-start;
-    gap: 0 var(--gap-sm);
+    align-items: flex-start;    /* alinea el ícono y el texto arriba */
+    gap: var(--gap-sm);
     letter-spacing: 2px;
+    line-height: 1;            /* elimina espacio extra vertical del texto */
+    height: auto;              /* que se ajuste al contenido */
 }
 
 .logo span {
