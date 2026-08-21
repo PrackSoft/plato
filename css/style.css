@@ -49,8 +49,7 @@ body {
 
 .header {
     background: linear-gradient(180deg, var(--bg-header) 0%, var(--bg-body) 100%);
-    padding: 0;
-    border-bottom: 1px solid var(--border-color);
+    padding: 0 0 var(--gap-xl) 0;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -61,7 +60,6 @@ body {
     max-width: 1400px;
     margin: 0 var(--gap-xl);
     padding: 0;
-    border: 1px solid yellow;
 }
 
 .navbar {
