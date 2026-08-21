@@ -98,7 +98,7 @@ body {
 }
 
 #logoIcon {
-    transform: translateY(-6px);
+    transform: translate(-2px, -8px); /* x e y */
 }
 
 /* El texto sin fondo */
@@ -106,7 +106,7 @@ body {
     align-self: flex-start;
     line-height: 1;
     /* elimina cualquier fondo heredado */
-    transform: translateY(-6px);
+    transform: translateY(-7px);
     background: none;
     display: inline;
     width: auto;
