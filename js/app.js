@@ -7,7 +7,6 @@ import { initModal, openModal } from './modal.js';
 
 // ---------------------- DOM elements ----------------------
 const searchInput = document.getElementById('searchInput');
-const searchBtn = document.getElementById('searchBtn');
 const resultsGrid = document.getElementById('resultsGrid');
 const searchInBtn = document.getElementById('searchInBtn');
 const searchInPanel = document.getElementById('searchInPanel');
@@ -2204,15 +2203,14 @@ window.openMovieModal = (movie, source = 'main') => {
     }, source);
 };
 
-// ---------------------- Search ----------------------
-searchBtn.onclick = async () => {
+// ---------------------- Función de búsqueda (sin botón) ----------------------
+async function performSearch() {
     if (activeTrashFilter || activeWatchingFilter || activeFavoriteFilter || activeCollectionFilter) {
         activeTrashFilter = false;
         activeWatchingFilter = false;
         activeFavoriteFilter = false;
         activeCollectionFilter = false;
         updateFilterButtonsUI();
-        
         if (!activeWatchingFilter && !activeFavoriteFilter && !activeTrashFilter) {
             activeRelatedFilter = savedRelatedFilter;
             updateRelatedButtonText();
@@ -2228,7 +2226,6 @@ searchBtn.onclick = async () => {
     activeTagFilter = null;
     
     let query = searchInput.value.trim();
-    
     if (!query) {
         resultsGrid.innerHTML = '<div class="stats">Enter a search term (title, director, actor, or genre)</div>';
         return;
@@ -2236,7 +2233,6 @@ searchBtn.onclick = async () => {
     
     let effectiveQuery = query;
     let customTermName = null;
-    
     if (searchOrder === 'viewCount') {
         customTermName = 'Most viewed';
     } else if (searchOrder === 'rating') {
@@ -2245,13 +2241,9 @@ searchBtn.onclick = async () => {
     
     const dateFrom = document.getElementById('dateFrom')?.value;
     const dateTo = document.getElementById('dateTo')?.value;
-    
     let publishedAfter = null;
     let publishedBefore = null;
-    
-    if (dateFrom) {
-        publishedAfter = new Date(dateFrom).toISOString();
-    }
+    if (dateFrom) publishedAfter = new Date(dateFrom).toISOString();
     if (dateTo) {
         const endDate = new Date(dateTo);
         endDate.setHours(23, 59, 59, 999);
@@ -2272,7 +2264,6 @@ searchBtn.onclick = async () => {
             }
             const termToSave = customTermName ? customTermName : query;
             let newMoviesCount = 0;
-            
             for (const movie of moviesFromAPI) {
                 const searchTermLower = termToSave.toLowerCase();
                 const titleMatch = movie.title && movie.title.toLowerCase().includes(searchTermLower);
@@ -2295,13 +2286,10 @@ searchBtn.onclick = async () => {
                     madeForKids: movie.madeForKids,
                     selfDeclaredMadeForKids: movie.selfDeclaredMadeForKids
                 });
-                
                 if (!existingMovie) newMoviesCount++;
             }
-            
             await refreshAvailableTerms();
             await refreshAvailableYear();
-            
             if (newMoviesCount > 0) {
                 await loadAndDisplayAll();
             } else {
@@ -2316,18 +2304,15 @@ searchBtn.onclick = async () => {
     } else {
         resultsGrid.innerHTML = '<div class="stats">Searching in Plato DB...</div>';
         let allMovies = await getAllMovies();
-        
         if (publishedAfter || publishedBefore) {
             allMovies = allMovies.filter(movie => {
                 if (!movie.publishedAt) return false;
                 const publishDate = new Date(movie.publishedAt);
-                
                 if (publishedAfter && publishDate < new Date(publishedAfter)) return false;
                 if (publishedBefore && publishDate > new Date(publishedBefore)) return false;
                 return true;
             });
         }
-        
         const lowerQuery = effectiveQuery.toLowerCase();
         const filtered = allMovies.filter(movie => {
             const titleMatch = movie.title.toLowerCase().includes(lowerQuery);
@@ -2350,12 +2335,12 @@ searchBtn.onclick = async () => {
         }
         searchInput.value = '';
     }
-};
+}
 
 document.getElementById('searchInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
         e.preventDefault();
-        searchBtn.click(); // reutiliza la lógica existente
+        performSearch();
     }
 });
 
