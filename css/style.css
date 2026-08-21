@@ -21,18 +21,18 @@
     --font-size-xl: 2rem;
     --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     
-    --btn-height: 32px;
-    --btn-padding-x: 16px;
-    --btn-height-sm: 32px;
-    --btn-padding-x-sm: 12px;
+    --btn-height: 2rem;
+    --btn-padding-x: 1rem;
+    --btn-height-sm: 2rem;
+    --btn-padding-x-sm: .75rem;
     --border-radius-sm: 0;
-    --border-radius-md: 12px;
+    --border-radius-md: .75rem;
     --border-radius-lg: 999px;
     --gap-xs: 2px;
     --gap-sm: 4px;
-    --gap-md: 12px;
-    --gap-lg: 24px;
-    --gap-xl: 64px;
+    --gap-md: .75rem;
+    --gap-lg: 1.5rem;
+    --gap-xl: 4rem;
 }
 
 * {
