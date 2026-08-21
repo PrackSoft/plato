@@ -871,6 +871,14 @@ body.compact-mode .history-header {
     color: var(--text-secondary);
     font-size: 0.875rem;
 }
+/* Ocultar título y estadísticas de las tarjetas */
+body.hide-card-info .video-card .info {
+    display: none;
+}
+
+body.hide-card-info .video-card img {
+    margin-bottom: 0;
+}
 
 /* Texto deshabilitado para Watching y Favorites, dentro del Trash */
 .btn-disabled {

@@ -595,16 +595,16 @@ function loadSearchPreferences() {
 }
 
 function buildSettingsSidebarContent() {
-    // Buscar el div .sidebar-section existente
     const section = document.querySelector('.sidebar-section');
     if (!section) return;
     
     const compactMode = localStorage.getItem('plato_compactMode') === 'true';
+    const hideCardInfo = localStorage.getItem('plato_hideCardInfo') === 'true';
     
     section.innerHTML = `
         <h3>Display</h3>
         <div class="settings-group">
-            <label class="settings-label">Compact mode</label>
+            <label class="settings-label">Compact mode (hide header)</label>
             <div class="toggle-wrapper">
                 <label class="toggle-switch">
                     <input type="checkbox" id="compactModeToggle" ${compactMode ? 'checked' : ''}>
@@ -612,23 +612,47 @@ function buildSettingsSidebarContent() {
                 </label>
                 <span class="toggle-label">${compactMode ? 'On' : 'Off'}</span>
             </div>
-            <p class="settings-note">Hide title bar and sorting menu for a cleaner interface.</p>
+        </div>
+        <div class="settings-group">
+            <label class="settings-label">Minimalist cards (hide title & stats)</label>
+            <div class="toggle-wrapper">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="hideCardInfoToggle" ${hideCardInfo ? 'checked' : ''}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">${hideCardInfo ? 'On' : 'Off'}</span>
+            </div>
         </div>
         <hr style="border-color: var(--border-color); margin: 20px 0;">
         <h3>General Settings</h3>
         <p class="settings-note">Future options: API key, default channel, theme, etc.</p>
     `;
     
+    // Aplicar estados iniciales
     document.body.classList.toggle('compact-mode', compactMode);
+    document.body.classList.toggle('hide-card-info', hideCardInfo);
     
-    const toggle = document.getElementById('compactModeToggle');
-    const label = toggle?.parentElement?.parentElement?.querySelector('.toggle-label');
-    if (toggle) {
-        toggle.addEventListener('change', (e) => {
+    // Toggle 1: Compact mode
+    const toggle1 = document.getElementById('compactModeToggle');
+    const label1 = toggle1?.parentElement?.parentElement?.querySelector('.toggle-label');
+    if (toggle1) {
+        toggle1.addEventListener('change', (e) => {
             const isChecked = e.target.checked;
             localStorage.setItem('plato_compactMode', isChecked);
             document.body.classList.toggle('compact-mode', isChecked);
-            if (label) label.textContent = isChecked ? 'On' : 'Off';
+            if (label1) label1.textContent = isChecked ? 'On' : 'Off';
+        });
+    }
+    
+    // Toggle 2: Hide card info
+    const toggle2 = document.getElementById('hideCardInfoToggle');
+    const label2 = toggle2?.parentElement?.parentElement?.querySelector('.toggle-label');
+    if (toggle2) {
+        toggle2.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            localStorage.setItem('plato_hideCardInfo', isChecked);
+            document.body.classList.toggle('hide-card-info', isChecked);
+            if (label2) label2.textContent = isChecked ? 'On' : 'Off';
         });
     }
 }
