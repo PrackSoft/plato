@@ -97,7 +97,7 @@ body {
     transition: all 0.2s ease;
 }
 
-.material-symbols-outlined {
+#logoIcon {
     transform: translateY(-6px);
 }
 
