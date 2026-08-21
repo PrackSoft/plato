@@ -30,6 +30,7 @@
     --gap-sm: 4px;
     --gap-md: 12px;
     --gap-lg: 24px;
+    --gap-xl: 64px;
 }
 
 * {
@@ -58,8 +59,8 @@ body {
 
 .container {
     max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 var(--gap-lg);
+    margin: var(--gap-xl) auto;
+    padding: 0 var(--gap-lg) ;
     border: 1px solid yellow;
 }
 
