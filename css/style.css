@@ -59,7 +59,7 @@ body {
 .container {
     max-width: 1400px;
     margin: 0;
-    padding: 0 var(--gap-xl);
+    padding: var(--gap-xl) var(--gap-xl) 0 var(--gap-xl);
 }
 
 .navbar {
@@ -67,7 +67,7 @@ body {
     height: auto;
     justify-content: space-between;
     align-items: flex-start;
-    margin: var(--gap-lg) 0;
+    margin: 0 0 var(--gap-lg) 0;
     padding: 0;
 }
 
