@@ -2301,7 +2301,7 @@ window.openMovieModal = (movie, source = 'main') => {
         moveToTrash: moveMovieToTrash,
         restoreFromTrash: restoreMovieFromTrash,
         permanentlyDelete: permanentlyDeleteMovie
-    }, source);
+    }, source, activeRelatedFilter);  // <-- pasamos el filtro actual
 };
 
 // ---------------------- Función de búsqueda (sin botón) ----------------------

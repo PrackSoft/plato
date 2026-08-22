@@ -545,6 +545,16 @@ body.compact-mode .history-header {
 .modal-input::placeholder {
     color: var(--text-secondary);
 }
+
+/* Chip seleccionado en el modal */
+#termsList .term-chip.selected {
+    background: var(--accent);
+    color: var(--text-primary);
+    border: 1px solid var(--accent);
+}
+#termsList .term-chip.selected .remove-term {
+    color: var(--text-primary);
+}
 .trash-actions .toggle-row:first-child {
     margin-bottom: 16px;
 }

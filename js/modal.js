@@ -22,17 +22,19 @@ export function initModal(onUpdateCallback) {
     window.onclick = (e) => { if (e.target === modal) closeModal(); };
 }
 
-export async function openModal(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source = 'main') {
+export async function openModal(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source = 'main', filterMode = null) {
     currentMovie = movie;
     currentMovieSource = source;
     currentTrashFunctions = { moveToTrash, restoreFromTrash, permanentlyDelete };
+    // Guardar el filtro para usarlo en el renderizado
+    window._modalFilterMode = filterMode;  // o una variable local
     const modal = document.getElementById('movieModal');
     const modalBody = document.getElementById('modalBody');
     if (!modal || !modalBody) return;
-    modalBody.innerHTML = renderModalContent(movie, source);
+    modalBody.innerHTML = renderModalContent(movie, source, filterMode);
     modal.style.display = 'flex';
     extraInfoVisible = false;
-    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
+    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source, filterMode);
 }
 
 function closeModal() {
@@ -44,16 +46,27 @@ function closeModal() {
     extraInfoVisible = false;
 }
 
-function renderModalContent(movie, source) {
+function renderModalContent(movie, source, filterMode = null) {
     const isInTrash = (source === 'trash');
     const watchingIconName = movie.watching ? 'visibility' : 'visibility_off';
     const favoriteIconName = movie.favorite ? 'star_shine' : 'star';
-    const hasAnyTerm = (movie.searchTerms || []).length > 0;
+    
+    // Filtrar términos según el modo de filtro (exact/related)
+    let filteredTerms = movie.searchTerms || [];
+    if (filterMode === 'exact') {
+        filteredTerms = filteredTerms.filter(t => t.exact === true);
+    } else if (filterMode === 'related') {
+        filteredTerms = filteredTerms.filter(t => t.exact === false);
+    }
+    // Si filterMode es null, se muestran todos los términos (sin filtrar)
+    
+    const hasAnyTerm = filteredTerms.length > 0;
     const showExactToggle = !isInTrash && hasAnyTerm;
-    const firstTerm = (movie.searchTerms || [])[0];
+    const firstTerm = filteredTerms.length > 0 ? filteredTerms[0] : null;
     const isFirstTermExact = firstTerm ? firstTerm.exact === true : true;
     const toggleIcon = isFirstTermExact ? 'graph_4' : 'subscriptions';
     const toggleLabel = isFirstTermExact ? 'Move to Related' : 'Move to Exact';
+    
     const tagsHtml = movie.tags && Array.isArray(movie.tags) && movie.tags.length > 0 ? `<p><strong>Tags:</strong> ${escapeHtml(movie.tags.join(', '))}</p>` : '';
     const directors = movie.directors || [];
     const actors = movie.actors || [];
@@ -81,7 +94,7 @@ function renderModalContent(movie, source) {
         <div class="modal-section">
             <strong>Search term:</strong>
             <div id="termsList" class="terms-list">
-                ${(movie.searchTerms || []).map(t => `<span class="term-chip">${escapeHtml(t.term)}${!isInTrash ? `<span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>` : ''}</span>`).join('')}
+                ${filteredTerms.map(t => `<span class="term-chip" data-term="${escapeHtml(t.term)}" data-exact="${t.exact}">${escapeHtml(t.term)}${!isInTrash ? `<span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>` : ''}</span>`).join('')}
             </div>
         </div>
         <div class="modal-section">
@@ -223,8 +236,9 @@ async function updateTermsListInModal(movie, source, attachModalEventsFn, {
     }
 }
 
-async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source) {
+async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source, filterMode = null) {
     const isInTrash = (source === 'trash');
+    let selectedTerm = null;  // término actualmente seleccionado
 
     const moveToTrashRow = document.getElementById('moveToTrashRow');
     if (moveToTrashRow && !isInTrash) {
@@ -278,32 +292,84 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
             if (currentOnUpdate) await currentOnUpdate();
         };
     }
-
-    // 
+    // Obtener el botón toggleExactRow
     const toggleExactRow = document.getElementById('toggleExactRow');
-    if (toggleExactRow && !isInTrash && (movie.searchTerms || []).length > 0) {
-        const firstTermObj = (movie.searchTerms || [])[0];
-        const isCurrentlyExact = firstTermObj ? firstTermObj.exact === true : true;
-        
-        const textSpan = toggleExactRow.querySelector('span:first-child');
-        const iconSpan = toggleExactRow.querySelector('.material-symbols-outlined');
-        if (textSpan && iconSpan) {
-            if (isCurrentlyExact) {
-                textSpan.innerHTML = 'Move to Related:';
-                iconSpan.textContent = 'graph_4';
-            } else {
-                textSpan.innerHTML = 'Move to Exact:';
-                iconSpan.textContent = 'subscriptions';
+    // Deshabilitarlo inicialmente (visualmente)
+    if (toggleExactRow) {
+        toggleExactRow.style.opacity = '0.5';
+        toggleExactRow.style.pointerEvents = 'none';
+    }
+
+    // Función para actualizar el estado visual del botón según el término seleccionado
+    function updateToggleButton(termObj) {
+        if (!toggleExactRow) return;
+        if (termObj) {
+            const isExact = termObj.exact === true;
+            const textSpan = toggleExactRow.querySelector('span:first-child');
+            const iconSpan = toggleExactRow.querySelector('.material-symbols-outlined');
+            if (textSpan && iconSpan) {
+                if (isExact) {
+                    textSpan.innerHTML = 'Move to Related:';
+                    iconSpan.textContent = 'graph_4';
+                } else {
+                    textSpan.innerHTML = 'Move to Exact:';
+                    iconSpan.textContent = 'subscriptions';
+                }
             }
+            toggleExactRow.style.opacity = '1';
+            toggleExactRow.style.pointerEvents = 'auto';
+        } else {
+            toggleExactRow.style.opacity = '0.5';
+            toggleExactRow.style.pointerEvents = 'none';
         }
-        
+    }
+
+    // Evento de clic para cada chip en la lista de términos
+    const termChips = document.querySelectorAll('#termsList .term-chip');
+    termChips.forEach(chip => {
+        chip.addEventListener('click', function(e) {
+            // Si se hizo clic en la '✖' no hacemos nada (ya tiene su propio evento)
+            if (e.target.classList.contains('remove-term')) return;
+            
+            const term = this.dataset.term;
+            const exact = this.dataset.exact === 'true';
+            // Buscar el objeto término en la película (podemos usar el array original o el filtrado)
+            const termObj = (movie.searchTerms || []).find(t => t.term === term);
+            if (!termObj) return;
+            
+            // Quitar clase 'selected' de todos los chips
+            termChips.forEach(c => c.classList.remove('selected'));
+            // Marcar este como seleccionado
+            this.classList.add('selected');
+            // Guardar el término seleccionado globalmente (en un closure o variable)
+            selectedTerm = termObj;
+            // Actualizar el botón
+            updateToggleButton(termObj);
+        });
+    });
+
+    // Evento para el botón toggleExactRow (cuando está activo)
+    if (toggleExactRow) {
         toggleExactRow.onclick = async () => {
-            const termToToggle = firstTermObj.term;
+            if (!selectedTerm) return;
+            const termToToggle = selectedTerm.term;
+            // Cambiar el estado exact del término
             await toggleExact(movie.youtubeId, termToToggle);
+            // Recargar la vista de la app
             await refreshAvailableTerms();
             await loadAndDisplayAll();
-            closeModal();
-            if (currentOnUpdate) await currentOnUpdate();
+            
+            // Actualizar el modal sin cerrarlo: obtener la película actualizada
+            const updatedMovie = await getMovieFromDB(movie.youtubeId);
+            if (updatedMovie) {
+                // Re-renderizar el modal con el nuevo estado y el mismo filtro
+                const modalBody = document.getElementById('modalBody');
+                if (modalBody) {
+                    modalBody.innerHTML = renderModalContent(updatedMovie, source, filterMode);
+                    // Volver a vincular eventos (incluyendo la selección)
+                    attachModalEvents(updatedMovie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source, filterMode);
+                }
+            }
         };
     }
 
