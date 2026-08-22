@@ -60,10 +60,6 @@ function renderModalContent(movie, source, filterMode = null) {
     
     const hasAnyTerm = filteredTerms.length > 0;
     const showExactToggle = !isInTrash && hasAnyTerm;
-    const firstTerm = filteredTerms.length > 0 ? filteredTerms[0] : null;
-    const isFirstTermExact = firstTerm ? firstTerm.exact === true : true;
-    const toggleIcon = isFirstTermExact ? 'graph_4' : 'subscriptions';
-    const toggleLabel = isFirstTermExact ? 'Move to Related' : 'Move to Exact';
     
     const tagsHtml = movie.tags && Array.isArray(movie.tags) && movie.tags.length > 0 ? `<p><strong>Tags:</strong> ${escapeHtml(movie.tags.join(', '))}</p>` : '';
     const directors = movie.directors || [];
@@ -171,8 +167,8 @@ function renderModalContent(movie, source, filterMode = null) {
         `}
         ${showExactToggle ? `
         <div class="modal-section toggle-row" id="toggleExactRow">
-            <span>${toggleLabel}:</span>
-            <span class="material-symbols-outlined">${toggleIcon}</span>
+            <span>Move to Related:</span>
+            <span class="material-symbols-outlined">graph_4</span>
         </div>
         ` : ''}
         <div class="modal-section">
@@ -289,6 +285,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
             if (currentOnUpdate) await currentOnUpdate();
         };
     }
+
     // Obtener el botón toggleExactRow
     const toggleExactRow = document.getElementById('toggleExactRow');
     // Deshabilitarlo inicialmente (visualmente)
@@ -297,15 +294,11 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         toggleExactRow.style.pointerEvents = 'none';
     }
 
-        // Función para actualizar el estado visual del botón según el chip seleccionado
-    function updateToggleButton() {
+    // Función para actualizar el estado visual del botón basado en un término
+    function updateToggleButton(termObj) {
         const toggleRow = document.getElementById('toggleExactRow');
         if (!toggleRow) return;
-        const selectedChip = document.querySelector('#termsList .term-chip.selected');
-        if (selectedChip) {
-            const term = selectedChip.dataset.term;
-            const termObj = movie.searchTerms.find(t => t.term === term);
-            if (!termObj) return;
+        if (termObj) {
             const isExact = termObj.exact === true;
             const textSpan = toggleRow.querySelector('span:first-child');
             const iconSpan = toggleRow.querySelector('.material-symbols-outlined');
@@ -326,7 +319,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         }
     }
 
-        // Evento de clic para cada chip en la lista de términos
+    // Evento de clic para cada chip en la lista de términos
     const termChips = document.querySelectorAll('#termsList .term-chip');
     termChips.forEach(chip => {
         chip.addEventListener('click', function(e) {
@@ -335,12 +328,16 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
             termChips.forEach(c => c.classList.remove('selected'));
             // Marcar este como seleccionado
             this.classList.add('selected');
-            // Actualizar el botón
-            updateToggleButton();
+            // Obtener el término correspondiente
+            const term = this.dataset.term;
+            const termObj = movie.searchTerms.find(t => t.term === term);
+            if (termObj) {
+                updateToggleButton(termObj);
+            }
         });
     });
 
-        // Evento para el botón toggleExactRow (cuando está activo)
+    // Evento para el botón toggleExactRow (cuando está activo)
     if (toggleExactRow) {
         toggleExactRow.onclick = async () => {
             // Obtener el chip seleccionado del DOM
@@ -385,16 +382,21 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                 // Volver a vincular eventos (incluyendo la selección)
                 attachModalEvents(updatedMovie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source, newFilterMode, setFilterFn);
                 // Seleccionar automáticamente el término modificado en el nuevo renderizado
+                // y actualizar el botón directamente con el término modificado
                 setTimeout(() => {
                     const chips = document.querySelectorAll('#termsList .term-chip');
                     chips.forEach(chip => {
                         if (chip.dataset.term === termToToggle) {
                             chip.classList.add('selected');
-                            // Actualizar el botón basado en el chip seleccionado
-                            updateToggleButton();
+                            // Buscar el término en la película actualizada
+                            const updatedTermObj = updatedMovie.searchTerms.find(t => t.term === termToToggle);
+                            if (updatedTermObj) {
+                                // Llamar a updateToggleButton con el término actualizado
+                                updateToggleButton(updatedTermObj);
+                            }
                         }
                     });
-                }, 50);
+                }, 10);
             }
         };
     }
