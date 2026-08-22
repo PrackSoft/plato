@@ -236,7 +236,6 @@ async function updateTermsListInModal(movie, source, attachModalEventsFn, {
 
 async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source, filterMode = null, setFilterFn = null) {
     const isInTrash = (source === 'trash');
-    let selectedTerm = null;  // término actualmente seleccionado
 
     const moveToTrashRow = document.getElementById('moveToTrashRow');
     if (moveToTrashRow && !isInTrash) {
@@ -298,11 +297,15 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         toggleExactRow.style.pointerEvents = 'none';
     }
 
-    // Función para actualizar el estado visual del botón según el término seleccionado
-    function updateToggleButton(termObj) {
+        // Función para actualizar el estado visual del botón según el chip seleccionado
+    function updateToggleButton() {
         const toggleRow = document.getElementById('toggleExactRow');
         if (!toggleRow) return;
-        if (termObj) {
+        const selectedChip = document.querySelector('#termsList .term-chip.selected');
+        if (selectedChip) {
+            const term = selectedChip.dataset.term;
+            const termObj = movie.searchTerms.find(t => t.term === term);
+            if (!termObj) return;
             const isExact = termObj.exact === true;
             const textSpan = toggleRow.querySelector('span:first-child');
             const iconSpan = toggleRow.querySelector('.material-symbols-outlined');
@@ -323,35 +326,31 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
         }
     }
 
-    // Evento de clic para cada chip en la lista de términos
+        // Evento de clic para cada chip en la lista de términos
     const termChips = document.querySelectorAll('#termsList .term-chip');
     termChips.forEach(chip => {
         chip.addEventListener('click', function(e) {
-            // Si se hizo clic en la '✖' no hacemos nada (ya tiene su propio evento)
             if (e.target.classList.contains('remove-term')) return;
-            
-            const term = this.dataset.term;
-            const exact = this.dataset.exact === 'true';
-            // Buscar el objeto término en la película (podemos usar el array original o el filtrado)
-            const termObj = (movie.searchTerms || []).find(t => t.term === term);
-            if (!termObj) return;
-            
             // Quitar clase 'selected' de todos los chips
             termChips.forEach(c => c.classList.remove('selected'));
             // Marcar este como seleccionado
             this.classList.add('selected');
-            // Guardar el término seleccionado globalmente (en un closure o variable)
-            selectedTerm = termObj;
             // Actualizar el botón
-            updateToggleButton(termObj);
+            updateToggleButton();
         });
     });
 
-    // Evento para el botón toggleExactRow (cuando está activo)
+        // Evento para el botón toggleExactRow (cuando está activo)
     if (toggleExactRow) {
         toggleExactRow.onclick = async () => {
-            if (!selectedTerm) return;
-            const termToToggle = selectedTerm.term;
+            // Obtener el chip seleccionado del DOM
+            const selectedChip = document.querySelector('#termsList .term-chip.selected');
+            if (!selectedChip) return;
+            const term = selectedChip.dataset.term;
+            const termObj = movie.searchTerms.find(t => t.term === term);
+            if (!termObj) return;
+
+            const termToToggle = termObj.term;
             // Cambiar el estado exact del término
             await toggleExact(movie.youtubeId, termToToggle);
             // Recargar la vista de la app
@@ -368,7 +367,6 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                 const hasExact = updatedMovie.searchTerms.some(t => t.exact === true);
                 if (!hasExact) {
                     newFilterMode = 'related';
-                    // Actualizar el filtro global
                     if (setFilterFn) setFilterFn('related');
                 }
             } else if (filterMode === 'related') {
@@ -392,11 +390,8 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                     chips.forEach(chip => {
                         if (chip.dataset.term === termToToggle) {
                             chip.classList.add('selected');
-                            const termObj = updatedMovie.searchTerms.find(t => t.term === termToToggle);
-                            if (termObj) {
-                                selectedTerm = termObj;
-                                updateToggleButton(termObj);
-                            }
+                            // Actualizar el botón basado en el chip seleccionado
+                            updateToggleButton();
                         }
                     });
                 }, 50);
