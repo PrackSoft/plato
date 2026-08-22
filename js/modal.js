@@ -60,6 +60,11 @@ function renderModalContent(movie, source, filterMode = null) {
     
     const hasAnyTerm = filteredTerms.length > 0;
     const showExactToggle = !isInTrash && hasAnyTerm;
+    // Calcular el estado del primer término para el botón
+    const firstTerm = filteredTerms.length > 0 ? filteredTerms[0] : null;
+    const isFirstTermExact = firstTerm ? firstTerm.exact === true : true;
+    const toggleLabel = isFirstTermExact ? 'Move to Related' : 'Move to Exact';
+    const toggleIcon = isFirstTermExact ? 'graph_4' : 'subscriptions';
     
     const tagsHtml = movie.tags && Array.isArray(movie.tags) && movie.tags.length > 0 ? `<p><strong>Tags:</strong> ${escapeHtml(movie.tags.join(', '))}</p>` : '';
     const directors = movie.directors || [];
@@ -167,8 +172,8 @@ function renderModalContent(movie, source, filterMode = null) {
         `}
         ${showExactToggle ? `
         <div class="modal-section toggle-row" id="toggleExactRow">
-            <span>Move to Related:</span>
-            <span class="material-symbols-outlined">graph_4</span>
+            <span>${toggleLabel}:</span>
+            <span class="material-symbols-outlined">${toggleIcon}</span>
         </div>
         ` : ''}
         <div class="modal-section">
@@ -288,7 +293,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
 
     // Obtener el botón toggleExactRow
     const toggleExactRow = document.getElementById('toggleExactRow');
-    // Deshabilitarlo inicialmente (visualmente)
+    // Deshabilitarlo inicialmente (visualmente) pero con el texto correcto (ya generado en HTML)
     if (toggleExactRow) {
         toggleExactRow.style.opacity = '0.5';
         toggleExactRow.style.pointerEvents = 'none';
