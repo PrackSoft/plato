@@ -300,11 +300,12 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
 
     // Función para actualizar el estado visual del botón según el término seleccionado
     function updateToggleButton(termObj) {
-        if (!toggleExactRow) return;
+        const toggleRow = document.getElementById('toggleExactRow');
+        if (!toggleRow) return;
         if (termObj) {
             const isExact = termObj.exact === true;
-            const textSpan = toggleExactRow.querySelector('span:first-child');
-            const iconSpan = toggleExactRow.querySelector('.material-symbols-outlined');
+            const textSpan = toggleRow.querySelector('span:first-child');
+            const iconSpan = toggleRow.querySelector('.material-symbols-outlined');
             if (textSpan && iconSpan) {
                 if (isExact) {
                     textSpan.innerHTML = 'Move to Related:';
@@ -314,11 +315,11 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                     iconSpan.textContent = 'subscriptions';
                 }
             }
-            toggleExactRow.style.opacity = '1';
-            toggleExactRow.style.pointerEvents = 'auto';
+            toggleRow.style.opacity = '1';
+            toggleRow.style.pointerEvents = 'auto';
         } else {
-            toggleExactRow.style.opacity = '0.5';
-            toggleExactRow.style.pointerEvents = 'none';
+            toggleRow.style.opacity = '0.5';
+            toggleRow.style.pointerEvents = 'none';
         }
     }
 
