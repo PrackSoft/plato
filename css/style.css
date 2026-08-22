@@ -726,6 +726,9 @@ body.compact-mode .history-header {
     flex: 1;
     overflow-y: auto;
 }
+
+
+
 .settings-group {
     margin-bottom: 20px;
 }
@@ -871,6 +874,53 @@ body.compact-mode .history-header {
     color: var(--text-secondary);
     font-size: 0.875rem;
 }
+
+/* ===== Sidebar: Segmented Control ===== */
+.segmented-control {
+    display: flex;
+    background: var(--button-bg);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    border: 1px solid var(--border-light);
+    margin-top: 4px;
+}
+
+.segmented-control button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    padding: 6px 8px;
+    font-size: var(--font-size-small);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    border-radius: 0;
+    text-align: center;
+    font-family: var(--font-family);
+}
+
+.segmented-control button.active {
+    background: var(--accent) !important;
+    color: var(--text-primary) !important;
+}
+
+.segmented-control button:not(:last-child) {
+    border-right: 1px solid var(--border-light);
+}
+
+.segmented-control button:hover:not(.active) {
+    background: var(--border-color);
+}
+
+/* Ajuste para que los grupos de settings queden con el mismo espaciado */
+.settings-group {
+    margin-bottom: 20px;
+}
+
+.settings-group:last-child {
+    margin-bottom: 0;
+}
+
 /* Ocultar título y estadísticas de las tarjetas */
 body.hide-card-info .video-card .info {
     display: none;
