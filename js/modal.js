@@ -2,7 +2,7 @@
 // Soporta entrada múltiple separada por comas en todos los campos (Search term, Director, Actor, etc.)
 
 import { getExtraInfo, toggleExact, addDirector, removeDirector, addActor, removeActor, addGenre, removeGenre, addYear, removeYear, addCountry, removeCountry, addLanguage, removeLanguage, addTag, removeTag, openDB } from './db.js';
-import { refreshAvailableTerms, loadAndDisplayAll, syncWindowTermFilter, getActiveTermFilter } from './app.js';
+import { refreshAvailableTerms, loadAndDisplayAll, syncWindowTermFilter, getActiveTermFilter, setActiveFilter } from './app.js';
 
 let currentMovie = null;
 let currentOnUpdate = null;
@@ -22,19 +22,17 @@ export function initModal(onUpdateCallback) {
     window.onclick = (e) => { if (e.target === modal) closeModal(); };
 }
 
-export async function openModal(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source = 'main', filterMode = null) {
+export async function openModal(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source = 'main', filterMode = null, setFilterFn = null) {
     currentMovie = movie;
     currentMovieSource = source;
     currentTrashFunctions = { moveToTrash, restoreFromTrash, permanentlyDelete };
-    // Guardar el filtro para usarlo en el renderizado
-    window._modalFilterMode = filterMode;  // o una variable local
     const modal = document.getElementById('movieModal');
     const modalBody = document.getElementById('modalBody');
     if (!modal || !modalBody) return;
     modalBody.innerHTML = renderModalContent(movie, source, filterMode);
     modal.style.display = 'flex';
     extraInfoVisible = false;
-    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source, filterMode);
+    attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source, filterMode, setFilterFn);
 }
 
 function closeModal() {
@@ -236,7 +234,7 @@ async function updateTermsListInModal(movie, source, attachModalEventsFn, {
     }
 }
 
-async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source, filterMode = null) {
+async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source, filterMode = null, setFilterFn = null) {
     const isInTrash = (source === 'trash');
     let selectedTerm = null;  // término actualmente seleccionado
 
@@ -359,16 +357,48 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
             await refreshAvailableTerms();
             await loadAndDisplayAll();
             
-            // Actualizar el modal sin cerrarlo: obtener la película actualizada
+            // Obtener la película actualizada
             const updatedMovie = await getMovieFromDB(movie.youtubeId);
-            if (updatedMovie) {
-                // Re-renderizar el modal con el nuevo estado y el mismo filtro
-                const modalBody = document.getElementById('modalBody');
-                if (modalBody) {
-                    modalBody.innerHTML = renderModalContent(updatedMovie, source, filterMode);
-                    // Volver a vincular eventos (incluyendo la selección)
-                    attachModalEvents(updatedMovie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source, filterMode);
+            if (!updatedMovie) return;
+            
+            // Determinar el nuevo filtro: si la película tiene términos del tipo actual, mantener el filtro; si no, cambiar al opuesto
+            let newFilterMode = filterMode;
+            if (filterMode === 'exact') {
+                const hasExact = updatedMovie.searchTerms.some(t => t.exact === true);
+                if (!hasExact) {
+                    newFilterMode = 'related';
+                    // Actualizar el filtro global
+                    if (setFilterFn) setFilterFn('related');
                 }
+            } else if (filterMode === 'related') {
+                const hasRelated = updatedMovie.searchTerms.some(t => t.exact === false);
+                if (!hasRelated) {
+                    newFilterMode = 'exact';
+                    if (setFilterFn) setFilterFn('exact');
+                }
+            }
+            // Si filterMode era null, mantenerlo
+            
+            // Re-renderizar el modal con el nuevo filtro y la película actualizada
+            const modalBody = document.getElementById('modalBody');
+            if (modalBody) {
+                modalBody.innerHTML = renderModalContent(updatedMovie, source, newFilterMode);
+                // Volver a vincular eventos (incluyendo la selección)
+                attachModalEvents(updatedMovie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source, newFilterMode, setFilterFn);
+                // Seleccionar automáticamente el término modificado en el nuevo renderizado
+                setTimeout(() => {
+                    const chips = document.querySelectorAll('#termsList .term-chip');
+                    chips.forEach(chip => {
+                        if (chip.dataset.term === termToToggle) {
+                            chip.classList.add('selected');
+                            const termObj = updatedMovie.searchTerms.find(t => t.term === termToToggle);
+                            if (termObj) {
+                                selectedTerm = termObj;
+                                updateToggleButton(termObj);
+                            }
+                        }
+                    });
+                }, 50);
             }
         };
     }

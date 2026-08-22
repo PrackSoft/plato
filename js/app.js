@@ -2293,6 +2293,17 @@ async function toggleFavorite(youtubeId) {
     return false;
 }
 
+// Función para cambiar el filtro activo desde el modal
+export function setActiveFilter(filter) {
+    if (filter === 'exact' || filter === 'related') {
+        activeRelatedFilter = filter;
+        savedRelatedFilter = filter;
+        updateRelatedButtonText();
+        updateFilterButtonsUI();
+        loadAndDisplayAll();
+    }
+}
+
 window.openMovieModal = (movie, source = 'main') => {
     openModal(movie, {
         updateMovieTerms,
@@ -2301,7 +2312,7 @@ window.openMovieModal = (movie, source = 'main') => {
         moveToTrash: moveMovieToTrash,
         restoreFromTrash: restoreMovieFromTrash,
         permanentlyDelete: permanentlyDeleteMovie
-    }, source, activeRelatedFilter);  // <-- pasamos el filtro actual
+    }, source, activeRelatedFilter, setActiveFilter);  // <-- pasamos el filtro y la función para cambiarlo
 };
 
 // ---------------------- Función de búsqueda (sin botón) ----------------------
