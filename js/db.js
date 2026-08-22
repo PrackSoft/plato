@@ -883,6 +883,7 @@ export async function saveMovie(movieData, searchTerm, isExact = true) {
                     likeCount: movieData.likeCount ?? existing.likeCount,
                     commentCount: movieData.commentCount ?? existing.commentCount,
                     duration: movieData.duration ?? existing.duration,
+                    thumbnails: movieData.thumbnails || existing.thumbnails,
                     lastUpdated: new Date().toISOString()
                 };
                 
@@ -907,7 +908,8 @@ export async function saveMovie(movieData, searchTerm, isExact = true) {
                     watching: false,
                     favorite: false,
                     dateSaved: new Date().toISOString(),
-                    lastUpdated: new Date().toISOString()
+                    lastUpdated: new Date().toISOString(),
+                    thumbnails: movieData.thumbnails
                 };
                 
                 const addRequest = store.add(newMovie);

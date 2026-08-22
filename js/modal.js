@@ -62,13 +62,18 @@ function renderModalContent(movie, source) {
     const countries = movie.countries || [];
     const languages = movie.languages || [];
 
+    const modalQuality = localStorage.getItem('plato_modalQuality') || 'high';
+    const thumbnails = movie.thumbnails || {};
+    const thumb = thumbnails[modalQuality] || thumbnails.high || thumbnails.medium || { url: '' };
+    const modalImageUrl = thumb.url || '';
+
     return `
         <div class="modal-header">
             <div class="modal-spacer"></div>
             <h2>${escapeHtml(movie.title)}</h2>
             <div class="modal-spacer"></div>
         </div>
-        <img class="modal-image" src="${movie.imageUrl}" alt="${movie.title}">
+        <img class="modal-image" src="${modalImageUrl}" alt="${movie.title}">
         <p><strong>Year:</strong> ${movie.publishedAt ? new Date(movie.publishedAt).toLocaleDateString() : 'Unknown year'}</p>
         <p><strong>Duration:</strong> ${formatDuration(movie.duration)}</p>
         <p><strong>Saved on:</strong> ${new Date(movie.dateSaved).toLocaleString()}</p>

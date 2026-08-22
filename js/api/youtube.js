@@ -74,15 +74,17 @@ export async function searchYouTube(query, channelId = null, order = 'relevance'
     const enrichedItems = searchData.items.map(item => {
         const videoId = item.id.videoId;
         const extra = detailsMap.get(videoId) || {};
+        const snippet = item.snippet;
         return {
             youtubeId: videoId,
-            title: extra.title || item.snippet.title,
-            channelId: extra.channelId || item.snippet.channelId,
-            channelTitle: extra.channelTitle || item.snippet.channelTitle,
-            imageUrl: extra.thumbnails?.medium?.url || item.snippet.thumbnails.medium.url,
+            title: extra.title || snippet.title,
+            channelId: extra.channelId || snippet.channelId,
+            channelTitle: extra.channelTitle || snippet.channelTitle,
+            // No guardamos `imageUrl` fijo, guardamos todo
+            thumbnails: extra.thumbnails || snippet.thumbnails,
             url: `https://youtube.com/watch?v=${videoId}`,
-            description: extra.fullDescription || item.snippet.description,
-            publishedAt: extra.publishedAt || item.snippet.publishedAt,
+            description: extra.fullDescription || snippet.description,
+            publishedAt: extra.publishedAt || snippet.publishedAt,
             duration: extra.duration,
             viewCount: extra.viewCount,
             likeCount: extra.likeCount,

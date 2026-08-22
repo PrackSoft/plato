@@ -135,9 +135,14 @@ export function renderMovies(container, movies, title, source = 'main', currentS
     `;
 
     function generateCard(movie) {
+        const cardQuality = localStorage.getItem('plato_cardQuality') || 'medium';
+        const thumbnails = movie.thumbnails || {};
+        const thumb = thumbnails[cardQuality] || thumbnails.medium || { url: '' };
+        const imageUrl = thumb.url || ''; // fallback vacío, pero siempre debería haber al menos medium
+
         return `
             <div class="video-card" data-id="${String(movie.youtubeId)}">
-                <img src="${movie.imageUrl}" alt="${movie.title}">
+                <img src="${imageUrl}" alt="${movie.title}">
                 <div class="info">
                     <h3>${escapeHtml(movie.title)}</h3>
                     <div class="card-stats">

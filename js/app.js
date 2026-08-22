@@ -597,14 +597,16 @@ function loadSearchPreferences() {
 function buildSettingsSidebarContent() {
     const section = document.querySelector('.sidebar-section');
     if (!section) return;
-    
+
     const compactMode = localStorage.getItem('plato_compactMode') === 'true';
     const hideCardInfo = localStorage.getItem('plato_hideCardInfo') === 'true';
-    
+    const cardQuality = localStorage.getItem('plato_cardQuality') || 'medium';
+    const modalQuality = localStorage.getItem('plato_modalQuality') || 'high';
+
     section.innerHTML = `
-        <h3>Display</h3>
+        <h3>Compact mode</h3>
         <div class="settings-group">
-            <label class="settings-label">Compact mode (hide header)</label>
+            <label class="settings-label">Hide header (title & sort)</label>
             <div class="toggle-wrapper">
                 <label class="toggle-switch">
                     <input type="checkbox" id="compactModeToggle" ${compactMode ? 'checked' : ''}>
@@ -614,7 +616,7 @@ function buildSettingsSidebarContent() {
             </div>
         </div>
         <div class="settings-group">
-            <label class="settings-label">Minimalist cards (hide title & stats)</label>
+            <label class="settings-label">Hide card info (title & stats)</label>
             <div class="toggle-wrapper">
                 <label class="toggle-switch">
                     <input type="checkbox" id="hideCardInfoToggle" ${hideCardInfo ? 'checked' : ''}>
@@ -623,16 +625,40 @@ function buildSettingsSidebarContent() {
                 <span class="toggle-label">${hideCardInfo ? 'On' : 'Off'}</span>
             </div>
         </div>
+
         <hr style="border-color: var(--border-color); margin: 20px 0;">
+
+        <h3>Resolution previews</h3>
+        <div class="settings-group">
+            <label class="settings-label">Cards</label>
+            <div class="segmented-control" id="cardQualityControl">
+                <button data-quality="default" class="${cardQuality === 'default' ? 'active' : ''}">Low</button>
+                <button data-quality="medium" class="${cardQuality === 'medium' ? 'active' : ''}">Medium</button>
+                <button data-quality="high" class="${cardQuality === 'high' ? 'active' : ''}">High</button>
+                <button data-quality="maxres" class="${cardQuality === 'maxres' ? 'active' : ''}">Max</button>
+            </div>
+        </div>
+        <div class="settings-group">
+            <label class="settings-label">Modal</label>
+            <div class="segmented-control" id="modalQualityControl">
+                <button data-quality="default" class="${modalQuality === 'default' ? 'active' : ''}">Low</button>
+                <button data-quality="medium" class="${modalQuality === 'medium' ? 'active' : ''}">Medium</button>
+                <button data-quality="high" class="${modalQuality === 'high' ? 'active' : ''}">High</button>
+                <button data-quality="maxres" class="${modalQuality === 'maxres' ? 'active' : ''}">Max</button>
+            </div>
+        </div>
+
+        <hr style="border-color: var(--border-color); margin: 20px 0;">
+
         <h3>General Settings</h3>
         <p class="settings-note">Future options: API key, default channel, theme, etc.</p>
     `;
-    
+
     // Aplicar estados iniciales
     document.body.classList.toggle('compact-mode', compactMode);
     document.body.classList.toggle('hide-card-info', hideCardInfo);
-    
-    // Toggle 1: Compact mode
+
+    // Toggle compact mode
     const toggle1 = document.getElementById('compactModeToggle');
     const label1 = toggle1?.parentElement?.parentElement?.querySelector('.toggle-label');
     if (toggle1) {
@@ -643,8 +669,8 @@ function buildSettingsSidebarContent() {
             if (label1) label1.textContent = isChecked ? 'On' : 'Off';
         });
     }
-    
-    // Toggle 2: Hide card info
+
+    // Toggle hide card info
     const toggle2 = document.getElementById('hideCardInfoToggle');
     const label2 = toggle2?.parentElement?.parentElement?.querySelector('.toggle-label');
     if (toggle2) {
@@ -653,6 +679,34 @@ function buildSettingsSidebarContent() {
             localStorage.setItem('plato_hideCardInfo', isChecked);
             document.body.classList.toggle('hide-card-info', isChecked);
             if (label2) label2.textContent = isChecked ? 'On' : 'Off';
+        });
+    }
+
+    // Segmented control: Cards
+    const cardControl = document.getElementById('cardQualityControl');
+    if (cardControl) {
+        cardControl.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const quality = btn.dataset.quality;
+                localStorage.setItem('plato_cardQuality', quality);
+                cardControl.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                loadAndDisplayAll();
+            });
+        });
+    }
+
+    // Segmented control: Modal
+    const modalControl = document.getElementById('modalQualityControl');
+    if (modalControl) {
+        modalControl.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const quality = btn.dataset.quality;
+                localStorage.setItem('plato_modalQuality', quality);
+                modalControl.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                // No se re-renderiza, el modal usará la nueva calidad al abrirse.
+            });
         });
     }
 }
