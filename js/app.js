@@ -599,7 +599,8 @@ function buildSettingsSidebarContent() {
     if (!section) return;
 
     const compactMode = localStorage.getItem('plato_compactMode') === 'true';
-    const hideCardInfo = localStorage.getItem('plato_hideCardInfo') === 'true';
+    const hideTitle = localStorage.getItem('plato_hideTitle') === 'true';
+    const hideStats = localStorage.getItem('plato_hideStats') === 'true';
     const cardQuality = localStorage.getItem('plato_cardQuality') || 'medium';
     const modalQuality = localStorage.getItem('plato_modalQuality') || 'high';
 
@@ -616,13 +617,23 @@ function buildSettingsSidebarContent() {
             </div>
         </div>
         <div class="settings-group">
-            <label class="settings-label">Hide card info (title & stats)</label>
+            <label class="settings-label">Hide video title</label>
             <div class="toggle-wrapper">
                 <label class="toggle-switch">
-                    <input type="checkbox" id="hideCardInfoToggle" ${hideCardInfo ? 'checked' : ''}>
+                    <input type="checkbox" id="hideTitleToggle" ${hideTitle ? 'checked' : ''}>
                     <span class="toggle-slider"></span>
                 </label>
-                <span class="toggle-label">${hideCardInfo ? 'On' : 'Off'}</span>
+                <span class="toggle-label">${hideTitle ? 'On' : 'Off'}</span>
+            </div>
+        </div>
+        <div class="settings-group">
+            <label class="settings-label">Hide stats (comments & likes)</label>
+            <div class="toggle-wrapper">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="hideStatsToggle" ${hideStats ? 'checked' : ''}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">${hideStats ? 'On' : 'Off'}</span>
             </div>
         </div>
 
@@ -656,9 +667,10 @@ function buildSettingsSidebarContent() {
 
     // Aplicar estados iniciales
     document.body.classList.toggle('compact-mode', compactMode);
-    document.body.classList.toggle('hide-card-info', hideCardInfo);
+    document.body.classList.toggle('hide-video-title', hideTitle);
+    document.body.classList.toggle('hide-card-stats', hideStats);
 
-    // Toggle compact mode
+    // Toggle 1: Compact mode
     const toggle1 = document.getElementById('compactModeToggle');
     const label1 = toggle1?.parentElement?.parentElement?.querySelector('.toggle-label');
     if (toggle1) {
@@ -670,15 +682,27 @@ function buildSettingsSidebarContent() {
         });
     }
 
-    // Toggle hide card info
-    const toggle2 = document.getElementById('hideCardInfoToggle');
+    // Toggle 2: Hide video title
+    const toggle2 = document.getElementById('hideTitleToggle');
     const label2 = toggle2?.parentElement?.parentElement?.querySelector('.toggle-label');
     if (toggle2) {
         toggle2.addEventListener('change', (e) => {
             const isChecked = e.target.checked;
-            localStorage.setItem('plato_hideCardInfo', isChecked);
-            document.body.classList.toggle('hide-card-info', isChecked);
+            localStorage.setItem('plato_hideTitle', isChecked);
+            document.body.classList.toggle('hide-video-title', isChecked);
             if (label2) label2.textContent = isChecked ? 'On' : 'Off';
+        });
+    }
+
+    // Toggle 3: Hide stats
+    const toggle3 = document.getElementById('hideStatsToggle');
+    const label3 = toggle3?.parentElement?.parentElement?.querySelector('.toggle-label');
+    if (toggle3) {
+        toggle3.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            localStorage.setItem('plato_hideStats', isChecked);
+            document.body.classList.toggle('hide-card-stats', isChecked);
+            if (label3) label3.textContent = isChecked ? 'On' : 'Off';
         });
     }
 
@@ -705,7 +729,6 @@ function buildSettingsSidebarContent() {
                 localStorage.setItem('plato_modalQuality', quality);
                 modalControl.querySelectorAll('button').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                // No se re-renderiza, el modal usará la nueva calidad al abrirse.
             });
         });
     }

@@ -921,8 +921,13 @@ body.compact-mode .history-header {
     margin-bottom: 0;
 }
 
-/* Ocultar título y estadísticas de las tarjetas */
-body.hide-card-info .video-card .info {
+/* Ocultar solo el título del video */
+body.hide-video-title .video-card .info h3 {
+    display: none;
+}
+
+/* Ocultar solo las estadísticas (comentarios y likes) */
+body.hide-card-stats .video-card .card-stats {
     display: none;
 }
 
