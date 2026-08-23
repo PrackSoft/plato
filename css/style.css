@@ -79,7 +79,7 @@ body {
     height: auto;
     justify-content: space-between;
     align-items: flex-start;
-    margin: 0 0 var(--gap-lg) 0;
+    margin: 0 0 0 0;
     padding: 0;
 }
 
@@ -132,7 +132,7 @@ body {
 .search-box {
     display: flex;
     gap: var(--gap-md);
-    margin-bottom: var(--gap-lg);
+    /*margin-bottom: var(--gap-lg);*/
 }
 #searchInput {
     flex: 1;
