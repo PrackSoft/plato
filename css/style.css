@@ -90,7 +90,7 @@ body {
     font-family: 'Monoton', cursive;
     font-size: var(--font-size-lg);
     font-weight: 400;
-    color: var(--text-primary);
+    color: var(--bg-body);
     display: flex;
     align-items: flex-start;    /* alinea el ícono y el texto arriba */
     gap: var(--gap-lg);
@@ -102,7 +102,7 @@ body {
 /* Solo el ícono con fondo rojo */
 .logo .material-symbols-outlined {
     font-size: calc(var(--font-size-lg) - 8px);
-    background: var(--accent);
+    background: var(--text-primary);
     border-radius: var(--border-radius-lg);
     width: calc(var(--font-size-lg) - 4px); /* 2rem - 4px ≈ 28px */
     height: calc(var(--font-size-lg) - 4px);
