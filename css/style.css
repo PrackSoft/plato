@@ -136,12 +136,12 @@ body {
 }
 #searchInput {
     flex: 1;
-    padding: 0 var(--gap-md);
+    padding: 0 var(--gap-lg);
     height: var(--btn-height-lg);
     background: var(--bg-card);
     border: 1px solid var(--border-light);
     color: var(--text-primary);
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-lg);
     border-radius: var(--border-radius-lg);
 }
 #searchInput:focus {
@@ -158,13 +158,13 @@ body {
     border-radius: var(--border-radius-lg);
     height: var(--btn-height-lg);
     padding: 0 var(--btn-padding-lg);
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-lg);
     font-weight: normal;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: var(--gap-sm);
+    gap: var(--gap-lg);
     transition: background 0.2s;
     white-space: nowrap;
     background: var(--button-bg);
@@ -200,8 +200,8 @@ body {
 }
 .btn-sm {
     height: var(--btn-height-lg);
-    padding: 0 var(--btn-padding-md);
-    font-size: var(--font-size-md);
+    padding: 0 var(--btn-padding-lg);
+    font-size: var(--font-size-lg);
     background: var(--button-bg);
 }
 .btn.active {
@@ -249,7 +249,7 @@ body {
 .card-stats {
     display: flex;
     justify-content: space-between;
-    margin-top: var(--gap-sm);
+    margin-top: var(--gap-md);
     font-size: var(--font-size-md);
     color: var(--text-secondary);
 }
@@ -299,11 +299,11 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: var(--gap-sm) var(--gap-md);
+    padding: var(--gap-lg) var(--gap-lg);
     cursor: pointer;
     white-space: nowrap;
     color: var(--text-primary);
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-lg);
 }
 .dropdown-panel label:hover {
     background: var(--button-bg);
@@ -312,12 +312,12 @@ body {
     margin: 0;
 }
 .dropdown-header {
-    padding: var(--gap-sm) var(--gap-md);
-    font-size: var(--font-size-md);
+    padding: var(--gap-lg) var(--gap-lg);
+    font-size: var(--font-size-lg);
     font-weight: bold;
     color: var(--text-secondary);
     border-bottom: 1px solid var(--border-color);
-    margin-bottom: var(--gap-sm);
+    margin-bottom: var(--gap-lg);
 }
 
 .results {
@@ -347,12 +347,12 @@ body {
     border-radius: 0; /* sin borde propio */
 }
 .info {
-    padding: var(--gap-md);
+    padding: var(--gap-lg);
 }
 .info h3 {
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-lg);
     font-weight: 500;
-    margin-bottom: var(--gap-sm);
+    margin-bottom: var(--gap-lg);
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -362,10 +362,10 @@ body {
 /* Extra info panel */
 .extra-info-panel {
     background: var(--bg-panel);
-    border-radius: var(--border-radius-sm);
-    padding: 8px;
+    border-radius: var(--border-radius-md);
+    padding: var(--gap-md);
     font-size: var(--font-size-md);
-    margin-top: 8px;
+    margin-top: var(--gap-md);
 }
 .extra-info-panel.hidden {
     display: none;
@@ -390,9 +390,9 @@ body {
 }
 .stats {
     text-align: center;
-    padding: 40px;
-    color: var(--text-secondary);
     font-size: var(--font-size-md);
+    padding: var(--gap-md);
+    color: var(--text-secondary);
 }
 
 .modal {
@@ -442,9 +442,9 @@ body {
 .modal-description {
     white-space: normal;
     word-wrap: break-word;
-    margin: 10px 0;
-    font-size: var(--font-size-md);
-    line-height: 1.5;
+    margin: var(--gap-lg) 0;
+    font-size: var(--font-size-lg);
+    line-height: var(--gap-lg);
 }
 .modal-image {
     width: 100%;
@@ -521,9 +521,9 @@ body {
     transform: translateX(16px);
 }
 .toggle-label {
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-lg);
     color: var(--text-secondary);
-    min-width: 30px;
+    min-width: var(--gap-lg);
 }
 
 /* Compact mode: ocultar título y sort */
@@ -574,12 +574,12 @@ body.compact-mode .history-header {
 
 .term-chip {
     background: var(--button-bg);
-    padding: 4px var(--gap-sm);
+    padding: var(--gap-lg) var(--gap-lg);
     border-radius: var(--border-radius-lg);
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-lg);
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--gap-lg);
 }
 
 /* Estilos unificados para todos los iconos de edición y eliminación */
@@ -639,8 +639,8 @@ body.compact-mode .history-header {
 
 .terms-placeholder {
     color: var(--text-secondary);
-    font-size: var(--font-size-md);
-    padding: 4px 0;
+    font-size: var(--font-size-lg);
+    padding: var(--gap-lg) 0;
 }
 
 .history-header {
@@ -657,17 +657,17 @@ body.compact-mode .history-header {
 .sort-control {
     display: flex;
     align-items: center;
-    gap: var(--gap-sm);
-    font-size: var(--font-size-md);
+    gap: var(--gap-lg);
+    font-size: var(--font-size-lg);
 }
 .sort-control select {
     background: var(--bg-card);
     border: 1px solid var(--border-light);
     border-radius: var(--border-radius-lg);
-    padding: 0 var(--gap-md);
-    height: 32px;
+    padding: 0 var(--gap-lg);
+    height: var(--gap-lg);
     color: var(--text-primary);
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-lg);
     cursor: pointer;
 }
 .sort-control select:focus {
@@ -683,7 +683,7 @@ body.compact-mode .history-header {
     font-size: var(--font-size-md);
     font-weight: 500;
     margin-bottom: var(--gap-md);
-    padding-bottom: var(--gap-sm);
+    padding-bottom: var(--gap-md);
     border-bottom: 1px solid var(--border-light);
     color: var(--accent);
 }
@@ -798,11 +798,11 @@ body.compact-mode .history-header {
 #collectionsPanel label {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: var(--gap-sm) var(--gap-md);
+    gap: var(--gap-lg);
+    padding: var(--gap-lg) var(--gap-lg);
     cursor: pointer;
     color: var(--text-primary);
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-lg);
 }
 #collectionsPanel label:hover {
     background: var(--button-bg);
@@ -865,11 +865,11 @@ body.compact-mode .history-header {
 
 .date-input {
     width: 100%;
-    padding: 6px 8px;
+    padding: var(--gap-md) var(--gap-md);
     background: var(--bg-card);
     border: 1px solid var(--border-light);
     color: var(--text-primary);
-    border-radius: 8px;
+    border-radius: var(--border-radius-md);
     font-family: var(--font-family);
     font-size: var(--font-size-md);
     cursor: pointer;
@@ -913,7 +913,7 @@ body.compact-mode .history-header {
     border: none;
     background: transparent;
     color: var(--text-secondary);
-    padding: 6px 8px;
+    padding: var(--gap-md) var(--gap-md);
     font-size: var(--font-size-md);
     cursor: pointer;
     transition: background 0.2s, color 0.2s;
