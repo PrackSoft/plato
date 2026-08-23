@@ -603,8 +603,24 @@ function buildSettingsSidebarContent() {
     const hideStats = localStorage.getItem('plato_hideStats') === 'true';
     const cardQuality = localStorage.getItem('plato_cardQuality') || 'medium';
     const modalQuality = localStorage.getItem('plato_modalQuality') || 'high';
+    const userLocation = localStorage.getItem('user_location') || 'global';
 
     section.innerHTML = `
+        <p class="settings-note">Future options: API key, default channel, theme, etc.</p>
+        <hr style="border-color: var(--border-color); margin: 20px 0;">
+
+        <h3>Location</h3>
+        <div class="settings-group">
+            <label class="settings-label">Select your region for YouTube search</label>
+            <div class="segmented-control" id="locationControl">
+                <button data-location="global" class="${userLocation === 'global' ? 'active' : ''}">Global</button>
+                <button data-location="us" class="${userLocation === 'us' ? 'active' : ''}">US</button>
+                <button data-location="ar" class="${userLocation === 'ar' ? 'active' : ''}">Argentina</button>
+            </div>
+        </div>
+
+        <hr style="border-color: var(--border-color); margin: 20px 0;">
+
         <h3>Compact mode</h3>
         <div class="settings-group">
             <label class="settings-label">Hide header (title & sort)</label>
@@ -660,9 +676,6 @@ function buildSettingsSidebarContent() {
         </div>
 
         <hr style="border-color: var(--border-color); margin: 20px 0;">
-
-        <h3>General Settings</h3>
-        <p class="settings-note">Future options: API key, default channel, theme, etc.</p>
     `;
 
     // Aplicar estados iniciales
@@ -703,6 +716,20 @@ function buildSettingsSidebarContent() {
             localStorage.setItem('plato_hideStats', isChecked);
             document.body.classList.toggle('hide-card-stats', isChecked);
             if (label3) label3.textContent = isChecked ? 'On' : 'Off';
+        });
+    }
+
+    // Segmented control: Location
+    const locationControl = document.getElementById('locationControl');
+    if (locationControl) {
+        locationControl.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const location = btn.dataset.location;
+                localStorage.setItem('user_location', location);
+                locationControl.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                // No es necesario recargar, la próxima búsqueda usará la nueva ubicación
+            });
         });
     }
 
@@ -2368,7 +2395,19 @@ async function performSearch() {
     if (selectedOption.type === 'api') {
         resultsGrid.innerHTML = '<div class="stats">Searching YouTube Movies...</div>';
         try {
-            const channelId = selectedOption.id === 'plato_db' ? null : selectedOption.id;
+            // Determinar el channelId según la ubicación del usuario
+            let channelId = null;
+            if (selectedOption.id !== 'plato_db') {
+                const userLocation = localStorage.getItem('user_location') || 'global';
+                if (userLocation === 'us') {
+                    channelId = 'UCuVPpxrm2VAgpH3Ktln4HXg';
+                } else if (userLocation === 'ar') {
+                    channelId = null; // <-- Reemplazar con el ID de Argentina cuando lo tengas
+                } else {
+                    channelId = null; // Global: sin canal fijo
+                }
+            }
+
             const moviesFromAPI = await searchYouTube(effectiveQuery, channelId, searchOrder, searchDuration, searchCategoryFilter, publishedAfter, publishedBefore);
             if (moviesFromAPI.length === 0) {
                 resultsGrid.innerHTML = '<div class="stats">No results found on YouTube Movies</div>';
