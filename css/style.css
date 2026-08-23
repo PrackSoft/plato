@@ -14,8 +14,8 @@
     --btn-height-sm: 1.5rem;
     --btn-height: 1.5rem;
 
-
-    --border-radius-sm: 0;
+    --border-radius-xs: .125rem;
+    --border-radius-sm: .25rem;
     --border-radius-md: .75rem;
     --border-radius-lg: 999px;
 
@@ -333,7 +333,7 @@ body {
 }
 .video-card {
     background: var(--bg-card);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--border-radius-xs);
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
