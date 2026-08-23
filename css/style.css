@@ -127,6 +127,7 @@ body {
     display: inline;
     width: auto;
     height: auto;
+    color: var(--text-primary);
 }
 
 .search-box {
