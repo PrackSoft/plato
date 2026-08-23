@@ -114,7 +114,7 @@ body {
 
 .glyph {
     display: inline-block;
-    transform: translate(-0.03rem, -.5rem);
+    transform: translate(-0.03rem, -.3rem);
 
 }
 /* El texto sin fondo */
