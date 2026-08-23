@@ -22,7 +22,7 @@
     --gap-xs: .125rem;
     --gap-sm: .25rem;
     --gap-md: 1rem;
-    --gap-lg: 2rem;
+    --gap-lg: 1.5rem;
     --gap-xl: 4rem;
 
 
@@ -82,8 +82,8 @@ body {
     height: auto;
     justify-content: space-between;
     align-items: flex-start;
-    margin: 0 0 0 0;
-    padding: 0;
+    margin: 0;
+    padding: 0 0 var(--gap-lg) 0;
 }
 
 
