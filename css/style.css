@@ -662,9 +662,9 @@ body.compact-mode .history-header {
     font-size: var(--font-size-md);
 }
 .sort-control select {
-    height: var(--btn-height);          /* Igual que los botones */
+    height: var(--btn-height-lg);          /* Igual que los botones */
     padding: 0 var(--gap-md);           /* Mismo padding horizontal */
-    font-size: var(--font-size-medium); /* Mismo tamaño de fuente */
+    font-size: var(--font-size-md); /* Mismo tamaño de fuente */
     background: var(--bg-card);
     border: 1px solid var(--border-light);
     border-radius: var(--border-radius-lg);
