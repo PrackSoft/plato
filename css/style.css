@@ -333,7 +333,7 @@ body {
 }
 .video-card {
     background: var(--bg-card);
-    border-radius: var(--border-radius-xs);
+    border-radius: var(--border-radius-md);
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
