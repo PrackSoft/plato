@@ -7,10 +7,13 @@
     --font-size-large: 1.5rem;
     --font-size-xl: 1.5rem;
     
-    --btn-height: 2rem;
-    --btn-height-sm: 2rem;
+
     --btn-padding-x-sm: .75rem;
     --btn-padding-x: 1rem;
+
+    --btn-height-sm: 1.5rem;
+    --btn-height: 1.5rem;
+
 
     --border-radius-sm: 0;
     --border-radius-md: .75rem;
