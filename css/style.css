@@ -287,11 +287,11 @@ body {
     left: 0;
     background: var(--bg-panel);
     border-radius: var(--border-radius-md);
-    padding: var(--gap-sm) 0;
+    padding: var(--gap-md) 0;
     min-width: 180px;
     box-shadow: var(--shadow);
     z-index: 200;
-    margin-top: var(--gap-sm);
+    margin-top: var(--gap-md);
 }
 .dropdown-panel.hidden {
     display: none;
@@ -787,11 +787,11 @@ body.compact-mode .history-header {
     left: 0;
     background: var(--bg-panel);
     border-radius: var(--border-radius-md);
-    padding: var(--gap-sm) 0;
+    padding: var(--gap-md) 0;
     min-width: 180px;
     box-shadow: var(--shadow);
     z-index: 1000;
-    margin-top: var(--gap-sm);
+    margin-top: var(--gap-md);
 }
 #collectionsPanel.hidden {
     display: none;
@@ -985,8 +985,8 @@ body.hide-card-info .video-card img {
     }
     .dropdown-panel {
         position: fixed;
-        left: var(--gap-lg);
-        right: var(--gap-lg);
+        left: var(--gap-md);
+        right: var(--gap-md);
         width: auto;
     }
     .sidebar {
