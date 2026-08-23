@@ -1,38 +1,48 @@
 /* ========== CSS Variables ========== */
 :root {
-    --bg-body: #0f0f0f;
-    --bg-header: #1a1a1a;
-    --bg-card: #1a1a1a;
-    --bg-panel: #1e1e1e;
-    --border-color: #2a2a2a;
-    --border-light: #3a3a3a;
-    --text-primary: white;
-    --text-secondary: #aaa;
-    --text-muted: #666;
-    --accent: #ff0000;
-    --accent-dark: #cc0000;
-    --accent-light: #ff9999;
-    --button-bg: #2a2a2a;
-    --shadow: 0 4px 12px rgba(0,0,0,0.4);
-    
-    --font-size-large: 1.25rem;
-    --font-size-medium: 0.875rem;
-    --font-size-small: 0.75rem;
-    --font-size-xl: 2rem;
     --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     
+    --font-size-small: 0.75rem;
+    --font-size-medium: 0.875rem;
+    --font-size-large: 1.25rem;
+    --font-size-xl: 2rem;
+    
     --btn-height: 2rem;
-    --btn-padding-x: 1rem;
     --btn-height-sm: 2rem;
     --btn-padding-x-sm: .75rem;
+    --btn-padding-x: 1rem;
+
     --border-radius-sm: 0;
     --border-radius-md: .75rem;
     --border-radius-lg: 999px;
+
     --gap-xs: 2px;
     --gap-sm: 4px;
     --gap-md: .75rem;
     --gap-lg: 1.5rem;
     --gap-xl: 4rem;
+
+
+    --bg-body: #0f0f0f;
+    --bg-header: #1a1a1a;
+    --bg-card: #1a1a1a;
+    --bg-panel: #1e1e1e;
+
+    --border-color: #2a2a2a;
+    --border-light: #3a3a3a;
+
+    --text-primary: white;
+    --text-secondary: #aaa;
+    --text-muted: #666;
+
+    --accent: #ff0000;
+    --accent-dark: #cc0000;
+    --accent-light: #ff9999;
+
+    --button-bg: #2a2a2a;
+
+    --shadow: 0 4px 12px rgba(0,0,0,0.4);
+
 }
 
 * {
@@ -73,9 +83,12 @@ body {
     padding: 0;
 }
 
+
+
+
 .logo {
     font-family: 'Monoton', cursive;
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-large);
     font-weight: 400;
     color: var(--text-primary);
     display: flex;
@@ -88,11 +101,11 @@ body {
 
 /* Solo el ícono con fondo rojo */
 .logo .material-symbols-outlined {
-    font-size: calc(var(--font-size-xl) - 8px);
+    font-size: calc(var(--font-size-large) - 8px);
     background: var(--accent);
     border-radius: var(--border-radius-sm);
-    width: calc(var(--font-size-xl) - 4px); /* 2rem - 4px ≈ 28px */
-    height: calc(var(--font-size-xl) - 4px);
+    width: calc(var(--font-size-large) - 4px); /* 2rem - 4px ≈ 28px */
+    height: calc(var(--font-size-large) - 4px);
     display: inline-flex;
     align-items: center;
     justify-content: center;
