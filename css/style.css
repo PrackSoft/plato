@@ -664,12 +664,13 @@ body.compact-mode .history-header {
 .sort-control select {
     background: var(--bg-card);
     border: 1px solid var(--border-light);
-    border-radius: var(--border-radius-md);
-    padding: var(--gap-md) var(--gap-md);
-    height: var(--gap-md);
+    border-radius: var(--border-radius-lg);
+    padding: 0 var(--gap-md);
+    height: var(--btn-height);  /* o 36px */
     color: var(--text-primary);
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-medium);
     cursor: pointer;
+    appearance: none; /* para que se vea mejor */
 }
 .sort-control select:focus {
     outline: 2px solid var(--accent-light);
