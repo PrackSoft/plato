@@ -135,7 +135,7 @@ body {
 .search-box {
     display: flex;
     gap: var(--gap-md);
-    /*margin-bottom: var(--gap-lg);*/
+    margin-bottom: var(--gap-lg);
 }
 #searchInput {
     flex: 1;
