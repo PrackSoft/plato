@@ -680,7 +680,7 @@ body.compact-mode .history-header {
     margin-bottom: 32px;
 }
 .group-date {
-    font-size: var(--font-size-large);
+    font-size: var(--font-size-medium);
     font-weight: 500;
     margin-bottom: var(--gap-md);
     padding-bottom: var(--gap-sm);
