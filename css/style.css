@@ -142,8 +142,8 @@ body {
     gap: var(--gap-md);
     /*margin-bottom: var(--gap-lg);*/
 
-    /*background-color: blue;
-    border: 1px solid blue;*/
+    /*background-color: blue;*/
+    border: 1px solid blue;
 }
 
 #searchInput {
@@ -301,17 +301,14 @@ body {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    /*gap: var(--gap-lg);*/
-    /*margin-bottom: var(--gap-lg);*/
-    margin: 0;
-    padding: 0;
-    /*background-color: orange;
-    border: 1px solid orange;*/
+
+    /*background-color: orange;*/
+    border: 1px solid orange;
 }
 
 .filter-buttons {
     display: flex;
-    /*gap: var(--gap-md);*/
+    gap: var(--gap-md);
 }
 
 .dropdown-search,
