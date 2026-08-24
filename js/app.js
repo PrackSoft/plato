@@ -154,7 +154,7 @@ function buildSearchInPanel() {
             <label class="settings-label">Content type:</label>
             <div class="radio-group">
                 <label><input type="radio" name="searchCategory" value="movies" ${searchCategoryFilter === 'movies' ? 'checked' : ''}> Include only movies</label>
-                <label><input type="radio" name="searchCategory" value="all" ${searchCategoryFilter === 'all' ? 'checked' : ''}> Include non‑movies</label>
+                <label><input type="radio" name="searchCategory" value="tvSeries" ${searchCategoryFilter === 'tvSeries' ? 'checked' : ''}> Include only TV Series</label>
             </div>
         </div>
         <div class="settings-group">

@@ -21,9 +21,13 @@ export async function searchYouTube(query, channelId = null, order = 'relevance'
         url += `&videoDuration=${duration}`;
     }
     
+    // --- NUEVA LÓGICA PARA CATEGORÍAS ---
     if (categoryFilter === 'movies') {
-        url += `&videoCategoryId=30`;
+        url += `&videoCategoryId=30`;  // Películas
+    } else if (categoryFilter === 'tvSeries') {
+        url += `&videoCategoryId=43`;  // Series de TV
     }
+    // Si es 'all' o cualquier otro valor, no se añade categoryId (busca todo)
     
     if (publishedAfter) {
         url += `&publishedAfter=${encodeURIComponent(publishedAfter)}`;
@@ -80,7 +84,6 @@ export async function searchYouTube(query, channelId = null, order = 'relevance'
             title: extra.title || snippet.title,
             channelId: extra.channelId || snippet.channelId,
             channelTitle: extra.channelTitle || snippet.channelTitle,
-            // No guardamos `imageUrl` fijo, guardamos todo
             thumbnails: extra.thumbnails || snippet.thumbnails,
             url: `https://youtube.com/watch?v=${videoId}`,
             description: extra.fullDescription || snippet.description,
