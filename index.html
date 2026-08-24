@@ -10,72 +10,69 @@
 </head>
 <body>
     <div class="header">
-        <div class="container">
-            <div class="navbar">
-                <div class="logo">
-                    <span class="material-symbols-outlined" id="logoIcon"><span class="glyph">looks</span></span>
-                    <span class="logo-text">PLATO</span>
-                </div>
-                <button id="settingsBtn" class="btn btn-secondary" title="Settings">
-                    <span class="material-symbols-outlined">settings</span>
-                </button>
-            </div>
 
-            <div class="search-box">
-                <div class="dropdown-search">
-                    <button id="searchInBtn" class="btn btn-primary">
-                        <span class="material-symbols-outlined">subscriptions</span> All Channels
+        <div class="navbar">
+            <div class="logo">
+                <span class="material-symbols-outlined" id="logoIcon"><span class="glyph">looks</span></span>
+                <span class="logo-text">PLATO</span>
+            </div>
+            <button id="settingsBtn" class="btn btn-secondary" title="Settings">
+                <span class="material-symbols-outlined">settings</span>
+            </button>
+        </div>
+
+        <div class="search-box">
+            <div class="dropdown-search">
+                <button id="searchInBtn" class="btn btn-primary">
+                    <span class="material-symbols-outlined">subscriptions</span> All Channels
+                    <span class="material-symbols-outlined">arrow_drop_down</span>
+                </button>
+                <div id="searchInPanel" class="dropdown-panel hidden"></div>
+            </div>
+            <input type="text" id="searchInput" placeholder="Enter a title, director, actor, or genre..." autocomplete="off">
+        </div>
+
+        <div class="top-controls">
+            <div class="filter-buttons">           
+                <button id="toggleTermsBtn" class="btn btn-secondary active">
+                    <span class="material-symbols-outlined">filter_list</span> Search term
+                </button>
+                <div class="dropdown-related">
+                    <button id="filterRelatedBtn" class="btn btn-primary">
+                        <span class="material-symbols-outlined">verified</span>
+                        Exact
                         <span class="material-symbols-outlined">arrow_drop_down</span>
                     </button>
-                    <div id="searchInPanel" class="dropdown-panel hidden"></div>
+                    <div id="relatedPanel" class="dropdown-panel hidden"></div>
                 </div>
-                <input type="text" id="searchInput" placeholder="Enter a title, director, actor, or genre..." autocomplete="off">
-            </div>
-
-            <div class="top-controls">
-                <div class="filter-buttons">           
-                    <button id="toggleTermsBtn" class="btn btn-secondary active">
-                        <span class="material-symbols-outlined">filter_list</span> Search term
+                <button id="filterWatchingBtn" class="btn btn-secondary">
+                    <span class="material-symbols-outlined">visibility</span> Watching
+                </button>
+                <button id="filterFavoriteBtn" class="btn btn-secondary">
+                    <span class="material-symbols-outlined">star_shine</span> Favorites
+                </button>                    
+                <div class="dropdown-collection">
+                    <button id="filterCollectionBtn" class="btn btn-secondary">
+                        <span class="material-symbols-outlined">join_inner</span> Collection
+                        <span class="material-symbols-outlined">arrow_drop_down</span>
                     </button>
-                    <div class="dropdown-related">
-                        <button id="filterRelatedBtn" class="btn btn-primary">
-                            <span class="material-symbols-outlined">verified</span>
-                            Exact
-                            <span class="material-symbols-outlined">arrow_drop_down</span>
-                        </button>
-                        <div id="relatedPanel" class="dropdown-panel hidden"></div>
-                    </div>
-                    <button id="filterWatchingBtn" class="btn btn-secondary">
-                        <span class="material-symbols-outlined">visibility</span> Watching
-                    </button>
-                    <button id="filterFavoriteBtn" class="btn btn-secondary">
-                        <span class="material-symbols-outlined">star_shine</span> Favorites
-                    </button>                    
-                    <div class="dropdown-collection">
-                        <button id="filterCollectionBtn" class="btn btn-secondary">
-                            <span class="material-symbols-outlined">join_inner</span> Collection
-                            <span class="material-symbols-outlined">arrow_drop_down</span>
-                        </button>
-                        <div id="collectionsPanel" class="dropdown-panel hidden"></div>
-                    </div>
-                    <button id="filterTrashBtn" class="btn btn-secondary">
-                        <span class="material-symbols-outlined">delete</span> Trash
-                    </button>        
+                    <div id="collectionsPanel" class="dropdown-panel hidden"></div>
                 </div>
+                <button id="filterTrashBtn" class="btn btn-secondary">
+                    <span class="material-symbols-outlined">delete</span> Trash
+                </button>        
             </div>
-
-            <div id="termsBar" class="terms-bar"></div>
-
-            <div id="directorsBar" class="terms-bar"></div>
-            <div id="actorsBar" class="terms-bar"></div>
-            <div id="genresBar" class="terms-bar"></div>
-            <div id="yearsBar" class="terms-bar"></div>
-            <div id="countriesBar" class="terms-bar"></div>
-            <div id="languagesBar" class="terms-bar"></div>
-
-            <div id="resultsGrid" class="results"></div>
-
         </div>
+
+        <div id="termsBar" class="terms-bar"></div>
+
+        <div id="directorsBar" class="terms-bar"></div>
+        <div id="actorsBar" class="terms-bar"></div>
+        <div id="genresBar" class="terms-bar"></div>
+        <div id="yearsBar" class="terms-bar"></div>
+        <div id="countriesBar" class="terms-bar"></div>
+        <div id="languagesBar" class="terms-bar"></div>
+
     </div>
 
     <!-- Sidebar (settings panel) - solo para ajustes generales en el futuro -->
@@ -87,14 +84,18 @@
         <div class="sidebar-section"></div>
     </div>
     <div id="sidebarOverlay" class="sidebar-overlay hidden"></div>
-
-    <div id="movieModal" class="modal" style="display:none;">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <div id="modalBody"></div>
-            <button id="watchMovieBtn" class="btn btn-primary modal-watch-btn">Watch on YouTube</button>
+    
+    <div class="container">
+        <div id="movieModal" class="modal" style="display:none;">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <div id="modalBody"></div>
+                <button id="watchMovieBtn" class="btn btn-primary modal-watch-btn">Watch on YouTube</button>
+            </div>
         </div>
+        <div id="resultsGrid" class="results"></div>
     </div>
+    
 
     <script type="module" src="js/app.js"></script>
 </body>
