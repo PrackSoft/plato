@@ -100,6 +100,11 @@ function closePanelWithDelay(panel) {
 function buildSearchInPanel() {
     searchInPanel.innerHTML = '';
 
+    const header = document.createElement('div');
+    header.className = 'dropdown-header';
+    header.textContent = 'Source';
+    searchInPanel.appendChild(header);
+
     const searchInContainer = document.createElement('div');
     searchInContainer.className = 'search-in-container';
     
@@ -122,6 +127,7 @@ function buildSearchInPanel() {
     youtubeLabel.className = 'search-in-label';
     youtubeLabel.appendChild(youtubeRadio);
     youtubeLabel.appendChild(document.createTextNode(' YouTube'));
+    searchInContainer.appendChild(youtubeLabel);
     
     const platoDbRadio = document.createElement('input');
     platoDbRadio.type = 'radio';
@@ -142,9 +148,8 @@ function buildSearchInPanel() {
     platoDbLabel.className = 'search-in-label';
     platoDbLabel.appendChild(platoDbRadio);
     platoDbLabel.appendChild(document.createTextNode(' Plato DB'));
-    
-    searchInContainer.appendChild(youtubeLabel);
     searchInContainer.appendChild(platoDbLabel);
+    
     searchInPanel.appendChild(searchInContainer);
     
     const youtubeSection = document.createElement('div');
@@ -227,16 +232,13 @@ function buildSearchInPanel() {
         }
     }
 
-    // SOLUCION: toggle del panel al hacer clic en el botón
     if (searchInBtn) {
         searchInBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            // Cerrar otros paneles
             const collectionsPanel = document.getElementById('collectionsPanel');
             if (collectionsPanel) collectionsPanel.classList.add('hidden');
             const relatedPanel = document.getElementById('relatedPanel');
             if (relatedPanel) relatedPanel.classList.add('hidden');
-            // Toggle solo este panel
             searchInPanel.classList.toggle('hidden');
         });
     }
@@ -432,11 +434,9 @@ function buildCollectionDropdown() {
                 collectionsSortBy = value;
                 updateCollectionButtonText();
                 
-                // Activar Collection filter si no está activo
                 if (!activeCollectionFilter) {
                     activeCollectionFilter = true;
                     updateFilterButtonsUI();
-                    // Ocultar terms bar si estaba visible
                     if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
                     if (termsBar) termsBar.classList.add('hidden');
                 }
@@ -465,7 +465,6 @@ function updateCollectionButtonText() {
     const iconSpan = mainPart.querySelector('.collections-icon');
     const labelSpan = mainPart.querySelector('.collections-label');
     
-    // Primero, actualizar el texto según collectionsSortBy (siempre)
     if (labelSpan) {
         switch (collectionsSortBy) {
             case 'all':
@@ -495,9 +494,7 @@ function updateCollectionButtonText() {
         }
     }
     
-    // Luego, ajustar el icono y estilo según si está activo o no
     if (!activeCollectionFilter) {
-        // Mantener el icono del último grupo seleccionado
         switch (collectionsSortBy) {
             case 'all':
                 if (iconSpan) iconSpan.textContent = 'join_inner';
@@ -688,13 +685,11 @@ function buildSettingsSidebarContent() {
         <hr style="border-color: var(--border-color); margin: 20px 0;">
     `;
 
-    // Aplicar estados iniciales
     document.body.classList.toggle('hide-btn-labels', hideLabels);
     document.body.classList.toggle('compact-mode', compactMode);
     document.body.classList.toggle('hide-video-title', hideTitle);
     document.body.classList.toggle('hide-card-stats', hideStats);
 
-    // Toggle 1: Hide button labels
     const toggle4 = document.getElementById('hideLabelsToggle');
     const label4 = toggle4?.parentElement?.parentElement?.querySelector('.toggle-label');
     if (toggle4) {
@@ -706,7 +701,6 @@ function buildSettingsSidebarContent() {
         });
     }
 
-    // Toggle 2: Compact mode
     const toggle1 = document.getElementById('compactModeToggle');
     const label1 = toggle1?.parentElement?.parentElement?.querySelector('.toggle-label');
     if (toggle1) {
@@ -718,7 +712,6 @@ function buildSettingsSidebarContent() {
         });
     }
 
-    // Toggle 3: Hide video title
     const toggle2 = document.getElementById('hideTitleToggle');
     const label2 = toggle2?.parentElement?.parentElement?.querySelector('.toggle-label');
     if (toggle2) {
@@ -730,7 +723,6 @@ function buildSettingsSidebarContent() {
         });
     }
 
-    // Toggle 4: Hide stats
     const toggle3 = document.getElementById('hideStatsToggle');
     const label3 = toggle3?.parentElement?.parentElement?.querySelector('.toggle-label');
     if (toggle3) {
@@ -742,7 +734,6 @@ function buildSettingsSidebarContent() {
         });
     }
 
-    // Segmented control: Channels
     const channelControl = document.getElementById('channelControl');
     if (channelControl) {
         channelControl.querySelectorAll('button').forEach(btn => {
@@ -751,12 +742,10 @@ function buildSettingsSidebarContent() {
                 localStorage.setItem('user_channel', channel);
                 channelControl.querySelectorAll('button').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                // No es necesario recargar, la próxima búsqueda usará el nuevo canal
             });
         });
     }
 
-    // Segmented control: Cards
     const cardControl = document.getElementById('cardQualityControl');
     if (cardControl) {
         cardControl.querySelectorAll('button').forEach(btn => {
@@ -770,7 +759,6 @@ function buildSettingsSidebarContent() {
         });
     }
 
-    // Segmented control: Modal
     const modalControl = document.getElementById('modalQualityControl');
     if (modalControl) {
         modalControl.querySelectorAll('button').forEach(btn => {
@@ -789,19 +777,12 @@ export async function refreshAvailableTags() {
     const allMovies = await getAllMovies();
     const tagsSet = new Set();
     for (const movie of allMovies) {
-        // Tags libres
         (movie.tags || []).forEach(t => tagsSet.add(t));
-        // Directores
         (movie.directors || []).forEach(d => tagsSet.add(d));
-        // Actores
         (movie.actors || []).forEach(a => tagsSet.add(a));
-        // Géneros
         (movie.genres || []).forEach(g => tagsSet.add(g));
-        // Años
         (movie.years || []).forEach(y => tagsSet.add(y));
-        // Países
         (movie.countries || []).forEach(c => tagsSet.add(c));
-        // Idiomas
         (movie.languages || []).forEach(l => tagsSet.add(l));
     }
     availableTags = Array.from(tagsSet).sort();
@@ -1949,7 +1930,6 @@ function updateFilterButtonsUI() {
         filterCollectionBtn.classList.remove('active');
     }
     
-    // Deshabilitar botones Watching y Favorite en Trash
     if (activeTrashFilter) {
         if (filterWatchingBtn) filterWatchingBtn.classList.add('btn-disabled');
         if (filterFavoriteBtn) filterFavoriteBtn.classList.add('btn-disabled');
@@ -1958,7 +1938,6 @@ function updateFilterButtonsUI() {
         if (filterFavoriteBtn) filterFavoriteBtn.classList.remove('btn-disabled');
     }
     
-    // Exact/Related button: change style when Trash or Collection is active
     if (activeTrashFilter || activeCollectionFilter) {
         if (filterRelatedBtn) {
             filterRelatedBtn.classList.remove('btn-primary');
@@ -2048,7 +2027,6 @@ function toggleCollectionFilter() {
     activeCollectionFilter = !activeCollectionFilter;
     
     if (activeCollectionFilter) {
-        // No cambiar activeRelatedFilter ni el texto del botón
         if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
         if (termsBar) termsBar.classList.add('hidden');
     } else {
@@ -2073,7 +2051,6 @@ export async function loadAndDisplayAll() {
     await dbReady;
     let allMovies = await getAllMovies();
 
-    // Filtrar por search term específico (chip)
     if (activeTermFilter) {
         allMovies = allMovies.filter(movie => {
             const terms = movie.searchTerms || [];
@@ -2085,7 +2062,6 @@ export async function loadAndDisplayAll() {
         });
     }
 
-    // Filtrar por Exact/Related (primario)
     if (!activeCollectionFilter && !activeTrashFilter && !activeWatchingFilter && !activeFavoriteFilter && !activeTermFilter) {
         if (activeRelatedFilter === 'exact') {
             allMovies = allMovies.filter(movie => {
@@ -2100,7 +2076,6 @@ export async function loadAndDisplayAll() {
         }
     }
 
-    // Filtrar por Collection
     if (activeCollectionFilter) {
         allMovies = await getAllMovies();
         
@@ -2148,7 +2123,6 @@ export async function loadAndDisplayAll() {
         }
     }
     
-    // Filtrar por Tag activo
     if (activeTagFilter && !activeCollectionFilter) {
         allMovies = allMovies.filter(movie => {
             const inDirectors = (movie.directors || []).includes(activeTagFilter);
@@ -2163,17 +2137,14 @@ export async function loadAndDisplayAll() {
         });
     }
 
-    // Filtrar por Watching (secundario)
     if (activeWatchingFilter) {
         allMovies = allMovies.filter(movie => movie.watching === true);
     }
 
-    // Filtrar por Favorite (secundario)
     if (activeFavoriteFilter) {
         allMovies = allMovies.filter(movie => movie.favorite === true);
     }
 
-    // Trash filter
     if (activeTrashFilter) {
         allMovies = await getTrashMovies();
     }
@@ -2240,7 +2211,6 @@ export async function loadAndDisplayAll() {
         title = `Related results (${allMovies.length})`;
     }
     
-    // ACTUALIZAR TÍTULO EN EL DOM
     const historyTitle = document.getElementById('historyTitle');
     if (historyTitle) historyTitle.innerHTML = title;
 
@@ -2254,7 +2224,6 @@ export async function loadAndDisplayAll() {
         }
     };
 
-    // Renderizar SOLO las películas (sin título)
     if (activeCollectionFilter) {
         const groupBy = (collectionsSortBy === 'all' ? null : collectionsSortBy);
         renderMovies(resultsGrid, allMovies, 'collections', currentSort, onSortChange, groupBy);
@@ -2367,7 +2336,6 @@ async function toggleFavorite(youtubeId) {
     return false;
 }
 
-// Función para cambiar el filtro activo desde el modal
 export function setActiveFilter(filter) {
     if (filter === 'exact' || filter === 'related') {
         activeRelatedFilter = filter;
@@ -2547,20 +2515,17 @@ function buildSortDropdown() {
     
     if (!sortBtn || !sortPanel || !sortLabel) return;
     
-    // Toggle panel
     sortBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         sortPanel.classList.toggle('hidden');
     });
     
-    // Cerrar panel al hacer clic fuera
     document.addEventListener('click', (e) => {
         if (!sortBtn.contains(e.target) && !sortPanel.contains(e.target)) {
             sortPanel.classList.add('hidden');
         }
     });
     
-    // Opciones del sort
     sortPanel.querySelectorAll('label').forEach(label => {
         label.addEventListener('click', () => {
             const value = label.dataset.value;
@@ -2569,7 +2534,6 @@ function buildSortDropdown() {
             const iconSpan = label.querySelector('.material-symbols-outlined');
             const iconName = iconSpan ? iconSpan.textContent : 'sort';
             
-            // Actualizar botón
             document.getElementById('sortLabel').textContent = text;
             document.getElementById('sortIcon').textContent = iconName;
             
