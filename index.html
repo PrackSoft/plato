@@ -85,6 +85,29 @@
     <div id="sidebarOverlay" class="sidebar-overlay hidden"></div>
     
     <div class="container">
+        <div class="history-header" id="historyHeader">
+            <h2 id="historyTitle">Exact results (0)</h2>
+            <div class="sort-control">
+                <div class="dropdown-sort">
+                    <button id="sortBtn" class="btn btn-secondary">
+                        <span id="sortIcon" class="material-symbols-outlined">calendar_today</span>                        
+                        <span id="sortLabel">Date</span>
+                        <span class="material-symbols-outlined">arrow_drop_down</span>
+                    </button>
+                    <div id="sortPanel" class="dropdown-panel hidden">
+                        <div class="dropdown-header">Sort by</div>
+                        <label data-value="date"><span class="material-symbols-outlined">calendar_today</span> <span class="sort-label-text">Date</span></label>
+                        <label data-value="published"><span class="material-symbols-outlined">event</span> <span class="sort-label-text">Premiere on YouTube</span></label>
+                        <label data-value="title"><span class="material-symbols-outlined">sort_by_alpha</span> <span class="sort-label-text">Title</span></label>
+                        <label data-value="channel"><span class="material-symbols-outlined">subscriptions</span> <span class="sort-label-text">Channel</span></label>
+                        <label data-value="mostLiked"><span class="material-symbols-outlined">thumb_up</span> <span class="sort-label-text">Most liked</span></label>
+                        <label data-value="mostCommented"><span class="material-symbols-outlined">forum</span> <span class="sort-label-text">Most commented</span></label>
+                        <label data-value="watching"><span class="material-symbols-outlined">visibility</span> <span class="sort-label-text">Watching</span></label>
+                        <label data-value="favorite"><span class="material-symbols-outlined">star_shine</span> <span class="sort-label-text">Favorites</span></label>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div id="movieModal" class="modal" style="display:none;">
             <div class="modal-content">
                 <span class="close-modal">&times;</span>

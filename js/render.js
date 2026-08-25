@@ -53,7 +53,7 @@ function sortMovies(movies, sortBy) {
     return sorted;
 }
 
-export function renderMovies(container, movies, title, source = 'main', currentSort = 'date', onSortChange = null, groupBy = null) {
+export function renderMovies(container, movies, source = 'main', currentSort = 'date', onSortChange = null, groupBy = null) {
     if (!movies.length) {
         container.innerHTML = `<div class="stats">No movies ${source === 'trash' ? 'in trash' : 'saved yet'}.</div>`;
         return;
@@ -114,25 +114,6 @@ export function renderMovies(container, movies, title, source = 'main', currentS
     const isPublishedSort = (currentSort === 'published' && !isGrouped);
     const isDateSavedSort = (currentSort === 'date' && !isGrouped);
     const isCollectionSort = (currentSort === 'collections');
-
-    const sortOptions = [
-        { value: 'date', label: 'Date' },
-        { value: 'published', label: 'Premiere on YouTube' },
-        { value: 'title', label: 'Title' },
-        { value: 'channel', label: 'Channel' },
-        { value: 'mostLiked', label: 'Most liked' },
-        { value: 'mostCommented', label: 'Most commented' },
-        { value: 'watching', label: 'Watching' },
-        { value: 'favorite', label: 'Favorites' }
-    ];
-    const sortSelectHtml = `
-        <div class="sort-control">
-            <label>Sort by:</label>
-            <select id="sortSelect">
-                ${sortOptions.map(opt => `<option value="${opt.value}" ${currentSort === opt.value ? 'selected' : ''}>${opt.label}</option>`).join('')}
-            </select>
-        </div>
-    `;
 
     function generateCard(movie) {
         const cardQuality = localStorage.getItem('plato_cardQuality') || 'medium';
@@ -236,23 +217,7 @@ export function renderMovies(container, movies, title, source = 'main', currentS
         bodyHtml = `<div class="movies-grid">${sorted.map(m => generateCard(m)).join('')}</div>`;
     }
 
-    // Mostrar sort selector en Collection mode (cuando está agrupado)
-    const showSortSelector = (!isCollectionSort && !isGrouped) || (source === 'collections' && isGrouped);
-    
-    container.innerHTML = `
-        <div class="history-header">
-            <h2>${title}</h2>
-            ${showSortSelector ? sortSelectHtml : ''}
-        </div>
-        ${bodyHtml}
-    `;
-
-    const sortSelect = document.getElementById('sortSelect');
-    if (sortSelect && onSortChange) {
-        sortSelect.addEventListener('change', (e) => {
-            onSortChange(e.target.value);
-        });
-    }
+    container.innerHTML = bodyHtml;
 
     document.querySelectorAll('.video-card').forEach(card => {
         const movieId = card.dataset.id;

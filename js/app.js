@@ -2240,6 +2240,10 @@ export async function loadAndDisplayAll() {
         title = `Related results (${allMovies.length})`;
     }
     
+    // ACTUALIZAR TÍTULO EN EL DOM
+    const historyTitle = document.getElementById('historyTitle');
+    if (historyTitle) historyTitle.innerHTML = title;
+
     const onSortChange = (newSort) => {
         if (activeCollectionFilter) {
             currentSort = newSort;
@@ -2250,11 +2254,12 @@ export async function loadAndDisplayAll() {
         }
     };
 
+    // Renderizar SOLO las películas (sin título)
     if (activeCollectionFilter) {
         const groupBy = (collectionsSortBy === 'all' ? null : collectionsSortBy);
-        renderMovies(resultsGrid, allMovies, title, 'collections', currentSort, onSortChange, groupBy);
+        renderMovies(resultsGrid, allMovies, 'collections', currentSort, onSortChange, groupBy);
     } else {
-        renderMovies(resultsGrid, allMovies, title, activeTrashFilter ? 'trash' : 'main', currentSort, onSortChange);
+        renderMovies(resultsGrid, allMovies, activeTrashFilter ? 'trash' : 'main', currentSort, onSortChange);
     }
 
     let termsToShow;
@@ -2534,6 +2539,48 @@ document.getElementById('searchInput').addEventListener('keydown', (e) => {
     }
 });
 
+// ---------------------- Build Sort dropdown ----------------------
+function buildSortDropdown() {
+    const sortBtn = document.getElementById('sortBtn');
+    const sortPanel = document.getElementById('sortPanel');
+    const sortLabel = document.getElementById('sortLabel');
+    
+    if (!sortBtn || !sortPanel || !sortLabel) return;
+    
+    // Toggle panel
+    sortBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        sortPanel.classList.toggle('hidden');
+    });
+    
+    // Cerrar panel al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (!sortBtn.contains(e.target) && !sortPanel.contains(e.target)) {
+            sortPanel.classList.add('hidden');
+        }
+    });
+    
+    // Opciones del sort
+    sortPanel.querySelectorAll('label').forEach(label => {
+        label.addEventListener('click', () => {
+            const value = label.dataset.value;
+            const textSpan = label.querySelector('.sort-label-text');
+            const text = textSpan ? textSpan.textContent : label.textContent.trim();
+            const iconSpan = label.querySelector('.material-symbols-outlined');
+            const iconName = iconSpan ? iconSpan.textContent : 'sort';
+            
+            // Actualizar botón
+            document.getElementById('sortLabel').textContent = text;
+            document.getElementById('sortIcon').textContent = iconName;
+            
+            sortPanel.classList.add('hidden');
+            currentSort = value;
+            loadAndDisplayAll();
+        });
+    });
+}
+
+
 // ---------------------- Initialization ----------------------
 async function init() {
     await dbReady;
@@ -2542,6 +2589,7 @@ async function init() {
     buildCollectionDropdown();
     buildRelatedDropdown();
     buildSettingsSidebarContent();
+    buildSortDropdown();
     
     initModal(async () => {
         await refreshAvailableTerms();
