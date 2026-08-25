@@ -121,7 +121,7 @@ function buildSearchInPanel() {
     youtubeLabel.htmlFor = 'searchInYouTube';
     youtubeLabel.className = 'search-in-label';
     youtubeLabel.appendChild(youtubeRadio);
-    youtubeLabel.appendChild(document.createTextNode(' YouTube Free Movies'));
+    youtubeLabel.appendChild(document.createTextNode(' YouTube'));
     
     const platoDbRadio = document.createElement('input');
     platoDbRadio.type = 'radio';
@@ -153,8 +153,8 @@ function buildSearchInPanel() {
         <div class="settings-group">
             <label class="settings-label">Content type:</label>
             <div class="radio-group">
-                <label><input type="radio" name="searchCategory" value="movies" ${searchCategoryFilter === 'movies' ? 'checked' : ''}> Include only movies</label>
-                <label><input type="radio" name="searchCategory" value="tvSeries" ${searchCategoryFilter === 'tvSeries' ? 'checked' : ''}> Include only TV Series</label>
+                <label><input type="radio" name="searchCategory" value="movies" ${searchCategoryFilter === 'movies' ? 'checked' : ''}> Movies only</label>
+                <label><input type="radio" name="searchCategory" value="tvSeries" ${searchCategoryFilter === 'tvSeries' ? 'checked' : ''}> TV Series only</label>
             </div>
         </div>
         <div class="settings-group">
@@ -218,7 +218,7 @@ function buildSearchInPanel() {
             `;
         } else {
             const option = SEARCH_OPTIONS.find(opt => opt.id === currentSearchOptionId);
-            const label = option ? option.name : 'YouTube Free Movies';
+            const label = option ? option.name : 'Free Movies';
             searchInBtn.innerHTML = `
                 <span class="material-symbols-outlined">subscriptions</span>
                 ${label}
@@ -598,30 +598,40 @@ function buildSettingsSidebarContent() {
     const section = document.querySelector('.sidebar-section');
     if (!section) return;
 
+    const hideLabels = localStorage.getItem('plato_hideLabels') === 'true';
     const compactMode = localStorage.getItem('plato_compactMode') === 'true';
     const hideTitle = localStorage.getItem('plato_hideTitle') === 'true';
     const hideStats = localStorage.getItem('plato_hideStats') === 'true';
     const cardQuality = localStorage.getItem('plato_cardQuality') || 'medium';
     const modalQuality = localStorage.getItem('plato_modalQuality') || 'high';
-    const userLocation = localStorage.getItem('user_location') || 'global';
+    const userChannel = localStorage.getItem('user_channel') || 'all';
 
     section.innerHTML = `
-        <p class="settings-note">Future options: API key, default channel, theme, etc.</p>
+        <p class="settings-note">Future options: API key, theme, etc.</p>
         <hr style="border-color: var(--border-color); margin: 20px 0;">
 
-        <h3>Location</h3>
+        <h3>Scope</h3>
         <div class="settings-group">
-            <label class="settings-label">Select your region for YouTube search</label>
-            <div class="segmented-control" id="locationControl">
-                <button data-location="global" class="${userLocation === 'global' ? 'active' : ''}">Global</button>
-                <button data-location="us" class="${userLocation === 'us' ? 'active' : ''}">US</button>
-                <button data-location="ar" class="${userLocation === 'ar' ? 'active' : ''}">Argentina</button>
+            <label class="settings-label">Select YouTube channel</label>
+            <div class="segmented-control" id="channelControl">
+                <button data-channel="all" class="${userChannel === 'all' ? 'active' : ''}">All</button>
+                <button data-channel="movies" class="${userChannel === 'movies' ? 'active' : ''}">Movies and TV</button>
             </div>
         </div>
 
         <hr style="border-color: var(--border-color); margin: 20px 0;">
 
         <h3>Compact mode</h3>
+        <div class="settings-group">
+            <label class="settings-label">Hide button labels</label>
+            <div class="toggle-wrapper">
+                <label class="toggle-switch">
+                    <input type="checkbox" id="hideLabelsToggle" ${localStorage.getItem('plato_hideLabels') === 'true' ? 'checked' : ''}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label">${localStorage.getItem('plato_hideLabels') === 'true' ? 'On' : 'Off'}</span>
+            </div>
+        </div>
         <div class="settings-group">
             <label class="settings-label">Hide header (title & sort)</label>
             <div class="toggle-wrapper">
@@ -679,11 +689,24 @@ function buildSettingsSidebarContent() {
     `;
 
     // Aplicar estados iniciales
+    document.body.classList.toggle('hide-btn-labels', hideLabels);
     document.body.classList.toggle('compact-mode', compactMode);
     document.body.classList.toggle('hide-video-title', hideTitle);
     document.body.classList.toggle('hide-card-stats', hideStats);
 
-    // Toggle 1: Compact mode
+    // Toggle 1: Hide button labels
+    const toggle4 = document.getElementById('hideLabelsToggle');
+    const label4 = toggle4?.parentElement?.parentElement?.querySelector('.toggle-label');
+    if (toggle4) {
+        toggle4.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            localStorage.setItem('plato_hideLabels', isChecked);
+            document.body.classList.toggle('hide-btn-labels', isChecked);
+            if (label4) label4.textContent = isChecked ? 'On' : 'Off';
+        });
+    }
+
+    // Toggle 2: Compact mode
     const toggle1 = document.getElementById('compactModeToggle');
     const label1 = toggle1?.parentElement?.parentElement?.querySelector('.toggle-label');
     if (toggle1) {
@@ -695,7 +718,7 @@ function buildSettingsSidebarContent() {
         });
     }
 
-    // Toggle 2: Hide video title
+    // Toggle 3: Hide video title
     const toggle2 = document.getElementById('hideTitleToggle');
     const label2 = toggle2?.parentElement?.parentElement?.querySelector('.toggle-label');
     if (toggle2) {
@@ -707,7 +730,7 @@ function buildSettingsSidebarContent() {
         });
     }
 
-    // Toggle 3: Hide stats
+    // Toggle 4: Hide stats
     const toggle3 = document.getElementById('hideStatsToggle');
     const label3 = toggle3?.parentElement?.parentElement?.querySelector('.toggle-label');
     if (toggle3) {
@@ -719,16 +742,16 @@ function buildSettingsSidebarContent() {
         });
     }
 
-    // Segmented control: Location
-    const locationControl = document.getElementById('locationControl');
-    if (locationControl) {
-        locationControl.querySelectorAll('button').forEach(btn => {
+    // Segmented control: Channels
+    const channelControl = document.getElementById('channelControl');
+    if (channelControl) {
+        channelControl.querySelectorAll('button').forEach(btn => {
             btn.addEventListener('click', () => {
-                const location = btn.dataset.location;
-                localStorage.setItem('user_location', location);
-                locationControl.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                const channel = btn.dataset.channel;
+                localStorage.setItem('user_channel', channel);
+                channelControl.querySelectorAll('button').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                // No es necesario recargar, la próxima búsqueda usará la nueva ubicación
+                // No es necesario recargar, la próxima búsqueda usará el nuevo canal
             });
         });
     }
@@ -1898,14 +1921,33 @@ if (toggleTermsBtn && termsBar) {
 
 // ---------------------- Filter buttons UI update ----------------------
 function updateFilterButtonsUI() {
-    if (activeWatchingFilter) filterWatchingBtn.classList.add('active');
-    else filterWatchingBtn.classList.remove('active');
-    if (activeFavoriteFilter) filterFavoriteBtn.classList.add('active');
-    else filterFavoriteBtn.classList.remove('active');
-    if (activeTrashFilter) filterTrashBtn.classList.add('active');
-    else filterTrashBtn.classList.remove('active');
-    if (activeCollectionFilter && filterCollectionBtn) filterCollectionBtn.classList.add('active');
-    else if (filterCollectionBtn) filterCollectionBtn.classList.remove('active');
+    if (activeWatchingFilter) {
+        filterWatchingBtn.classList.add('active');
+        filterWatchingBtn.querySelector('.material-symbols-outlined').textContent = 'visibility';
+    } else {
+        filterWatchingBtn.classList.remove('active');
+        filterWatchingBtn.querySelector('.material-symbols-outlined').textContent = 'visibility_off';
+    }
+
+    if (activeFavoriteFilter) {
+        filterFavoriteBtn.classList.add('active');
+        filterFavoriteBtn.querySelector('.material-symbols-outlined').textContent = 'star_shine';
+    } else {
+        filterFavoriteBtn.classList.remove('active');
+        filterFavoriteBtn.querySelector('.material-symbols-outlined').textContent = 'star';
+    }
+
+    if (activeTrashFilter) {
+        filterTrashBtn.classList.add('active');
+    } else {
+        filterTrashBtn.classList.remove('active');
+    }
+
+    if (activeCollectionFilter && filterCollectionBtn) {
+        filterCollectionBtn.classList.add('active');
+    } else if (filterCollectionBtn) {
+        filterCollectionBtn.classList.remove('active');
+    }
     
     // Deshabilitar botones Watching y Favorite en Trash
     if (activeTrashFilter) {
@@ -2339,7 +2381,7 @@ window.openMovieModal = (movie, source = 'main') => {
         moveToTrash: moveMovieToTrash,
         restoreFromTrash: restoreMovieFromTrash,
         permanentlyDelete: permanentlyDeleteMovie
-    }, source, activeRelatedFilter, setActiveFilter);  // <-- pasamos el filtro y la función para cambiarlo
+    }, source, activeRelatedFilter, setActiveFilter);
 };
 
 // ---------------------- Función de búsqueda (sin botón) ----------------------
@@ -2395,16 +2437,13 @@ async function performSearch() {
     if (selectedOption.type === 'api') {
         resultsGrid.innerHTML = '<div class="stats">Searching YouTube Movies...</div>';
         try {
-            // Determinar el channelId según la ubicación del usuario
             let channelId = null;
             if (selectedOption.id !== 'plato_db') {
-                const userLocation = localStorage.getItem('user_location') || 'global';
-                if (userLocation === 'us') {
+                const userChannel = localStorage.getItem('user_channel') || 'all';
+                if (userChannel === 'movies') {
                     channelId = 'UCuVPpxrm2VAgpH3Ktln4HXg';
-                } else if (userLocation === 'ar') {
-                    channelId = null; // <-- Reemplazar con el ID de Argentina cuando lo tengas
                 } else {
-                    channelId = null; // Global: sin canal fijo
+                    channelId = null;
                 }
             }
 
@@ -2512,7 +2551,19 @@ async function init() {
     await loadAndDisplayAll();
     
     if (termsBar) termsBar.classList.add('hidden');
-    if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
+    if (toggleTermsBtn) {
+        toggleTermsBtn.classList.remove('active');
+        const icon = toggleTermsBtn.querySelector('.material-symbols-outlined');
+        if (icon) icon.textContent = 'filter_list_off';
+    }
+
+    searchInput.focus();
+
+    if (localStorage.getItem('plato_hideLabels') === 'true') {
+        document.body.classList.add('hide-btn-labels');
+    }
+
+    updateFilterButtonsUI();
 }
 init();
 

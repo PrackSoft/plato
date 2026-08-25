@@ -6,6 +6,7 @@
     --font-size-lg: 1rem;
     --font-size-xl: 2rem;
     
+    --btn-padding-sm: .25rem;
     --btn-padding-md: .75rem;
     --btn-padding-lg: 1rem;
 
@@ -35,7 +36,8 @@
     --text-secondary: #aaa;
     --text-muted: #666;
 
-    --accent: #ff0000;
+    /*--accent: #ff0000;*/
+    --accent: white;
     --accent-dark: #cc0000;
     --accent-light: #ff9999;
 
@@ -150,16 +152,19 @@ body {
     flex: 1;
     padding: 0 var(--gap-lg);
     height: var(--btn-height-lg);
-    background: var(--bg-card);
+    background: var(--text-muted);
     border: 1px solid var(--border-light);
-    color: var(--text-primary);
+    color: var(--bg-header);
     font-size: var(--font-size-lg);
     border-radius: var(--border-radius-lg);
+    caret-color: var(--text-primary);
 }
 
+
 #searchInput:focus {
-    outline: 2px solid var(--accent-light);
-    outline-offset: 2px;
+    outline: 1px solid var(--text-primary);
+    outline: 1px;
+    outline-offset: 1px;
     border-color: transparent;
 }
 
@@ -186,17 +191,19 @@ body {
 }
 
 .btn:hover {
-    background: var(--accent-dark);
+    background: var(--text-muted);
+    /*background: var(--accent-dark);*/
+    color: var(--text-primary)
 }
 
 .btn:focus {
-    outline: 2px solid var(--accent-light);
-    outline-offset: 2px;
+    outline: 1px solid var(--text-primary);
+    outline-offset: 1px;
 }
 
 .btn:focus-visible {
-    outline: 2px solid var(--accent-light);
-    outline-offset: 2px;
+    outline: 1px solid var(--text-primary);
+    outline-offset: 1px;
 }
 
 .btn:focus:not(:focus-visible) {
@@ -205,11 +212,13 @@ body {
 
 .btn-primary {
     background: var(--accent);
-    color: var(--text-primary);
+    color: var(--text-muted);
 }
 
 .btn-primary:hover {
-    background: var(--accent-dark);
+    background: var(--text-muted);
+    /*background: var(--accent-dark);*/
+
 }
 
 .btn-secondary {
@@ -218,19 +227,21 @@ body {
 }
 
 .btn-secondary:hover {
-    background: var(--accent-dark);
+    background: var(--text-muted);
+    /*background: var(--accent-dark);*/
 }
 
 .btn-sm {
     height: var(--btn-height-md);
-    padding: 0 var(--btn-padding-md);
+    padding: var(--btn-padding-sm) var(--btn-padding-md);
     font-size: var(--font-size-md);
     background: var(--button-bg);
+    gap: var(--gap-sm);
 }
 
 .btn.active {
     background: var(--accent);
-    color: var(--text-primary);
+    color: var(--text-muted);
 }
 
 .btn .material-symbols-outlined {
@@ -580,7 +591,7 @@ body {
 }
 
 .toggle-switch input:checked + .toggle-slider {
-    background: var(--accent);
+    background: var(--text-secondary) !important;
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
@@ -620,8 +631,8 @@ body.compact-mode .history-header {
 }
 
 .modal-input:focus {
-    outline: 2px solid var(--accent-light);
-    outline-offset: 2px;
+    outline: 1px solid var(--text-primary);
+    outline-offset: 1px;
     border-color: transparent;
 }
 
@@ -806,8 +817,8 @@ body.compact-mode .history-header {
 }
 
 .sort-control select:focus {
-    outline: 2px solid var(--accent-light);
-    outline-offset: 2px;
+    outline: 1px solid var(--text-primary);
+    outline-offset: 1px;
     border-color: transparent;
 }
 
@@ -1021,8 +1032,8 @@ body.compact-mode .history-header {
 }
 
 .date-input:focus {
-    outline: 2px solid var(--accent-light);
-    outline-offset: 2px;
+    outline: 1px solid var(--text-primary);
+    outline-offset: 1px;
     border-color: transparent;
 }
 
@@ -1031,7 +1042,7 @@ body.compact-mode .history-header {
     cursor: pointer;
 }
 
-.radio-group input[type="radio"],
+.radio-group input[type=""],
 #searchInYouTube,
 #searchInPlatoDB {
     accent-color: var(--accent);
@@ -1067,7 +1078,7 @@ body.compact-mode .history-header {
 
 .segmented-control button.active {
     background: var(--accent) !important;
-    color: var(--text-primary) !important;
+    color: var(--text-muted) !important;
 }
 
 .segmented-control button:not(:last-child) {
@@ -1081,6 +1092,16 @@ body.compact-mode .history-header {
 .settings-group:last-child {
     margin-bottom: 0;
 }
+
+/* Ocultar textos de los botones (solo iconos) - afecta SOLO a top-controls */
+body.hide-btn-labels .top-controls .btn:not(#closeSidebarBtn) {
+    font-size: 0 !important;
+    gap: 0 !important;
+}
+body.hide-btn-labels .top-controls .btn:not(#closeSidebarBtn) .material-symbols-outlined {
+    font-size: var(--font-size-lg);
+}
+
 
 body.hide-video-title .video-card .info h3 {
     display: none;
