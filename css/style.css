@@ -37,14 +37,12 @@
     --text-secondary: #aaa;
     --text-muted: #666;
 
-    /*--accent: #ff0000;*/
     --accent: white;
     --accent-dark: #cc0000;
     --accent-light: #ff9999;
 
     --button-bg: #2a2a2a;
     --shadow: 0 4px 12px rgba(0,0,0,0.4);
-
 }
 
 * {
@@ -63,28 +61,20 @@ body {
 
 .header {
     display: flex;
-    flex-direction: column; /* Apila verticalmente */
-    gap: var(--gap-lg); /* Espacio entre cada elemento */
+    flex-direction: column;
+    gap: var(--gap-lg);
     background: linear-gradient(180deg, var(--bg-header) 0%, var(--bg-body) 100%);
     position: sticky;
     top: 0;
     z-index: 600;
     backdrop-filter: blur(10px);
     padding: var(--gap-xl) var(--gap-xxl) var(--gap-lg) var(--gap-xxl);
-
-
-    /*background-color: red;*/
-    /*border: 1px solid red;*/
 }
 
 .container {
     max-width: 1400px;
     margin: 0;
     padding: 0 var(--gap-xxl) var(--gap-xxl) var(--gap-xxl);
-
-
-    /*background-color: green;*/
-    /*border: 1px solid green;*/
 }
 
 .navbar {
@@ -93,10 +83,6 @@ body {
     justify-content: space-between;
     align-items: flex-start;
     margin: 0;
-    /*padding: 0 0 var(--gap-lg) 0;*/
-
-    /*background-color: yellow;
-    border: 1px solid yellow;*/
 }
 
 .logo {
@@ -143,10 +129,6 @@ body {
 .search-box {
     display: flex;
     gap: var(--gap-md);
-    /*margin-bottom: var(--gap-lg);*/
-
-    /*background-color: blue;*/
-    /*border: 1px solid blue;*/
 }
 
 #searchInput {
@@ -191,8 +173,7 @@ body {
 
 .btn:hover {
     background: var(--text-muted);
-    /*background: var(--accent-dark);*/
-    color: var(--text-primary)
+    color: var(--text-primary);
 }
 
 .btn:focus {
@@ -216,8 +197,6 @@ body {
 
 .btn-primary:hover {
     background: var(--text-muted);
-    /*background: var(--accent-dark);*/
-
 }
 
 .btn-secondary {
@@ -227,7 +206,6 @@ body {
 
 .btn-secondary:hover {
     background: var(--text-muted);
-    /*background: var(--accent-dark);*/
 }
 
 .btn-sm {
@@ -289,7 +267,6 @@ body {
 .card-stats {
     display: flex;
     justify-content: space-between;
-    /*margin-top: var(--gap-md);*/
     font-size: var(--font-size-md);
     color: var(--text-secondary);
 }
@@ -312,10 +289,7 @@ body {
     flex-wrap: wrap;
     align-items: center;
     gap: var(--gap-md);
-    /*background-color: orange;*/
-    /*border: 1px solid orange;*/
 }
-
 
 /* ===== DROPDOWNS UNIFICADOS ===== */
 .dropdown-search,
@@ -336,7 +310,6 @@ body {
     box-shadow: var(--shadow);
     z-index: 200;
     margin-top: var(--gap-md);
-
 }
 
 .dropdown-panel.hidden {
@@ -374,11 +347,6 @@ body {
 #sortBtn {
     min-width: 160px;
     justify-content: space-between;
-}
-
-
-.results {
-    /*margin-top: var(--gap-lg);*/
 }
 
 .movies-grid {
@@ -454,7 +422,6 @@ body {
 .terms {
     font-size: var(--font-size-md);
     color: var(--text-muted);
-    /*margin-top: var(--gap-sm);*/
 }
 
 .stats {
@@ -766,14 +733,10 @@ body.compact-mode .history-header {
     display: flex;
     flex-wrap: wrap;
     gap: var(--gap-sm);
-    /*margin: var(--gap-md) 0;*/
-    /*padding: var(--gap-sm) 0;*/
     border-top: 1px solid var(--border-color);
     border-bottom: 1px solid var(--border-color);
     margin: 0;
     padding: 0;
-    /*background-color: purple;
-    border: 1px solid purple;*/
 }
 
 .terms-bar.hidden {
@@ -794,9 +757,6 @@ body.compact-mode .history-header {
     padding: 0;
     margin: 0;
     margin-bottom: var(--gap-sm);
-
-    /*background-color: purple;
-    border: 1px solid purple;*/
 }
 
 .history-header h2 {
@@ -949,7 +909,6 @@ body.compact-mode .history-header {
     left: 0;
     background: var(--bg-panel);
     border-radius: var(--border-radius-md);
-    /*padding: var(--gap-md) 0;*/
     min-width: 180px;
     box-shadow: var(--shadow);
     z-index: 1000;
@@ -992,88 +951,8 @@ body.compact-mode .history-header {
     align-items: center;
     cursor: pointer;
 }
-.date-range-container {
-    display: flex;
-    /*gap: 12px;*/
-    /*margin-top: 8px;*/
-}
 
-.date-input-wrapper {
-    flex: 1;
-}
-
-.date-label {
-    display: block;
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    margin-bottom: 4px;
-}
-
-.date-input {
-    width: 100%;
-    padding: var(--gap-md) var(--gap-md);
-    background: var(--bg-card);
-    border: 1px solid var(--border-light);
-    color: var(--text-primary);
-    border-radius: var(--border-radius-md);
-    font-family: var(--font-family);
-    font-size: var(--font-size-md);
-    cursor: pointer;
-}
-
-.date-input:focus {
-    outline: 1px solid var(--text-primary);
-    outline-offset: 1px;
-    border-color: transparent;
-}
-
-.date-input::-webkit-calendar-picker-indicator {
-    filter: invert(0.8);
-    cursor: pointer;
-}
-
-.date-range-container {
-    display: flex;
-    gap: var(--gap-sm);
-    padding: 0;
-}
-
-.date-input-wrapper {
-    flex: 1;
-}
-
-.date-input {
-    width: 100%;
-    padding: var(--gap-sm) var(--gap-md);
-    background: var(--bg-card);
-    border: 1px solid var(--border-light);
-    color: var(--text-primary);
-    border-radius: var(--border-radius-md);
-    font-family: var(--font-family);
-    font-size: var(--font-size-md);
-    cursor: pointer;
-    box-sizing: border-box;
-}
-
-.radio-group input[type=""],
-#searchInYouTube,
-#searchInPlatoDB {
-    accent-color: var(--accent);
-}
-
-.search-in-container label,
-.radio-group label {
-    display: flex;
-    align-items: center;
-    gap: var(--gap-sm);
-    padding: var(--gap-xs) padding: var(--gap-md);
-    cursor: pointer;
-}
-
-.search-filters-section {
-    padding: 0 var(--gap-lg);
-}
-
+/* SEARCH IN PANEL - ESTILOS UNIFICADOS */
 .search-in-container,
 .search-filters-section .settings-group {
     padding: 0 var(--gap-md);
@@ -1110,6 +989,7 @@ body.compact-mode .history-header {
     cursor: pointer;
     box-sizing: border-box;
 }
+
 .settings-note {
     color: var(--text-secondary);
     font-size: 0.875rem;
@@ -1153,8 +1033,12 @@ body.compact-mode .history-header {
 
 .settings-group:last-child {
     margin-bottom: 0;
-    padding: 0 var(--gap-md) var(--gap-md) var(--gap-md);
+    padding: 0 var(--gap-md) var(--gap-xs) var(--gap-md);
 }
+/*
+.settings-group:last-child .date-range-container {
+    padding-bottom: var(--gap-xs);
+}*/
 
 /* Ocultar textos de los botones (solo iconos) - afecta SOLO a top-controls */
 body.hide-btn-labels .top-controls .btn:not(#closeSidebarBtn) {
@@ -1164,7 +1048,6 @@ body.hide-btn-labels .top-controls .btn:not(#closeSidebarBtn) {
 body.hide-btn-labels .top-controls .btn:not(#closeSidebarBtn) .material-symbols-outlined {
     font-size: var(--font-size-lg);
 }
-
 
 body.hide-video-title .video-card .info h3 {
     display: none;
@@ -1188,7 +1071,6 @@ body.hide-card-info .video-card img {
     font-size: var(--font-size-lg);
     vertical-align: middle;
 }
-
 
 @media (max-width: 768px) {
     .top-controls {
