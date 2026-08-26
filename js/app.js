@@ -2207,11 +2207,11 @@ export async function loadAndDisplayAll() {
     } else if (activeTagFilter) {
         title = `Tag: "${activeTagFilter}" (${allMovies.length})`;
     } else if (activeWatchingFilter && activeFavoriteFilter) {
-        title = `<span class="material-symbols-outlined">visibility</span> <span class="material-symbols-outlined">star_shine</span> ${activeRelatedFilter === 'exact' ? 'Exact results' : 'Related results'} (${allMovies.length})`;
+        title = `<span class="material-symbols-outlined">visibility</span> <span class="material-symbols-outlined">star_shine</span> ${activeRelatedFilter === 'exact' ? 'Results' : 'Results'} (${allMovies.length})`;
     } else if (activeWatchingFilter) {
-        title = `<span class="material-symbols-outlined">visibility</span> ${activeRelatedFilter === 'exact' ? 'Exact results' : 'Related results'} (${allMovies.length})`;
+        title = `<span class="material-symbols-outlined">visibility</span> ${activeRelatedFilter === 'exact' ? 'Results' : 'Results'} (${allMovies.length})`;
     } else if (activeFavoriteFilter) {
-        title = `<span class="material-symbols-outlined">star_shine</span> ${activeRelatedFilter === 'exact' ? 'Exact results' : 'Related results'} (${allMovies.length})`;
+        title = `<span class="material-symbols-outlined">star_shine</span> ${activeRelatedFilter === 'exact' ? 'Results' : 'Results'} (${allMovies.length})`;
     } else if (activeRelatedFilter === 'exact') {
         title = `Results (${allMovies.length})`;
     } else {

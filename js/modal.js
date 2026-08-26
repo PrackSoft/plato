@@ -63,7 +63,7 @@ function renderModalContent(movie, source, filterMode = null) {
     // Calcular el estado del primer término para el botón
     const firstTerm = filteredTerms.length > 0 ? filteredTerms[0] : null;
     const isFirstTermExact = firstTerm ? firstTerm.exact === true : true;
-    const toggleLabel = isFirstTermExact ? 'Move to Related' : 'Move to Exact';
+    const toggleLabel = isFirstTermExact ? 'Move to Suggestions' : 'Move to Featured';
     const toggleIcon = isFirstTermExact ? 'graph_4' : 'subscriptions';
     
     const tagsHtml = movie.tags && Array.isArray(movie.tags) && movie.tags.length > 0 ? `<p><strong>Tags:</strong> ${escapeHtml(movie.tags.join(', '))}</p>` : '';
@@ -309,10 +309,10 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
             const iconSpan = toggleRow.querySelector('.material-symbols-outlined');
             if (textSpan && iconSpan) {
                 if (isExact) {
-                    textSpan.innerHTML = 'Move to Related:';
+                    textSpan.innerHTML = 'Move to Suggestions:';
                     iconSpan.textContent = 'graph_4';
                 } else {
-                    textSpan.innerHTML = 'Move to Exact:';
+                    textSpan.innerHTML = 'Move to Featured:';
                     iconSpan.textContent = 'subscriptions';
                 }
             }
