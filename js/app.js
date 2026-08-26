@@ -260,8 +260,8 @@ function buildRelatedDropdown() {
     if (!panel) return;
     
     const options = [
-        { value: 'exact', label: 'Exact', icon: 'verified' },
-        { value: 'related', label: 'Related', icon: 'verified_off' }
+        { value: 'exact', label: 'Featured', icon: 'verified' },
+        { value: 'related', label: 'Suggestions', icon: 'verified_off' }
     ];
     
     panel.innerHTML = `
@@ -346,10 +346,10 @@ function buildRelatedDropdown() {
 
 function updateRelatedButtonText() {
     if (!filterRelatedBtn) return;
-    let label = 'Exact';
+    let label = 'Featured';
     let icon = 'verified';
     if (activeRelatedFilter === 'related') {
-        label = 'Related';
+        label = 'Suggestions';
         icon = 'verified_off';
     }
     const mainPart = filterRelatedBtn.querySelector('.related-main');
@@ -2206,9 +2206,9 @@ export async function loadAndDisplayAll() {
     } else if (activeFavoriteFilter) {
         title = `<span class="material-symbols-outlined">star_shine</span> ${activeRelatedFilter === 'exact' ? 'Exact results' : 'Related results'} (${allMovies.length})`;
     } else if (activeRelatedFilter === 'exact') {
-        title = `Exact results (${allMovies.length})`;
+        title = `Results (${allMovies.length})`;
     } else {
-        title = `Related results (${allMovies.length})`;
+        title = `Results (${allMovies.length})`;
     }
     
     const historyTitle = document.getElementById('historyTitle');
