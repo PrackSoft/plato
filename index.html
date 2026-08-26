@@ -33,34 +33,64 @@
         </div>
 
         <div class="top-controls">
-         
             <button id="toggleTermsBtn" class="btn btn-secondary active">
                 <span class="material-symbols-outlined">filter_list</span> Search terms
             </button>
+
             <div class="dropdown-related">
-                <button id="filterRelatedBtn" class="btn btn-primary">
-                    <span class="material-symbols-outlined">verified</span>
-                    Exact
-                    <span class="material-symbols-outlined">arrow_drop_down</span>
+                <button id="filterRelatedBtn" class="btn btn-primary dropdown-btn">
+                    <span class="related-main">
+                        <span class="material-symbols-outlined related-icon">verified</span>
+                        <span class="related-label">Featured</span>
+                    </span>
+                    <span class="related-arrow">
+                        <span class="material-symbols-outlined">arrow_drop_down</span>
+                    </span>
                 </button>
                 <div id="relatedPanel" class="dropdown-panel hidden"></div>
             </div>
+
             <button id="filterWatchingBtn" class="btn btn-secondary">
                 <span class="material-symbols-outlined">visibility</span> Watching
             </button>
+
             <button id="filterFavoriteBtn" class="btn btn-secondary">
-                <span class="material-symbols-outlined">star_shine</span> Favorites
-            </button>                    
+                <span class="material-symbols-outlined">star</span> Favorites
+            </button>
+
             <div class="dropdown-collection">
-                <button id="filterCollectionBtn" class="btn btn-secondary">
-                    <span class="material-symbols-outlined">join_inner</span> Collection
-                    <span class="material-symbols-outlined">arrow_drop_down</span>
+                <button id="filterCollectionBtn" class="btn btn-secondary dropdown-btn">
+                    <span class="collections-main">
+                        <span class="material-symbols-outlined collections-icon">join_inner</span>
+                        <span class="collections-label">Collection</span>
+                    </span>
+                    <span class="collections-arrow">
+                        <span class="material-symbols-outlined">arrow_drop_down</span>
+                    </span>
                 </button>
                 <div id="collectionsPanel" class="dropdown-panel hidden"></div>
             </div>
+
             <button id="filterTrashBtn" class="btn btn-secondary">
                 <span class="material-symbols-outlined">delete</span> Trash
             </button>
+
+            <div class="dropdown-sort">
+                <button id="sortBtn" class="btn btn-primary dropdown-btn">
+                    <span id="sortIcon" class="material-symbols-outlined">calendar_today</span>
+                    <span id="sortLabel">Date</span>
+                    <span class="material-symbols-outlined">arrow_drop_down</span>
+                </button>
+                <div id="sortPanel" class="dropdown-panel hidden">
+                    <div class="dropdown-header">Sort by</div>
+                    <label data-value="date"><span class="material-symbols-outlined">calendar_today</span> <span class="sort-label-text">Date</span></label>
+                    <label data-value="published"><span class="material-symbols-outlined">event</span> <span class="sort-label-text">Premiere</span></label>
+                    <label data-value="title"><span class="material-symbols-outlined">sort_by_alpha</span> <span class="sort-label-text">Title</span></label>
+                    <label data-value="channel"><span class="material-symbols-outlined">subscriptions</span> <span class="sort-label-text">Channel</span></label>
+                    <label data-value="mostLiked"><span class="material-symbols-outlined">thumb_up</span> <span class="sort-label-text">Most liked</span></label>
+                    <label data-value="mostCommented"><span class="material-symbols-outlined">forum</span> <span class="sort-label-text">Most commented</span></label>
+                </div>
+            </div>
         </div>
 
         <div id="termsBar" class="terms-bar"></div>
@@ -87,26 +117,6 @@
     <div class="container">
         <div class="history-header" id="historyHeader">
             <h2 id="historyTitle">Exact results (0)</h2>
-            <div class="sort-control">
-                <div class="dropdown-sort">
-                    <button id="sortBtn" class="btn btn-primary">
-                        <span id="sortIcon" class="material-symbols-outlined">calendar_today</span>                        
-                        <span id="sortLabel">Date</span>
-                        <span class="material-symbols-outlined">arrow_drop_down</span>
-                    </button>
-                    <div id="sortPanel" class="dropdown-panel hidden">
-                        <div class="dropdown-header">Sort by</div>
-                        <label data-value="date"><span class="material-symbols-outlined">calendar_today</span> <span class="sort-label-text">Date</span></label>
-                        <label data-value="published"><span class="material-symbols-outlined">event</span> <span class="sort-label-text">Premiere on YouTube</span></label>
-                        <label data-value="title"><span class="material-symbols-outlined">sort_by_alpha</span> <span class="sort-label-text">Title</span></label>
-                        <label data-value="channel"><span class="material-symbols-outlined">subscriptions</span> <span class="sort-label-text">Channel</span></label>
-                        <label data-value="mostLiked"><span class="material-symbols-outlined">thumb_up</span> <span class="sort-label-text">Most liked</span></label>
-                        <label data-value="mostCommented"><span class="material-symbols-outlined">forum</span> <span class="sort-label-text">Most commented</span></label>
-                        <label data-value="watching"><span class="material-symbols-outlined">visibility</span> <span class="sort-label-text">Watching</span></label>
-                        <label data-value="favorite"><span class="material-symbols-outlined">star_shine</span> <span class="sort-label-text">Favorites</span></label>
-                    </div>
-                </div>
-            </div>
         </div>
         <div id="movieModal" class="modal" style="display:none;">
             <div class="modal-content">

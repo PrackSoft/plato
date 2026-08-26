@@ -180,7 +180,7 @@ function buildSearchInPanel() {
             </div>
         </div>
         <div class="settings-group">
-            <label class="settings-label">Date range (optional):</label>
+            <label class="settings-label">Premiere date:</label>
             <div class="date-range-container">
                 <div class="date-input-wrapper">
                     <label class="date-label">From:</label>
@@ -216,6 +216,7 @@ function buildSearchInPanel() {
 
     function updateSearchInButtonText() {
         if (currentSearchOptionId === 'plato_db') {
+            searchInBtn.className = 'btn btn-primary dropdown-btn';
             searchInBtn.innerHTML = `
                 <span class="material-symbols-outlined">storage</span>
                 Plato DB
@@ -224,6 +225,7 @@ function buildSearchInPanel() {
         } else {
             const option = SEARCH_OPTIONS.find(opt => opt.id === currentSearchOptionId);
             const label = option ? option.name : 'Free Movies';
+            searchInBtn.className = 'btn btn-primary dropdown-btn';
             searchInBtn.innerHTML = `
                 <span class="material-symbols-outlined">subscriptions</span>
                 ${label}
@@ -296,10 +298,11 @@ function buildRelatedDropdown() {
         });
     });
     
+    filterRelatedBtn.className = 'btn btn-primary dropdown-btn';
     filterRelatedBtn.innerHTML = `
         <span class="related-main">
             <span class="material-symbols-outlined related-icon">${activeRelatedFilter === 'exact' ? 'verified' : 'verified_off'}</span>
-            <span class="related-label">${activeRelatedFilter === 'exact' ? 'Exact' : 'Related'}</span>
+            <span class="related-label">${activeRelatedFilter === 'exact' ? 'Featured' : 'Suggestions'}</span>
         </span>
         <span class="related-arrow">
             <span class="material-symbols-outlined">arrow_drop_down</span>
@@ -359,6 +362,7 @@ function updateRelatedButtonText() {
         if (iconSpan) iconSpan.textContent = icon;
         if (labelSpan) labelSpan.textContent = label;
     } else {
+        filterRelatedBtn.className = 'btn btn-primary dropdown-btn';
         filterRelatedBtn.innerHTML = `
             <span class="related-main">
                 <span class="material-symbols-outlined related-icon">${icon}</span>
@@ -399,6 +403,7 @@ function buildCollectionDropdown() {
         `).join('')}
     `;
     
+    filterCollectionBtn.className = 'btn btn-secondary dropdown-btn';
     filterCollectionBtn.innerHTML = `
         <span class="collections-main">
             <span class="material-symbols-outlined collections-icon">join_inner</span>
@@ -458,6 +463,8 @@ function buildCollectionDropdown() {
 
 function updateCollectionButtonText() {
     if (!filterCollectionBtn) return;
+    
+    filterCollectionBtn.className = 'btn btn-secondary dropdown-btn';
     
     const mainPart = filterCollectionBtn.querySelector('.collections-main');
     if (!mainPart) return;
@@ -2517,7 +2524,7 @@ function buildSortDropdown() {
     
     const options = [
         { value: 'date', label: 'Date', icon: 'calendar_today' },
-        { value: 'published', label: 'Premiere on YouTube', icon: 'event' },
+        { value: 'published', label: 'Premiere', icon: 'event' },
         { value: 'title', label: 'Title', icon: 'sort_by_alpha' },
         { value: 'channel', label: 'Channel', icon: 'subscriptions' },
         { value: 'mostLiked', label: 'Most liked', icon: 'thumb_up' },
@@ -2533,6 +2540,8 @@ function buildSortDropdown() {
             </label>
         `).join('')}
     `;
+    
+    sortBtn.className = 'btn btn-primary dropdown-btn';
     
     sortBtn.addEventListener('click', (e) => {
         e.stopPropagation();
