@@ -36,16 +36,8 @@ function sortMovies(movies, sortBy) {
         case 'mostCommented':
             sorted.sort((a, b) => (parseInt(b.commentCount) || 0) - (parseInt(a.commentCount) || 0));
             break;
-        case 'watching':
-            sorted.sort((a, b) => (b.watching ? 1 : 0) - (a.watching ? 1 : 0));
-            break;
-        case 'favorite':
-            sorted.sort((a, b) => (b.favorite ? 1 : 0) - (a.favorite ? 1 : 0));
-            break;
         case 'published':
             sorted.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
-            break;
-        case 'collections':
             break;
         default:
             sorted.sort((a, b) => new Date(b.dateSaved) - new Date(a.dateSaved));

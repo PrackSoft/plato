@@ -2515,6 +2515,25 @@ function buildSortDropdown() {
     
     if (!sortBtn || !sortPanel || !sortLabel) return;
     
+    const options = [
+        { value: 'date', label: 'Date', icon: 'calendar_today' },
+        { value: 'published', label: 'Premiere on YouTube', icon: 'event' },
+        { value: 'title', label: 'Title', icon: 'sort_by_alpha' },
+        { value: 'channel', label: 'Channel', icon: 'subscriptions' },
+        { value: 'mostLiked', label: 'Most liked', icon: 'thumb_up' },
+        { value: 'mostCommented', label: 'Most commented', icon: 'forum' }
+    ];
+    
+    sortPanel.innerHTML = `
+        <div class="dropdown-header">Sort by</div>
+        ${options.map(opt => `
+            <label data-value="${opt.value}">
+                <span class="material-symbols-outlined">${opt.icon}</span>
+                <span class="sort-label-text">${opt.label}</span>
+            </label>
+        `).join('')}
+    `;
+    
     sortBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         sortPanel.classList.toggle('hidden');
