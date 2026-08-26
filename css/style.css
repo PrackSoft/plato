@@ -133,7 +133,7 @@ body {
 
 #searchInput {
     flex: 1;
-    padding: 0 var(--gap-lg);
+    padding: var(--gap-sm) var(--gap-lg);
     height: var(--btn-height-lg);
     background: var(--text-muted);
     border: 1px solid var(--border-light);
@@ -154,6 +154,8 @@ body {
 }
 
 .btn {
+    display: inline-flex;
+    align-items: center;
     border: none;
     border-radius: var(--border-radius-lg);
     height: var(--btn-height-lg);
@@ -1088,23 +1090,58 @@ body.hide-card-info .video-card img {
 }
 
 @media (max-width: 768px) {
-    .top-controls {
+    .search-box {
         flex-direction: column;
         align-items: stretch;
+        gap: var(--gap-sm);
     }
-    .btn {
+
+    .dropdown-search {
+        width: 100%;
+    }
+
+    #searchInBtn {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    #searchInput {
+        width: 100%;
+        padding: var(--gap-sm) var(--gap-lg);
+        height: var(--btn-height-lg);
+        font-size: var(--font-size-lg);
+        box-sizing: border-box;
+    }
+
+    .top-controls-buttons {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--gap-sm);
+        width: 100%;
+    }
+
+    .top-controls-buttons .btn,
+    .top-controls-buttons .dropdown-related,
+    .top-controls-buttons .dropdown-collection,
+    .top-controls-buttons .dropdown-sort {
+        width: 100%;
+        flex: 0 0 auto;
+    }
+
+    .top-controls-buttons .btn {
         justify-content: center;
     }
-    .filter-buttons {
-        justify-content: center;
-    }
+
     .dropdown-panel {
         position: fixed;
         left: var(--gap-md);
         right: var(--gap-md);
         width: auto;
     }
+
     .sidebar {
         width: 100%;
     }
+
 }
