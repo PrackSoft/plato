@@ -292,7 +292,7 @@ body {
 }
 
 .top-controls .dropdown-btn {
-    min-width: 100px;
+    min-width: 6rem;
     justify-content: space-between;
     gap: var(--gap-sm);
 }
