@@ -137,7 +137,7 @@ body {
     height: var(--btn-height-lg);
     background: var(--text-muted);
     border: 1px solid var(--border-light);
-    color: var(--bg-header);
+    color: var(--text-primary);
     font-size: var(--font-size-lg);
     border-radius: var(--border-radius-lg);
     caret-color: var(--text-primary);
