@@ -92,55 +92,55 @@ function renderModalContent(movie, source, filterMode = null) {
         ${isInTrash ? `<p><strong>Deleted on:</strong> ${movie.deletedAt ? new Date(movie.deletedAt).toLocaleString() : 'Unknown date'}</p>` : ''}
         <div class="modal-section">
             <strong>Search term:</strong>
-            <div id="termsList" class="terms-list">
+            <div id="key_wordsList" class="key_words-list">
                 ${filteredTerms.map(t => `<span class="term-chip" data-term="${escapeHtml(t.term)}" data-exact="${t.exact}">${escapeHtml(t.term)}${!isInTrash ? `<span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span>` : ''}</span>`).join('')}
             </div>
         </div>
         <div class="modal-section">
             <strong>Tags:</strong>
-            <div id="tagsList" class="terms-list">
+            <div id="tagsList" class="key_words-list">
                 ${(movie.tags || []).map(name => `<span class="term-chip">${escapeHtml(name)}${!isInTrash ? `<span class="remove-tag" data-name="${escapeHtml(name)}">✖</span>` : ''}</span>`).join('')}
             </div>
             ${!isInTrash ? `<div class="add-term-row"><input type="text" id="newTagInput" class="modal-input" placeholder="Add tag (separate multiple with commas)"><span id="addTagBtn" class="modal-add-icon" title="Add tag"><span class="material-symbols-outlined">add</span></span></div>` : ''}
         </div>
         <div class="modal-section">
             <strong>Director:</strong>
-            <div id="directorsList" class="terms-list">
+            <div id="directorsList" class="key_words-list">
                 ${directors.map(name => `<span class="term-chip">${escapeHtml(name)}${!isInTrash ? `<span class="remove-director" data-name="${escapeHtml(name)}">✖</span>` : ''}</span>`).join('')}
             </div>
             ${!isInTrash ? `<div class="add-term-row"><input type="text" id="newDirectorInput" class="modal-input" placeholder="Add director (separate multiple with commas)"><span id="addDirectorBtn" class="modal-add-icon" title="Add director"><span class="material-symbols-outlined">add</span></span></div>` : ''}
         </div>
         <div class="modal-section">
             <strong>Actor:</strong>
-            <div id="actorsList" class="terms-list">
+            <div id="actorsList" class="key_words-list">
                 ${actors.map(name => `<span class="term-chip">${escapeHtml(name)}${!isInTrash ? `<span class="remove-actor" data-name="${escapeHtml(name)}">✖</span>` : ''}</span>`).join('')}
             </div>
             ${!isInTrash ? `<div class="add-term-row"><input type="text" id="newActorInput" class="modal-input" placeholder="Add actor (separate multiple with commas)"><span id="addActorBtn" class="modal-add-icon" title="Add actor"><span class="material-symbols-outlined">add</span></span></div>` : ''}
         </div>
         <div class="modal-section">
             <strong>Genre:</strong>
-            <div id="genresList" class="terms-list">
+            <div id="genresList" class="key_words-list">
                 ${genres.map(name => `<span class="term-chip">${escapeHtml(name)}${!isInTrash ? `<span class="remove-genre" data-name="${escapeHtml(name)}">✖</span>` : ''}</span>`).join('')}
             </div>
             ${!isInTrash ? `<div class="add-term-row"><input type="text" id="newGenreInput" class="modal-input" placeholder="Add genre (separate multiple with commas)"><span id="addGenreBtn" class="modal-add-icon" title="Add genre"><span class="material-symbols-outlined">add</span></span></div>` : ''}
         </div>
         <div class="modal-section">
             <strong>Year:</strong>
-            <div id="yearsList" class="terms-list">
+            <div id="yearsList" class="key_words-list">
                 ${years.map(year => `<span class="term-chip">${escapeHtml(year)}${!isInTrash ? `<span class="remove-year" data-name="${escapeHtml(year)}">✖</span>` : ''}</span>`).join('')}
             </div>
             ${!isInTrash ? `<div class="add-term-row"><input type="text" id="newYearInput" class="modal-input" placeholder="Add year (separate multiple with commas)"><span id="addYearBtn" class="modal-add-icon" title="Add year"><span class="material-symbols-outlined">add</span></span></div>` : ''}
         </div>
         <div class="modal-section">
             <strong>Country:</strong>
-            <div id="countriesList" class="terms-list">
+            <div id="countriesList" class="key_words-list">
                 ${countries.map(name => `<span class="term-chip">${escapeHtml(name)}${!isInTrash ? `<span class="remove-country" data-name="${escapeHtml(name)}">✖</span>` : ''}</span>`).join('')}
             </div>
             ${!isInTrash ? `<div class="add-term-row"><input type="text" id="newCountryInput" class="modal-input" placeholder="Add country (separate multiple with commas)"><span id="addCountryBtn" class="modal-add-icon" title="Add country"><span class="material-symbols-outlined">add</span></span></div>` : ''}
         </div>
         <div class="modal-section">
             <strong>Language:</strong>
-            <div id="languagesList" class="terms-list">
+            <div id="languagesList" class="key_words-list">
                 ${languages.map(name => `<span class="term-chip">${escapeHtml(name)}${!isInTrash ? `<span class="remove-language" data-name="${escapeHtml(name)}">✖</span>` : ''}</span>`).join('')}
             </div>
             ${!isInTrash ? `<div class="add-term-row"><input type="text" id="newLanguageInput" class="modal-input" placeholder="Add language (separate multiple with commas)"><span id="addLanguageBtn" class="modal-add-icon" title="Add language"><span class="material-symbols-outlined">add</span></span></div>` : ''}
@@ -190,9 +190,9 @@ function splitByCommas(input) {
     return input.split(',').map(s => s.trim()).filter(s => s);
 }
 
-async function addMultipleTerms(movieId, termsString, updateMovieTermsFn) {
-    const terms = splitByCommas(termsString);
-    if (terms.length === 0) return;
+async function addMultipleTerms(movieId, key_wordsString, updateMovieTermsFn) {
+    const key_words = splitByCommas(key_wordsString);
+    if (key_words.length === 0) return;
     const db = await openDB();
     const transaction = db.transaction(['movies'], 'readonly');
     const store = transaction.objectStore('movies');
@@ -205,7 +205,7 @@ async function addMultipleTerms(movieId, termsString, updateMovieTermsFn) {
         const existingTerms = (movie.searchTerms || []).map(t => t.term);
         const newTermsArray = [...existingTerms];
         let added = false;
-        for (const term of terms) {
+        for (const term of key_words) {
             if (!newTermsArray.includes(term)) {
                 newTermsArray.push(term);
                 added = true;
@@ -228,9 +228,9 @@ async function addMultipleValues(movieId, valuesString, addFunction) {
 async function updateTermsListInModal(movie, source, attachModalEventsFn, {
     updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete
 }) {
-    const termsContainer = document.getElementById('termsList');
-    if (termsContainer) {
-        termsContainer.innerHTML = (movie.searchTerms || []).map(t => `<span class="term-chip">${escapeHtml(t.term)}<span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span></span>`).join('');
+    const key_wordsContainer = document.getElementById('key_wordsList');
+    if (key_wordsContainer) {
+        key_wordsContainer.innerHTML = (movie.searchTerms || []).map(t => `<span class="term-chip">${escapeHtml(t.term)}<span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span></span>`).join('');
         attachModalEventsFn(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
     }
 }
@@ -325,7 +325,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
     }
 
     // Evento de clic para cada chip en la lista de términos
-    const termChips = document.querySelectorAll('#termsList .term-chip');
+    const termChips = document.querySelectorAll('#key_wordsList .term-chip');
     termChips.forEach(chip => {
         chip.addEventListener('click', function(e) {
             if (e.target.classList.contains('remove-term')) return;
@@ -346,7 +346,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
     if (toggleExactRow) {
         toggleExactRow.onclick = async () => {
             // Obtener el chip seleccionado del DOM
-            const selectedChip = document.querySelector('#termsList .term-chip.selected');
+            const selectedChip = document.querySelector('#key_wordsList .term-chip.selected');
             if (!selectedChip) return;
             const term = selectedChip.dataset.term;
             const termObj = movie.searchTerms.find(t => t.term === term);
@@ -389,7 +389,7 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                 // Seleccionar automáticamente el término modificado en el nuevo renderizado
                 // y actualizar el botón directamente con el término modificado
                 setTimeout(() => {
-                    const chips = document.querySelectorAll('#termsList .term-chip');
+                    const chips = document.querySelectorAll('#key_wordsList .term-chip');
                     chips.forEach(chip => {
                         if (chip.dataset.term === termToToggle) {
                             chip.classList.add('selected');
@@ -487,9 +487,9 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                     const tagsContainer = document.getElementById('tagsList');
                     if (tagsContainer) tagsContainer.innerHTML = (movie.tags || []).map(name => `<span class="term-chip">${escapeHtml(name)}<span class="remove-tag" data-name="${escapeHtml(name)}">✖</span></span>`).join('');
                 }
-                const termsContainer = document.getElementById('termsList');
-                if (termsContainer) {
-                    termsContainer.innerHTML = movie.searchTerms.map(t => `<span class="term-chip">${escapeHtml(t.term)}<span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span></span>`).join('');
+                const key_wordsContainer = document.getElementById('key_wordsList');
+                if (key_wordsContainer) {
+                    key_wordsContainer.innerHTML = movie.searchTerms.map(t => `<span class="term-chip">${escapeHtml(t.term)}<span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span></span>`).join('');
                     attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
                 }
                 if (currentOnUpdate) await currentOnUpdate();
@@ -517,9 +517,9 @@ async function attachModalEvents(movie, { updateMovieTerms, toggleWatching, togg
                         movie.tags = updatedMovie.tags;
                     }
                     newTermInput.value = '';
-                    const termsContainer = document.getElementById('termsList');
-                    if (termsContainer) {
-                        termsContainer.innerHTML = (movie.searchTerms || []).map(t => `<span class="term-chip">${escapeHtml(t.term)}<span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span></span>`).join('');
+                    const key_wordsContainer = document.getElementById('key_wordsList');
+                    if (key_wordsContainer) {
+                        key_wordsContainer.innerHTML = (movie.searchTerms || []).map(t => `<span class="term-chip">${escapeHtml(t.term)}<span class="remove-term" data-term="${escapeHtml(t.term)}">✖</span></span>`).join('');
                         attachModalEvents(movie, { updateMovieTerms, toggleWatching, toggleFavorite, moveToTrash, restoreFromTrash, permanentlyDelete }, source);
                     }
                     if (currentOnUpdate) await currentOnUpdate();

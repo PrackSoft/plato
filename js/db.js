@@ -861,17 +861,17 @@ export async function saveMovie(movieData, searchTerm, isExact = true) {
             const existing = getRequest.result;
             
             if (existing) {
-                let terms = existing.searchTerms || [];
-                const existingIndex = terms.findIndex(t => t.term === searchTerm);
+                let key_words = existing.searchTerms || [];
+                const existingIndex = key_words.findIndex(t => t.term === searchTerm);
                 if (existingIndex === -1) {
-                    terms.push({ term: searchTerm, exact: isExact });
+                    key_words.push({ term: searchTerm, exact: isExact });
                 } else {
-                    if (isExact) terms[existingIndex].exact = true;
+                    if (isExact) key_words[existingIndex].exact = true;
                 }
                 
                 const updated = {
                     ...existing,
-                    searchTerms: terms,
+                    searchTerms: key_words,
                     directors: existing.directors || [],
                     actors: existing.actors || [],
                     genres: existing.genres || [],

@@ -15,7 +15,7 @@ const filterFavoriteBtn = document.getElementById('filterFavoriteBtn');
 const filterTrashBtn = document.getElementById('filterTrashBtn');
 const filterCollectionBtn = document.getElementById('filterCollectionBtn');
 const filterRelatedBtn = document.getElementById('filterRelatedBtn');
-const termsBar = document.getElementById('termsBar');
+const key_wordsBar = document.getElementById('key_wordsBar');
 const directorsBar = document.getElementById('directorsBar');
 const actorsBar = document.getElementById('actorsBar');
 const genresBar = document.getElementById('genresBar');
@@ -147,7 +147,7 @@ function buildSearchInPanel() {
     platoDbLabel.htmlFor = 'searchInPlatoDB';
     platoDbLabel.className = 'search-in-label';
     platoDbLabel.appendChild(platoDbRadio);
-    platoDbLabel.appendChild(document.createTextNode(' Plato DB'));
+    platoDbLabel.appendChild(document.createTextNode(' History'));
     searchInContainer.appendChild(platoDbLabel);
     
     searchInPanel.appendChild(searchInContainer);
@@ -219,7 +219,7 @@ function buildSearchInPanel() {
             searchInBtn.className = 'btn btn-primary dropdown-btn';
             searchInBtn.innerHTML = `
                 <span class="material-symbols-outlined">storage</span>
-                Plato DB
+                History
                 <span class="material-symbols-outlined">arrow_drop_down</span>
             `;
         } else {
@@ -443,7 +443,7 @@ function buildCollectionDropdown() {
                     activeCollectionFilter = true;
                     updateFilterButtonsUI();
                     if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
-                    if (termsBar) termsBar.classList.add('hidden');
+                    if (key_wordsBar) key_wordsBar.classList.add('hidden');
                 }
                 
                 loadAndDisplayAll();
@@ -798,7 +798,7 @@ export async function refreshAvailableTags() {
 function renderTagsBar() {
     if (!tagsBar) return;
     if (availableTags.length === 0) {
-        tagsBar.innerHTML = '<div class="terms-placeholder">No tags yet.</div>';
+        tagsBar.innerHTML = '<div class="key_words-placeholder">No tags yet.</div>';
         tagsBar.classList.remove('hidden');
         return;
     }
@@ -1110,22 +1110,22 @@ export async function deleteLanguageFromAllMovies(languageName) {
     }
 }
 
-// ---------------------- Search terms Bar ----------------------
+// ---------------------- Key words Bar ----------------------
 export async function refreshAvailableTerms() {
     const allMovies = await getAllMovies();
-    const termsSet = new Set();
+    const key_wordsSet = new Set();
     for (const movie of allMovies) {
         (movie.searchTerms || []).forEach(t => {
             if (t && typeof t === 'object' && t.term) {
                 if (activeRelatedFilter === 'exact') {
-                    if (t.exact === true) termsSet.add(t.term);
+                    if (t.exact === true) key_wordsSet.add(t.term);
                 } else {
-                    if (t.exact === false) termsSet.add(t.term);
+                    if (t.exact === false) key_wordsSet.add(t.term);
                 }
             }
         });
     }
-    availableTerms = Array.from(termsSet).sort();
+    availableTerms = Array.from(key_wordsSet).sort();
 }
 
 export async function refreshAvailableDirector() {
@@ -1288,8 +1288,8 @@ async function deleteMoviesWithTermFromCurrentView(term) {
         moviesToProcess = await getAllMovies();
         if (activeTermFilter) {
             moviesToProcess = moviesToProcess.filter(movie => {
-                const terms = movie.searchTerms || [];
-                return terms.some(t => t.term === activeTermFilter);
+                const key_words = movie.searchTerms || [];
+                return key_words.some(t => t.term === activeTermFilter);
             });
         }
         if (activeWatchingFilter) moviesToProcess = moviesToProcess.filter(movie => movie.watching === true);
@@ -1297,18 +1297,18 @@ async function deleteMoviesWithTermFromCurrentView(term) {
         if (activeRelatedFilter === 'related') {
             onlyRelated = true;
             moviesToProcess = moviesToProcess.filter(movie => {
-                const terms = movie.searchTerms || [];
-                return terms.some(t => t.exact === false);
+                const key_words = movie.searchTerms || [];
+                return key_words.some(t => t.exact === false);
             });
         }
     }
     
     const moviesWithTerm = moviesToProcess.filter(movie => {
-        const terms = movie.searchTerms || [];
+        const key_words = movie.searchTerms || [];
         if (onlyRelated) {
-            return terms.some(t => t.term === term && t.exact === false);
+            return key_words.some(t => t.term === term && t.exact === false);
         } else {
-            return terms.some(t => t.term === term);
+            return key_words.some(t => t.term === term);
         }
     });
     
@@ -1555,13 +1555,13 @@ async function deleteLanguageFromCurrentView(languageName) {
     await loadAndDisplayAll();
 }
 
-function renderTermsBar(termsArray = null) {
-    const terms = termsArray !== null ? termsArray : availableTerms;
-    if (!terms || terms.length === 0) {
-        termsBar.innerHTML = '<div class="terms-placeholder">No Search terms yet.</div>';
+function renderTermsBar(key_wordsArray = null) {
+    const key_words = key_wordsArray !== null ? key_wordsArray : availableTerms;
+    if (!key_words || key_words.length === 0) {
+        key_wordsBar.innerHTML = '<div class="key_words-placeholder">No Key words yet.</div>';
         return;
     }
-    const html = terms.map(term => {
+    const html = key_words.map(term => {
         const termStr = String(term);
         return `
             <button class="btn btn-secondary btn-sm ${activeTermFilter === termStr ? 'active' : ''}" data-term="${escapeHtml(termStr)}">
@@ -1571,9 +1571,9 @@ function renderTermsBar(termsArray = null) {
             </button>
         `;
     }).join('');
-    termsBar.innerHTML = html;
+    key_wordsBar.innerHTML = html;
 
-    document.querySelectorAll('#termsBar .btn').forEach(btn => {
+    document.querySelectorAll('#key_wordsBar .btn').forEach(btn => {
         const term = btn.dataset.term;
         btn.addEventListener('click', (e) => {
             if (e.target.classList.contains('term-edit') || e.target.classList.contains('term-delete')) return;
@@ -1607,7 +1607,7 @@ function renderTermsBar(termsArray = null) {
 function renderDirectorBar() {
     if (!directorsBar) return;
     if (availableDirector.length === 0) {
-        directorsBar.innerHTML = '<div class="terms-placeholder">No directors yet.</div>';
+        directorsBar.innerHTML = '<div class="key_words-placeholder">No directors yet.</div>';
         directorsBar.classList.remove('hidden');
         return;
     }
@@ -1654,7 +1654,7 @@ function renderDirectorBar() {
 function renderActorBar() {
     if (!actorsBar) return;
     if (availableActor.length === 0) {
-        actorsBar.innerHTML = '<div class="terms-placeholder">No Actor yet.</div>';
+        actorsBar.innerHTML = '<div class="key_words-placeholder">No Actor yet.</div>';
         actorsBar.classList.remove('hidden');
         return;
     }
@@ -1701,7 +1701,7 @@ function renderActorBar() {
 function renderGenreBar() {
     if (!genresBar) return;
     if (availableGenre.length === 0) {
-        genresBar.innerHTML = '<div class="terms-placeholder">No Genre yet.</div>';
+        genresBar.innerHTML = '<div class="key_words-placeholder">No Genre yet.</div>';
         genresBar.classList.remove('hidden');
         return;
     }
@@ -1748,7 +1748,7 @@ function renderGenreBar() {
 function renderYearBar() {
     if (!yearsBar) return;
     if (availableYear.length === 0) {
-        yearsBar.innerHTML = '<div class="terms-placeholder">No years yet.</div>';
+        yearsBar.innerHTML = '<div class="key_words-placeholder">No years yet.</div>';
         yearsBar.classList.remove('hidden');
         return;
     }
@@ -1795,7 +1795,7 @@ function renderYearBar() {
 function renderCountryBar() {
     if (!countriesBar) return;
     if (availableCountry.length === 0) {
-        countriesBar.innerHTML = '<div class="terms-placeholder">No countries yet.</div>';
+        countriesBar.innerHTML = '<div class="key_words-placeholder">No countries yet.</div>';
         countriesBar.classList.remove('hidden');
         return;
     }
@@ -1842,7 +1842,7 @@ function renderCountryBar() {
 function renderLanguageBar() {
     if (!languagesBar) return;
     if (availableLanguage.length === 0) {
-        languagesBar.innerHTML = '<div class="terms-placeholder">No languages yet.</div>';
+        languagesBar.innerHTML = '<div class="key_words-placeholder">No languages yet.</div>';
         languagesBar.classList.remove('hidden');
         return;
     }
@@ -1887,21 +1887,21 @@ function renderLanguageBar() {
 }
 
 // ---------------------- Toggle Terms Bar visibility ----------------------
-if (toggleTermsBtn && termsBar) {
-    const termsIcon = toggleTermsBtn.querySelector('.material-symbols-outlined');
+if (toggleTermsBtn && key_wordsBar) {
+    const key_wordsIcon = toggleTermsBtn.querySelector('.material-symbols-outlined');
     
     toggleTermsBtn.addEventListener('click', () => {
         if (activeCollectionFilter) {
             activeCollectionFilter = false;
             updateFilterButtonsUI();
         }
-        const isHidden = termsBar.classList.toggle('hidden');
+        const isHidden = key_wordsBar.classList.toggle('hidden');
         if (isHidden) {
             toggleTermsBtn.classList.remove('active');
-            if (termsIcon) termsIcon.textContent = 'filter_list_off';
+            if (key_wordsIcon) key_wordsIcon.textContent = 'filter_list_off';
         } else {
             toggleTermsBtn.classList.add('active');
-            if (termsIcon) termsIcon.textContent = 'filter_list';
+            if (key_wordsIcon) key_wordsIcon.textContent = 'filter_list';
         }
         loadAndDisplayAll();
     });
@@ -2035,11 +2035,11 @@ function toggleCollectionFilter() {
     
     if (activeCollectionFilter) {
         if (toggleTermsBtn) toggleTermsBtn.classList.remove('active');
-        if (termsBar) termsBar.classList.add('hidden');
+        if (key_wordsBar) key_wordsBar.classList.add('hidden');
     } else {
         activeRelatedFilter = savedRelatedFilter;
         updateRelatedButtonText();
-        if (toggleTermsBtn && termsBar && !termsBar.classList.contains('hidden')) {
+        if (toggleTermsBtn && key_wordsBar && !key_wordsBar.classList.contains('hidden')) {
             toggleTermsBtn.classList.add('active');
         }
     }
@@ -2060,11 +2060,11 @@ export async function loadAndDisplayAll() {
 
     if (activeTermFilter) {
         allMovies = allMovies.filter(movie => {
-            const terms = movie.searchTerms || [];
+            const key_words = movie.searchTerms || [];
             if (activeRelatedFilter === 'exact') {
-                return terms.some(t => t.term === activeTermFilter && t.exact === true);
+                return key_words.some(t => t.term === activeTermFilter && t.exact === true);
             } else {
-                return terms.some(t => t.term === activeTermFilter && t.exact === false);
+                return key_words.some(t => t.term === activeTermFilter && t.exact === false);
             }
         });
     }
@@ -2072,13 +2072,13 @@ export async function loadAndDisplayAll() {
     if (!activeCollectionFilter && !activeTrashFilter && !activeWatchingFilter && !activeFavoriteFilter && !activeTermFilter) {
         if (activeRelatedFilter === 'exact') {
             allMovies = allMovies.filter(movie => {
-                const terms = movie.searchTerms || [];
-                return terms.some(t => t.exact === true);
+                const key_words = movie.searchTerms || [];
+                return key_words.some(t => t.exact === true);
             });
         } else if (activeRelatedFilter === 'related') {
             allMovies = allMovies.filter(movie => {
-                const terms = movie.searchTerms || [];
-                return terms.some(t => t.exact === false);
+                const key_words = movie.searchTerms || [];
+                return key_words.some(t => t.exact === false);
             });
         }
     }
@@ -2238,7 +2238,7 @@ export async function loadAndDisplayAll() {
         renderMovies(resultsGrid, allMovies, activeTrashFilter ? 'trash' : 'main', currentSort, onSortChange);
     }
 
-    let termsToShow;
+    let key_wordsToShow;
 
     if (!activeCollectionFilter) {
         if (activeTermFilter) {
@@ -2250,12 +2250,12 @@ export async function loadAndDisplayAll() {
         }
 
         if (activeTermFilter) {
-            termsToShow = [activeTermFilter];
+            key_wordsToShow = [activeTermFilter];
         } else {
             const allTerms = new Set();
             for (const movie of allMovies) {
-                const terms = movie.searchTerms || [];
-                terms.forEach(t => {
+                const key_words = movie.searchTerms || [];
+                key_words.forEach(t => {
                     if (!t.term) return;
                     if (activeRelatedFilter === 'exact') {
                         if (t.exact === true) allTerms.add(t.term);
@@ -2264,9 +2264,9 @@ export async function loadAndDisplayAll() {
                     }
                 });
             }
-            termsToShow = Array.from(allTerms).sort();
+            key_wordsToShow = Array.from(allTerms).sort();
         }
-        renderTermsBar(termsToShow);
+        renderTermsBar(key_wordsToShow);
         
         if (directorsBar) directorsBar.classList.add('hidden');
         if (actorsBar) actorsBar.classList.add('hidden');
@@ -2472,7 +2472,7 @@ async function performSearch() {
             resultsGrid.innerHTML = `<div class="stats">Error: ${err.message}</div>`;
         }
     } else {
-        resultsGrid.innerHTML = '<div class="stats">Searching in Plato DB...</div>';
+        resultsGrid.innerHTML = '<div class="stats">Searching in History...</div>';
         let allMovies = await getAllMovies();
         if (publishedAfter || publishedBefore) {
             allMovies = allMovies.filter(movie => {
@@ -2487,15 +2487,15 @@ async function performSearch() {
         const filtered = allMovies.filter(movie => {
             const titleMatch = movie.title.toLowerCase().includes(lowerQuery);
             const descMatch = movie.description && movie.description.toLowerCase().includes(lowerQuery);
-            let termsMatch = false;
-            const terms = movie.searchTerms || [];
-            terms.forEach(t => {
-                if (t.term && t.term.toLowerCase().includes(lowerQuery)) termsMatch = true;
+            let key_wordsMatch = false;
+            const key_words = movie.searchTerms || [];
+            key_words.forEach(t => {
+                if (t.term && t.term.toLowerCase().includes(lowerQuery)) key_wordsMatch = true;
             });
-            return titleMatch || descMatch || termsMatch;
+            return titleMatch || descMatch || key_wordsMatch;
         });
         if (filtered.length === 0) {
-            resultsGrid.innerHTML = '<div class="stats">No matching movies found in Plato DB</div>';
+            resultsGrid.innerHTML = '<div class="stats">No matching movies found in History</div>';
         } else {
             const onSortChange = (newSort) => {
                 currentSort = newSort;
@@ -2590,7 +2590,7 @@ async function init() {
     await refreshAvailableTerms();
     await loadAndDisplayAll();
     
-    if (termsBar) termsBar.classList.add('hidden');
+    if (key_wordsBar) key_wordsBar.classList.add('hidden');
     if (toggleTermsBtn) {
         toggleTermsBtn.classList.remove('active');
         const icon = toggleTermsBtn.querySelector('.material-symbols-outlined');
