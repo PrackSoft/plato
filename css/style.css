@@ -27,8 +27,8 @@
 
     --bg-header: black;
     --bg-body: #0b0b0e;
-    --bg-card: #FFFFFF;
-    --bg-panel: #1e1e1e;
+    --bg-card: rgba(255, 255, 255, 0.06);
+    --bg-panel: rgba(30, 30, 30, 1);
     
     --border-color: #FFFFFF;
     --border-light: #38383A;
@@ -451,11 +451,20 @@ body {
 
 .video-card {
     background: var(--bg-card);
+    border: 0.5px solid rgba(255, 255, 255, 0.12);
     border-radius: var(--border-radius-sm);
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
+/*.video-card {
+    background: var(--bg-card);
+    border-radius: var(--border-radius-sm);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}*/
 
 .video-card:hover {
     transform: translateY(-4px);
